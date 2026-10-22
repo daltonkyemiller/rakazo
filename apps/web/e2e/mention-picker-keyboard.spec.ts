@@ -41,11 +41,26 @@ test("mention picker completes with Enter and Tab", async ({ page }, testInfo) =
   await expect(composer).toHaveAttribute("aria-expanded", "true");
   await captureScreenshot(page, testInfo, "mention-picker-keyboard-open");
 
+  const researcherOption = picker.getByRole("option", { name: "@Researcher", exact: true });
+  const writerOption = picker.getByRole("option", { name: "@Research Writer", exact: true });
+  const inactiveBackground = await writerOption.evaluate(
+    (element) => getComputedStyle(element).backgroundColor,
+  );
+  await researcherOption.hover();
   await composer.press("ArrowDown");
+  await expect(researcherOption).toHaveAttribute("aria-selected", "false");
+  await expect(researcherOption).toHaveCSS("background-color", inactiveBackground);
   await expect(picker.getByRole("option", { name: "@Research Writer" })).toHaveAttribute(
     "aria-selected",
     "true",
   );
+  await captureScreenshot(page, testInfo, "mention-picker-keyboard-with-parked-pointer");
+  await writerOption.hover();
+  await researcherOption.hover();
+  await expect(researcherOption).toHaveAttribute("aria-selected", "true");
+  await expect(writerOption).toHaveAttribute("aria-selected", "false");
+  await writerOption.hover();
+  await expect(writerOption).toHaveAttribute("aria-selected", "true");
   await composer.press("Enter");
   await expect(page.getByTestId("mention-picker")).toHaveCount(0);
   await expect(

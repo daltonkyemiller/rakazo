@@ -524,7 +524,7 @@ export const Composer = memo(function Composer({
                 onClick={() => insertMention(mention)}
                 // Opening the list under a stationary pointer must not steal the keyboard highlight.
                 onMouseMove={() => setMentionHighlightKey(mentionChipKey(mention))}
-                className={`flex w-full items-start gap-3 px-4 py-2.5 text-start hover:bg-accent ${
+                className={`flex w-full items-start gap-3 px-4 py-2.5 text-start ${
                   highlighted ? "bg-accent" : ""
                 }`}
               >

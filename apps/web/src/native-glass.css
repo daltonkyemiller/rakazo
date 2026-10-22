@@ -130,3 +130,10 @@ html[data-native-glass] [data-testid="message-user-bubble"] {
   box-shadow: none;
   filter: none;
 }
+
+html[data-native-glass] [data-slot="dialog-overlay"],
+html[data-native-glass] [data-slot="alert-dialog-overlay"],
+html[data-native-glass] [data-slot="sheet-overlay"] {
+  background: var(--overlay);
+  backdrop-filter: none;
+}

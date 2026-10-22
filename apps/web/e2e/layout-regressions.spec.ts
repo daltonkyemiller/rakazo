@@ -80,5 +80,21 @@ test("Mac glass keeps inset content and selected toolbar icons readable in both 
     expect(bounds.y + bounds.height).toBe(842);
     await captureScreenshot(page, testInfo, `mac-glass-${theme}`);
     await activity.click();
+    await page.keyboard.press("Control+,");
+    await expect(page.getByTestId("user-settings")).toBeVisible();
+    const overlay = page.locator('[data-slot="dialog-overlay"]');
+    await expect(overlay).toHaveCSS("backdrop-filter", "none");
+    const overlayColors = await overlay.evaluate((element) => {
+      const probe = document.createElement("span");
+      probe.style.backgroundColor = "var(--overlay)";
+      element.append(probe);
+      const expected = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return { actual: getComputedStyle(element).backgroundColor, expected };
+    });
+    expect(overlayColors.actual).toBe(overlayColors.expected);
+    await captureScreenshot(page, testInfo, `mac-glass-settings-${theme}`);
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("user-settings")).toBeHidden();
   }
 });

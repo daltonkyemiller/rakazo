@@ -39,13 +39,33 @@ test("command palette opens with keyboard, filters, and switches bots", async ({
   await captureScreenshot(page, testInfo, "command-palette-bots");
 
   const search = page.getByTestId("command-palette-search");
+  await expect(search).toBeFocused();
+  const rows = palette.getByRole("option");
+  for (const theme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: theme });
+    await expect(rows.first()).toHaveAttribute("aria-selected", "true");
+    await page.keyboard.press("ArrowDown");
+    await expect(rows.nth(1)).toHaveAttribute("aria-selected", "true");
+    await expect(rows.first()).toHaveAttribute("aria-selected", "false");
+    const menuBackground = await palette.evaluate(
+      (element) => getComputedStyle(element).backgroundColor,
+    );
+    const selectedBackground = await rows
+      .nth(1)
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
+    expect(selectedBackground).not.toBe(menuBackground);
+    expect(selectedBackground).not.toBe("rgba(0, 0, 0, 0)");
+    await captureScreenshot(page, testInfo, `command-palette-keyboard-${theme}`);
+    await page.keyboard.press("ArrowUp");
+    await expect(rows.first()).toHaveAttribute("aria-selected", "true");
+  }
   await search.fill("Research");
   // Chat matches may also appear, so check the bot rows by id.
   await expect(page.getByTestId(`command-palette-bot-${researcher.id}`)).toBeVisible();
   await expect(page.getByTestId(`command-palette-bot-${chiefId}`)).toHaveCount(0);
   await captureScreenshot(page, testInfo, "command-palette-filtered");
 
-  await page.getByTestId(`command-palette-bot-${researcher.id}`).click();
+  await page.keyboard.press("Enter");
   await expect(dialog).toBeHidden();
   await page.waitForURL(new RegExp(`/app/${researcher.id}$`));
   expect(activeBotId(page)).toBe(researcher.id);
@@ -53,6 +73,7 @@ test("command palette opens with keyboard, filters, and switches bots", async ({
 
   await page.getByTestId("sidebar-search-trigger").click();
   await expect(dialog).toBeVisible();
+  await expect(search).toBeFocused();
   await page.getByTestId(`command-palette-bot-${chiefId}`).click();
   await page.waitForURL(new RegExp(`/app/${chiefId}$`));
   expect(activeBotId(page)).toBe(chiefId);

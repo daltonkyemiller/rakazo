@@ -249,6 +249,7 @@ test("changes and recovers an email password", async ({ page }, testInfo) => {
     "username",
   );
   await expect(settings.locator('input[name="username"]')).toHaveValue(email);
+  await settings.getByRole("button", { name: "Change password", exact: true }).click();
   await expect(settings.getByLabel("Current password")).toHaveAttribute(
     "autocomplete",
     "current-password",

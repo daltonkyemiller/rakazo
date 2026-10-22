@@ -380,6 +380,7 @@ function SpaceShell() {
   }, setLogOutError);
   const [attachmentNotice, setAttachmentNotice] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [modelFocusRequest, setModelFocusRequest] = useState(0);
   const [panel, setPanelState] = useState<Panel>(null);
   const [restoredPanelKey, setRestoredPanelKey] = useState<string | null>(null);
   const panelStorageKeyRef = useRef<string | null>(null);
@@ -394,6 +395,7 @@ function SpaceShell() {
     pendingPanelRestore.current = null;
     pendingExplicitPanel.current = panelStorageKeyRef.current === null;
     setRestoredPanelKey(panelStorageKeyRef.current);
+    setModelFocusRequest(0);
     setPanelState(next);
     const currentSearch = panelSearch.current;
     if (currentSearch.searchParams.has("routine")) {
@@ -2814,7 +2816,11 @@ function SpaceShell() {
     const bootInFlight = bootsInFlight.current.has(id) || targetComputer?.state === "booting";
     setComputerOpen(true);
     computerVisible.current = true;
-    if (bootInFlight && !takeControl) return true;
+    if (bootInFlight && !takeControl) {
+      // An external boot may have finished since this snapshot was cached.
+      if (!bootsInFlight.current.has(id)) await refreshComputerFor(id).catch(() => undefined);
+      return true;
+    }
     const needsTakeover = takeControl && !userHoldsComputerControl(targetComputer, id);
     const blocked = computerTakeoverBlocked(targetComputer, snapshot?.run?.status);
     try {
@@ -3478,7 +3484,12 @@ function SpaceShell() {
             pendingAttachments={activePendingAttachments}
             attachmentNotice={attachmentNotice}
             sendError={sendError}
-            onOpenModels={() => openSettings("models")}
+            onOpenModels={() => {
+              if (active && !inGroup) {
+                setPanel("settings");
+                setModelFocusRequest(Date.now());
+              } else openSettings("models");
+            }}
             runError={displayedRunError}
             runErrorId={displayedRunErrorId}
             onRunErrorPresented={handleRunErrorPresented}
@@ -3642,6 +3653,8 @@ function SpaceShell() {
                 key={active.id}
                 bot={active}
                 nav={botPanelTabs}
+                focusModel={modelFocusRequest}
+                onOpenConnections={() => openSettings("models")}
                 memoryProviderConfigured={memoryProviderConfig != null}
                 onSkillsChange={setAgentSkills}
                 onSave={async ({ computerMode, ...patch }) => {

@@ -102,6 +102,9 @@ vi.mock("../components/glass-surface", () => ({
     createElement("div", { "data-glass": shape, "data-style": JSON.stringify(style) }, children),
 }));
 vi.mock("../components/native-symbol", () => ({ NativeSymbol: () => null }));
+vi.mock("../components/connector-icon", () => ({
+  ConnectorIcon: ({ logo }: { logo: string }) => createElement("img", { src: logo }),
+}));
 vi.mock("./native", () => ({ useMobileTokens: () => ({}), useResolvedAppearance: () => "light" }));
 vi.mock("./i18n", () => ({ useI18n: () => ({ t: (text: string) => text }) }));
 
@@ -235,6 +238,29 @@ describe("thread composer isolation", () => {
     expect(composer.current!.snapshot().skill).toEqual(skill);
     act(() => input.key({ nativeEvent: { key: "Backspace" } }));
     expect(composer.current!.snapshot().skill).toBeNull();
+  });
+
+  it("shows integration profiles with their app logo and keeps each profile's name", () => {
+    const logo = "https://logos.example.test/gmail.svg";
+    const work = {
+      kind: "connector",
+      id: "conn-2",
+      name: "Work",
+      connectionId: "conn-2",
+      authStatus: "connected",
+      logo,
+    } as const;
+    render({ composerMentionTargets: [work, { ...work, id: "conn-3", name: "Wiki", logo: null }] });
+    type("@W");
+    const picker = container.querySelector('[data-testid="mention-picker"]')!;
+    expect(picker.textContent).toContain("@Work");
+    expect(picker.textContent).toContain("@Wiki");
+    expect([...picker.querySelectorAll("img")].map((img) => img.getAttribute("src"))).toEqual([
+      logo,
+    ]);
+    press("@{name}");
+    expect(composer.current!.snapshot().mentions).toEqual([work]);
+    expect(container.querySelector("img")?.getAttribute("src")).toBe(logo);
   });
 
   it("clears a slash query before routing and uses the call control for an empty draft", () => {

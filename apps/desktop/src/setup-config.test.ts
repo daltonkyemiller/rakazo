@@ -188,6 +188,22 @@ describe("startup target", () => {
 });
 
 describe("bundled renderer eligibility", () => {
+  it("lets local builds use their own UI with an existing server", () => {
+    expect(servesBundledRenderer("http://127.0.0.1:45173", false, true)).toBe(true);
+    expect(servesBundledRenderer("http://100.100.1.20:45173", false, true)).toBe(true);
+    expect(servesBundledRenderer("https://rakazo.example.com", false, true)).toBe(true);
+    expect(servesBundledRenderer("http://example.com", false, true)).toBe(false);
+    expect(servesBundledRenderer("https://user:secret@example.com", false, true)).toBe(false);
+    expect(servesBundledRenderer("file:///tmp/index.html", false, true)).toBe(false);
+  });
+
+  it("accepts tailnet HTTP addresses within the shared address range only", () => {
+    expect(normalizeServerUrl("100.64.0.1:45173")).toBe("http://100.64.0.1:45173");
+    expect(normalizeServerUrl("100.127.255.254:45173")).toBe("http://100.127.255.254:45173");
+    expect(normalizeServerUrl("http://100.63.255.254:45173")).toBeNull();
+    expect(normalizeServerUrl("http://100.128.0.1:45173")).toBeNull();
+  });
+
   it("overlays the bundle only for the managed loopback stack", () => {
     expect(servesBundledRenderer(DEFAULT_LOCAL_WEB_URL, true)).toBe(true);
     expect(servesBundledRenderer("http://localhost:5173", true)).toBe(true);

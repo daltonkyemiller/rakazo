@@ -1,3 +1,4 @@
+import { BottomSheet } from "@expo/ui/community/bottom-sheet";
 import type {
   CapabilityInstall,
   Connection,
@@ -5,17 +6,16 @@ import type {
   McpServer,
 } from "@rakazo/contracts";
 import {
-  buildFeaturedConnectorTiles,
   CONNECTION_CATALOG_PAGE_SIZE,
   catalogItemAccounts,
   catalogItemKey,
   connectCatalogItem,
+  connectionCatalogRows,
   EMPTY_PLUGIN_CATALOG_MESSAGE,
-  filterConnectionCatalogItems,
   humanizeToolName,
   isCatalogItemConnected,
 } from "@rakazo/core";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -45,6 +45,7 @@ import {
 } from "../../lib/integrations-cache";
 import { loadLastBotId } from "../../lib/last-bot";
 import { native, useThemedStyles } from "../../lib/native";
+import { closeSettingsSheet } from "../../lib/settings-sheet";
 import { errorText } from "../../lib/user-error";
 
 type SourceKind = "treg" | "executor" | "mcp" | "api" | "graphql";
@@ -53,10 +54,13 @@ type ConnectionTool = { name: string; description: string };
 const LOGO_SIZE = 32;
 
 export default function Integrations() {
+  return <IntegrationsScreen />;
+}
+
+export function IntegrationsScreen({ connectedOnly = false }: { connectedOnly?: boolean }) {
   const styles = useThemedStyles(createIntegrationsStyles);
   const { t } = useI18n();
-  const { width } = useWindowDimensions();
-  const catalogColumns = width >= 480 ? 2 : 1;
+  const { height } = useWindowDimensions();
   const [catalog, setCatalog] = useState<ConnectionCatalogItem[]>([]);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [query, setQuery] = useState("");
@@ -79,7 +83,7 @@ export default function Integrations() {
   const [detailKey, setDetailKey] = useState<{ connectorId: string; slug: string } | null>(null);
   const [tools, setTools] = useState<ConnectionTool[]>([]);
   const [toolsLoading, setToolsLoading] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(true);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [toolsTick, setToolsTick] = useState(0);
   const connectionAttempt = useRef<AbortController | null>(null);
 
@@ -153,9 +157,12 @@ export default function Integrations() {
     });
   }
 
-  const featuredTiles = useMemo(() => buildFeaturedConnectorTiles(catalog), [catalog]);
-  const showFeatured = !query.trim();
-  const catalogApps = useMemo(() => filterConnectionCatalogItems(catalog, query), [catalog, query]);
+  const catalogApps = useMemo(
+    () =>
+      connectionCatalogRows(catalog, connections, query, connectedOnly ? "connected" : "available"),
+    [catalog, connections, query, connectedOnly],
+  );
+  const connectedCount = connectionCatalogRows(catalog, connections, "", "connected").length;
   const renderedApps = catalogApps.slice(0, visibleCount);
 
   const detailItem = useMemo(() => {
@@ -322,7 +329,7 @@ export default function Integrations() {
   );
 
   useEffect(() => {
-    if (!detailKey) {
+    if (!detailKey || !toolsOpen) {
       setTools([]);
       setToolsLoading(false);
       return;
@@ -345,7 +352,7 @@ export default function Integrations() {
     return () => {
       cancelled = true;
     };
-  }, [detailKey, toolsTick]);
+  }, [detailKey, toolsTick, toolsOpen]);
 
   function closeAdvanced() {
     setAdvancedOpen(false);
@@ -359,7 +366,7 @@ export default function Integrations() {
 
   function openDetail(item: ConnectionCatalogItem) {
     setCatalogError(null);
-    setToolsOpen(true);
+    setToolsOpen(false);
     setDetailKey({ connectorId: item.connectorId, slug: item.slug });
   }
 
@@ -565,20 +572,7 @@ export default function Integrations() {
 
   function renderCatalogActions(item: ConnectionCatalogItem, label: string) {
     const key = catalogItemKey(item);
-    const connected = itemConnected(item);
     const connecting = pending === key;
-    if (connected) {
-      return (
-        <NativeActionButton
-          accessibilityLabel={t("Added")}
-          disabled={connecting}
-          fill={false}
-          label={connecting ? t("Working…") : t("Added")}
-          onPress={() => openDetail(item)}
-          prominence="secondary"
-        />
-      );
-    }
     return (
       <NativeActionButton
         accessibilityLabel={t("Add {name}", { name: label })}
@@ -600,25 +594,32 @@ export default function Integrations() {
           <Text numberOfLines={1} style={styles.title}>
             {label}
           </Text>
+          {accountsFor(item).length ? (
+            <View style={styles.badges}>
+              {accountsFor(item).map((account) => (
+                <Text key={account.id} numberOfLines={1} style={styles.badge}>
+                  {account.displayName}
+                </Text>
+              ))}
+            </View>
+          ) : null}
         </View>
-        {renderCatalogActions(item, label)}
+        {connected ? <Chevron /> : renderCatalogActions(item, label)}
       </>
     );
-    const tileStyle = [styles.row, catalogColumns === 2 ? styles.catalogCell : null];
-    if (connected) {
-      return (
-        <Pressable
-          key={catalogItemKey(item)}
-          accessibilityRole="button"
-          onPress={() => openDetail(item)}
-          style={tileStyle}
-        >
-          {body}
-        </Pressable>
-      );
-    }
-    return (
-      <View key={catalogItemKey(item)} style={tileStyle}>
+    return connected ? (
+      <Pressable
+        key={catalogItemKey(item)}
+        testID={`connection-tile-${item.slug.toLowerCase()}`}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        onPress={() => openDetail(item)}
+        style={styles.row}
+      >
+        {body}
+      </Pressable>
+    ) : (
+      <View key={catalogItemKey(item)} style={styles.row}>
         {body}
       </View>
     );
@@ -637,11 +638,11 @@ export default function Integrations() {
           <View style={styles.detailTitleRow}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={t("Back")}
+              accessibilityLabel={t("Close")}
               onPress={closeDetail}
               style={styles.backButton}
             >
-              <Text style={styles.link}>{t("Back")}</Text>
+              <Text style={styles.link}>{t("Close")}</Text>
             </Pressable>
             <ConnectorIcon logo={item.logo} name={item.name} size={LOGO_SIZE} />
             <Text numberOfLines={1} style={styles.detailTitle}>
@@ -698,7 +699,7 @@ export default function Integrations() {
             style={styles.toolsToggle}
           >
             <Text style={styles.title}>
-              {toolsLoading
+              {toolsLoading || !toolsOpen
                 ? t("Tools")
                 : toolCount === 1
                   ? t("1 tool")
@@ -727,7 +728,29 @@ export default function Integrations() {
   }
 
   return (
-    <SafeAreaView edges={["bottom"]} style={styles.screen}>
+    <SafeAreaView edges={["top", "bottom"]} style={styles.screen}>
+      <View style={styles.pageHeader}>
+        <NativeActionButton
+          accessibilityLabel={connectedOnly ? t("Back") : t("Close integrations")}
+          icon={{
+            ios: connectedOnly ? "chevron.left" : "xmark",
+            android: connectedOnly ? "chevron-back" : "close",
+          }}
+          onPress={connectedOnly ? () => router.back() : closeSettingsSheet}
+          prominence="secondary"
+          fill={false}
+        />
+        <Text style={styles.pageTitle}>{connectedOnly ? t("Connected") : t("Integrations")}</Text>
+        {!connectedOnly ? (
+          <NativeActionButton
+            accessibilityLabel={t("Connected integrations")}
+            label={t("{count} connected", { count: connectedCount })}
+            onPress={() => router.push("/connected-integrations")}
+            prominence="secondary"
+            fill={false}
+          />
+        ) : null}
+      </View>
       <ScrollView
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
@@ -804,22 +827,17 @@ export default function Integrations() {
           </View>
         ) : null}
 
-        {detailItem ? (
-          renderDetail(detailItem)
-        ) : (
+        {
           <>
             {!catalogReady && !catalogError ? (
               <View
                 testID="integrations-loading"
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants"
-                style={catalogColumns === 2 ? styles.catalogGrid : styles.catalogStack}
+                style={styles.catalogStack}
               >
                 {Array.from({ length: 8 }, (_, index) => (
-                  <View
-                    key={index}
-                    style={[styles.row, catalogColumns === 2 ? styles.catalogCell : null]}
-                  >
+                  <View key={index} style={styles.row}>
                     <View style={styles.logoPlaceholder} />
                     <View style={styles.grow}>
                       <View style={styles.titlePlaceholder} />
@@ -835,43 +853,19 @@ export default function Integrations() {
             ) : null}
 
             {catalogReady && catalog.length > 0 ? (
-              <View style={catalogColumns === 2 ? styles.catalogGrid : styles.catalogStack}>
-                {showFeatured
-                  ? featuredTiles.map((tile) => {
-                      const item = tile.item;
-                      const key = item ? catalogItemKey(item) : tile.id;
-                      const disabled = tile.missing || !item;
-                      if (item && !tile.missing) {
-                        return renderCatalogTile(item, tile.label);
-                      }
-                      return (
-                        <View
-                          key={key}
-                          style={[
-                            styles.row,
-                            catalogColumns === 2 ? styles.catalogCell : null,
-                            disabled ? { opacity: 0.7 } : null,
-                          ]}
-                        >
-                          <ConnectorIcon logo={item?.logo} name={tile.label} size={LOGO_SIZE} />
-                          <View style={styles.grow}>
-                            <Text numberOfLines={1} style={styles.title}>
-                              {tile.label}
-                            </Text>
-                            {disabled ? (
-                              <Text style={styles.secondary}>{t("Not in the plugin catalog")}</Text>
-                            ) : null}
-                          </View>
-                        </View>
-                      );
-                    })
-                  : null}
+              <View style={styles.catalogStack}>
                 {renderedApps.map((item) => renderCatalogTile(item, item.name))}
               </View>
             ) : null}
 
-            {catalogReady && catalog.length > 0 && catalogApps.length === 0 && !showFeatured ? (
-              <Text style={styles.secondary}>{t("No apps match your search.")}</Text>
+            {catalogReady && catalog.length > 0 && catalogApps.length === 0 ? (
+              <Text style={styles.secondary}>
+                {query.trim()
+                  ? t("No apps match your search.")
+                  : connectedOnly
+                    ? t("No connected integrations.")
+                    : t("No available integrations.")}
+              </Text>
             ) : null}
 
             {renderedApps.length < catalogApps.length ? (
@@ -890,7 +884,7 @@ export default function Integrations() {
                 if (advancedOpen) closeAdvanced();
                 else setAdvancedOpen(true);
               }}
-              style={styles.advancedToggle}
+              style={[styles.advancedToggle, connectedOnly && { display: "none" }]}
             >
               <Text style={styles.advancedLabel}>{t("Advanced")}</Text>
               <Chevron expanded={advancedOpen} />
@@ -1028,8 +1022,25 @@ export default function Integrations() {
               </View>
             ) : null}
           </>
-        )}
+        }
       </ScrollView>
+      {detailItem ? (
+        <BottomSheet
+          snapPoints={["65%", "85%"]}
+          enableDynamicSizing={false}
+          enablePanDownToClose
+          onClose={closeDetail}
+          backgroundStyle={{ backgroundColor: mobileTokens().background }}
+        >
+          <ScrollView
+            style={{ height: Math.min(height * 0.65, 720) }}
+            contentContainerStyle={styles.sheetContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            {renderDetail(detailItem)}
+          </ScrollView>
+        </BottomSheet>
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -1037,6 +1048,15 @@ export default function Integrations() {
 function createIntegrationsStyles() {
   const destructive = mobileTokens().destructive;
   return StyleSheet.create({
+    pageHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 8,
+    },
+    pageTitle: { flex: 1, color: native.label, fontSize: 20, fontWeight: "600" },
     screen: { flex: 1, backgroundColor: native.page },
     content: { padding: 20, gap: 14 },
     explanation: { color: native.secondaryLabel, fontSize: 14, lineHeight: 20 },
@@ -1051,15 +1071,24 @@ function createIntegrationsStyles() {
       fontSize: 15,
     },
     authToggle: { minHeight: 42, justifyContent: "center" },
-    catalogGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    catalogStack: { gap: 8 },
-    catalogCell: { flexGrow: 1, flexBasis: "47%", maxWidth: "49%" },
+    catalogStack: { gap: 0 },
+    sheetContent: { padding: 20, paddingBottom: 44 },
+    badges: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
+    badge: {
+      maxWidth: 180,
+      borderRadius: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      backgroundColor: native.fill,
+      color: native.secondaryLabel,
+      fontSize: 12,
+    },
     row: {
       minHeight: 56,
       paddingHorizontal: 12,
       paddingVertical: 12,
-      borderRadius: 14,
-      backgroundColor: native.fill,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: native.separator,
       flexDirection: "row",
       alignItems: "center",
       gap: 10,

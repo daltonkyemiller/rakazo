@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import type { ComposerMention, SlashActionId } from "@rakazo/core";
 import { BotAvatar } from "@rakazo/ui-web";
 import { Clock, Puzzle } from "lucide-react";
+import { ConnectorIcon } from "../../components/integrations/ConnectorIcon";
 import { FALLBACK_BOT_COLOR } from "./chat-shared";
 
 export function slashActionLabel(id: SlashActionId) {
@@ -20,7 +21,16 @@ export function MentionOptionIcon({ mention }: { mention: ComposerMention }) {
     return <Clock size={16} strokeWidth={1.7} className="mt-0.5 shrink-0 text-muted-foreground" />;
   }
   if (mention.kind === "connector") {
-    return <Puzzle size={16} strokeWidth={1.7} className="mt-0.5 shrink-0 text-muted-foreground" />;
+    return (
+      <ConnectorIcon
+        name={mention.name}
+        logo={mention.logo}
+        className="mt-0.5 size-4 rounded-[4px] p-px"
+        fallback={
+          <Puzzle size={16} strokeWidth={1.7} className="mt-0.5 shrink-0 text-muted-foreground" />
+        }
+      />
+    );
   }
   if (mention.kind === "group") {
     return (
@@ -44,7 +54,16 @@ export function MentionChipIcon({ mention }: { mention: ComposerMention }) {
     return <Clock size={13} strokeWidth={1.7} className="shrink-0 text-muted-foreground/70" />;
   }
   if (mention.kind === "connector") {
-    return <Puzzle size={13} strokeWidth={1.7} className="shrink-0 text-muted-foreground/70" />;
+    return (
+      <ConnectorIcon
+        name={mention.name}
+        logo={mention.logo}
+        className="size-4 rounded-[4px] p-px"
+        fallback={
+          <Puzzle size={13} strokeWidth={1.7} className="shrink-0 text-muted-foreground/70" />
+        }
+      />
+    );
   }
   if (mention.kind === "group" || mention.kind === "everyone") {
     return (

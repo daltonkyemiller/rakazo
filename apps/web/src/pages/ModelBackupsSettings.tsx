@@ -24,6 +24,7 @@ import {
 } from "@rakazo/ui-web";
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { settingsTargetClass, settingsTargetId } from "../components/SettingsLayout";
 import { selectedSpaceId } from "../lib/rpc";
 import { useBoundSpaceId, useSpaceRpc } from "../lib/space-rpc";
 
@@ -233,7 +234,8 @@ export function ModelBackupsSettings({
     <section
       data-testid="model-backups"
       aria-labelledby="model-backups-title"
-      className="mt-6 border-t border-border pt-5"
+      id={settingsTargetId("backup-models")}
+      className={`${settingsTargetClass} mt-6 border-t border-border pt-5`}
     >
       <h3 id="model-backups-title" className="text-[13.5px] text-muted-foreground">
         <Trans>Backup models</Trans>

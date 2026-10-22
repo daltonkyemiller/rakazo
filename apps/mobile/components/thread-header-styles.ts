@@ -11,7 +11,8 @@ export function createThreadHeaderStyles() {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      maxWidth: 220,
+      minWidth: 0,
+      overflow: "hidden",
       minHeight: HEADER_CONTROL_SIZE,
       paddingHorizontal: 14,
       borderRadius: 999,
@@ -22,6 +23,8 @@ export function createThreadHeaderStyles() {
       backgroundColor: tokens.glassFill,
     },
     title: {
+      flexShrink: 1,
+      minWidth: 0,
       color: tokens.foreground,
       fontSize: 18,
       fontWeight: "600",

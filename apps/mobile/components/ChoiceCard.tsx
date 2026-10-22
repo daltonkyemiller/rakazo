@@ -1,62 +1,32 @@
 import type { MessageBlock } from "@rakazo/contracts";
-import { typeScale } from "@rakazo/ui-tokens";
+import type { BotColorDef } from "@rakazo/core";
 import { useRef, useState } from "react";
 import type { ViewProps } from "react-native";
-import { Alert, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { Alert, Pressable, StyleSheet } from "react-native";
 import { rpc } from "../lib/api";
 import { useI18n } from "../lib/i18n";
-import {
-  choiceCardOptions,
-  DISMISSED_CHOICE_ANSWER_ID,
-  threadCardWidth,
-} from "../lib/message-presentation";
-import { native, useMobileTokens } from "../lib/native";
+import { DISMISSED_CHOICE_ANSWER_ID } from "../lib/message-presentation";
+import { useMobileTokens } from "../lib/native";
 import { useThreadReadOnly } from "../lib/thread-read-only";
 import { errorText } from "../lib/user-error";
 import { NativeSymbol } from "./native-symbol";
+import { QuestionCard } from "./QuestionCard";
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 18,
-    gap: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
   dismiss: { alignItems: "center", height: 24, justifyContent: "center", width: 24 },
-  header: { alignItems: "flex-start", flexDirection: "row", gap: 8 },
-  heading: { flex: 1, gap: 2 },
-  letter: {
-    alignItems: "center",
-    borderRadius: 7,
-    height: 24,
-    justifyContent: "center",
-    width: 24,
-  },
-  letterText: { fontSize: 12.5, fontWeight: "500" },
-  option: {
-    alignItems: "center",
-    borderRadius: 12,
-    flexDirection: "row",
-    gap: 12,
-    minHeight: 48,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  optionLabel: { flex: 1, fontSize: 15 },
-  options: { gap: 8 },
-  question: typeScale.cardTitle,
-  subtitle: typeScale.secondary,
 });
 
 export function ChoiceCard({
   botId,
   block,
+  accent,
   onDismissed,
   accessibilityActions,
   onAccessibilityAction,
 }: {
   botId: string;
   block: Extract<MessageBlock, { kind: "choice" }>;
+  accent?: BotColorDef;
   onDismissed?: () => void;
   accessibilityActions?: ViewProps["accessibilityActions"];
   onAccessibilityAction?: ViewProps["onAccessibilityAction"];
@@ -64,8 +34,7 @@ export function ChoiceCard({
   const { t } = useI18n();
   const readOnly = useThreadReadOnly();
   const tokens = useMobileTokens();
-  const { width: windowWidth } = useWindowDimensions();
-  const [busy, setBusy] = useState(false);
+  const [pendingId, setPendingId] = useState<string | null>(null);
   // Set in the handler, so a second tap cannot pass before the buttons re-render disabled.
   const pending = useRef(false);
   // Shows the outcome before the thread stream delivers the updated block.
@@ -77,7 +46,7 @@ export function ChoiceCard({
   async function submit(optionId: string) {
     if (readOnly || pending.current || answerId) return;
     pending.current = true;
-    setBusy(true);
+    setPendingId(optionId);
     try {
       if (optionId === DISMISSED_CHOICE_ANSWER_ID) {
         await rpc("onboarding/dismissFocus", { botId });
@@ -90,96 +59,41 @@ export function ChoiceCard({
       Alert.alert(t("Could not complete action"), errorText(reason, t("Please try again.")));
     } finally {
       pending.current = false;
-      setBusy(false);
+      setPendingId(null);
     }
   }
 
+  const picked = block.options.find((option) => option.id === answerId);
+
   return (
-    <View
+    <QuestionCard
       testID="choice-card"
-      style={[
-        styles.card,
-        {
-          width: threadCardWidth(windowWidth),
-          backgroundColor: native.fill,
-        },
-      ]}
-    >
-      <View style={styles.header}>
-        <View style={styles.heading}>
-          <Text
-            accessibilityRole="header"
-            accessibilityActions={accessibilityActions}
-            onAccessibilityAction={onAccessibilityAction}
-            style={[styles.question, { color: tokens.foreground }]}
-          >
-            {block.question}
-          </Text>
-          {block.subtitle ? (
-            <Text style={[styles.subtitle, { color: tokens.mutedForeground }]}>
-              {block.subtitle}
-            </Text>
-          ) : null}
-        </View>
-        {!readOnly && !answerId ? (
+      question={block.question}
+      subtitle={block.subtitle}
+      options={block.options}
+      answer={picked ? { letter: picked.letter, label: picked.label } : undefined}
+      accent={accent}
+      pendingId={pendingId}
+      disabled={readOnly}
+      onChoose={(optionId) => void submit(optionId)}
+      accessibilityActions={accessibilityActions}
+      onAccessibilityAction={onAccessibilityAction}
+      accessory={
+        readOnly ? null : (
           <Pressable
             testID="choice-card-dismiss"
             accessibilityRole="button"
             accessibilityLabel={t("Dismiss")}
-            accessibilityState={{ disabled: busy }}
-            disabled={busy}
+            accessibilityState={{ disabled: pendingId !== null }}
+            disabled={pendingId !== null}
             hitSlop={10}
             onPress={() => void submit(DISMISSED_CHOICE_ANSWER_ID)}
             style={styles.dismiss}
           >
             <NativeSymbol ios="xmark" android="close" size={14} color={tokens.mutedForeground} />
           </Pressable>
-        ) : null}
-      </View>
-      <View style={styles.options}>
-        {choiceCardOptions({ ...block, answerId }).map((option) => {
-          const chosen = option.id === answerId;
-          return (
-            <Pressable
-              key={option.id}
-              accessibilityRole="button"
-              accessibilityLabel={option.label}
-              accessibilityState={{ disabled: readOnly || busy || chosen, selected: chosen }}
-              disabled={readOnly || busy || chosen}
-              onPress={() => void submit(option.id)}
-              style={({ pressed }) => [
-                styles.option,
-                {
-                  backgroundColor: pressed || chosen ? native.fillPressed : native.page,
-                  opacity: busy ? 0.6 : 1,
-                },
-              ]}
-            >
-              <View style={[styles.letter, { backgroundColor: native.fill }]}>
-                <Text style={[styles.letterText, { color: tokens.mutedForeground }]}>
-                  {option.letter}
-                </Text>
-              </View>
-              <Text
-                style={[
-                  styles.optionLabel,
-                  { color: chosen ? tokens.mutedForeground : tokens.foreground },
-                ]}
-              >
-                {option.label}
-              </Text>
-              {chosen ? (
-                <NativeSymbol
-                  ios="checkmark"
-                  android="checkmark"
-                  size={15}
-                  color={tokens.mutedForeground}
-                />
-              ) : null}
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
+        )
+      }
+    />
   );
 }

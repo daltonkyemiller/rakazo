@@ -43,12 +43,12 @@ test("needs-you computer card opens a group member bot computer", async ({ page 
   await captureScreenshot(page, testInfo, "computer-needs-you-card-group-open");
 });
 
-// The expanded bots sidebar's resize edge sits at x = 308-316px; the computer covers it.
+// The expanded bots sidebar's resize edge sits at x = 292-300px; the computer covers it.
 async function expectSidebarEdgeClickReachesComputer(page: Page) {
   const sidebar = page.getByTestId("bots-sidebar");
   await expect(sidebar).not.toHaveAttribute("data-collapsed", "true");
   await expect(page.getByTestId("bots-sidebar-edge")).toHaveCount(0);
-  const point = { x: 312, y: Math.round((page.viewportSize()?.height ?? 720) / 2) };
+  const point = { x: 296, y: Math.round((page.viewportSize()?.height ?? 720) / 2) };
   const hitsComputer = await page.evaluate(
     ({ x, y }) =>
       Boolean(document.elementFromPoint(x, y)?.closest('[data-testid="computer-viewport"]')),

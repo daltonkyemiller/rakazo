@@ -44,19 +44,17 @@ test("create opens form, then empty chat; picker lists bots; sidebar collapses",
   await expect(page.getByText("What do you want me on first?", { exact: true })).toHaveCount(0);
   await captureScreenshot(page, testInfo, "create-chat-sidepanel-closed");
 
-  await page.getByTestId("minimize-bots-sidebar").click();
-  await expect(page.getByTestId("bots-sidebar")).toHaveAttribute("data-collapsed", "true");
   const edge = page.getByTestId("bots-sidebar-edge");
+  await edge.click();
+  await expect(page.getByTestId("bots-sidebar")).toHaveAttribute("data-collapsed", "true");
   await expect(edge).toBeVisible();
-  const restore = page.getByTestId("restore-bots-sidebar");
-  await expect(restore).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show bots", exact: true })).toHaveCount(0);
   await captureScreenshot(page, testInfo, "bots-sidebar-collapsed");
 
-  await restore.click();
+  await edge.click();
   await expect(page.getByTestId("bots-sidebar")).toHaveAttribute("data-collapsed", "false");
-  await expect(restore).toHaveCount(0);
 
-  await page.getByTestId("minimize-bots-sidebar").click();
+  await edge.click();
   await expect(page.getByTestId("bots-sidebar")).toHaveAttribute("data-collapsed", "true");
 
   await expect(page.getByTestId("bots-sidebar")).toHaveCSS("width", "72px");

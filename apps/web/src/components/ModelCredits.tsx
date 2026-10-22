@@ -19,10 +19,11 @@ import {
   SelectValue,
   Separator,
 } from "@rakazo/ui-web";
-import { Check } from "lucide-react";
+import { Check, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { rpc } from "../lib/rpc";
 import { useSignOut } from "../lib/sign-out";
+import { SettingsRow, SettingsSection, SettingsStack } from "./SettingsLayout";
 
 type CreditAmount = (typeof MODEL_CREDIT_AMOUNTS)[number];
 
@@ -30,10 +31,12 @@ export function CreditAmountSelect({
   value,
   onChange,
   monthly = false,
+  size = "xl",
 }: {
   value: CreditAmount;
   onChange: (amount: CreditAmount) => void;
   monthly?: boolean;
+  size?: "default" | "xl";
 }) {
   const { t } = useLingui();
   const items = MODEL_CREDIT_AMOUNTS.map((amount) => ({
@@ -51,13 +54,17 @@ export function CreditAmountSelect({
       <SelectTrigger
         aria-label={monthly ? t`Monthly credits` : t`Credit amount`}
         className="w-full"
-        size="xl"
+        size={size}
       >
         <SelectValue />
       </SelectTrigger>
       <SelectContent alignItemWithTrigger={false} align="start" className="p-1">
         {items.map((item) => (
-          <SelectItem key={item.value} value={item.value} className="py-2 text-base">
+          <SelectItem
+            key={item.value}
+            value={item.value}
+            className={size === "xl" ? "py-2 text-base" : undefined}
+          >
             {item.label}
           </SelectItem>
         ))}
@@ -234,132 +241,137 @@ export function ModelCreditsSettings({
   const recurring =
     status.monthlyAmountCents && !["canceled", "none", "incomplete"].includes(status.state);
   return (
-    <div data-testid="model-credits" className="space-y-5">
-      <div className="rounded-xl border border-border p-5">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm text-muted-foreground">
-            <Trans>Available credits</Trans>
-          </h3>
-          <Button
-            size="sm"
-            variant="ghost"
-            aria-label={t`Refresh credits`}
-            disabled={pending}
-            onClick={() => void action(refresh)}
-          >
-            <Trans>Refresh</Trans>
-          </Button>
-        </div>
-        <p className="mt-2 text-3xl font-medium tabular-nums">{balance}</p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {status.funding === "byok" ? (
-            <Trans>Using your API key</Trans>
-          ) : (
-            <Trans>Monthly credits expire at renewal. Top-ups do not expire.</Trans>
-          )}
-        </p>
-        {status.canManage ? (
-          <Button
-            className="mt-5"
-            disabled={!status.creditPurchasesEnabled}
-            onClick={() => setPurchaseOpen(true)}
-          >
-            <Trans>Add credits</Trans>
-          </Button>
-        ) : null}
-      </div>
-      {status.canManage ? (
-        <div className="rounded-xl border border-border p-5">
-          <h3 className="font-medium">
-            <Trans>Monthly credits</Trans>
-          </h3>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <CreditAmountSelect monthly value={amount} onChange={setAmount} />
-            <Button
-              variant="secondary"
-              disabled={
-                pending ||
-                !status.creditPurchasesEnabled ||
-                Boolean(recurring && amount === status.monthlyAmountCents)
-              }
-              onClick={() =>
-                void action(async () => {
-                  if (recurring) {
-                    await rpc.billing.setMonthlyCredits({ amountCents: amount });
-                    await refresh();
-                  } else {
-                    const { url } = await rpc.billing.purchaseCredits({
-                      amountCents: amount,
-                      monthly: true,
-                    });
-                    window.location.assign(url);
-                  }
-                })
-              }
-            >
-              {recurring ? (
-                amount > (status.monthlyAmountCents ?? 0) ? (
-                  <Trans>Upgrade now</Trans>
-                ) : amount < (status.monthlyAmountCents ?? 0) ? (
-                  <Trans>Downgrade at renewal</Trans>
-                ) : (
-                  <Trans>Update</Trans>
-                )
+    <div data-testid="model-credits">
+      <SettingsStack>
+        <SettingsSection title={<Trans>Credits</Trans>} target="credits">
+          <SettingsRow
+            label={<Trans>Available credits</Trans>}
+            description={
+              status.funding === "byok" ? (
+                <Trans>Using your API key</Trans>
               ) : (
-                <Trans>Subscribe</Trans>
-              )}
-            </Button>
-          </div>
-          {status.hasCustomer ? (
+                <Trans>Monthly credits expire at renewal. Top-ups do not expire.</Trans>
+              )
+            }
+          >
+            <span className="text-xl font-medium tabular-nums">{balance}</span>
             <Button
-              className="mt-4"
+              size="icon-sm"
               variant="ghost"
+              aria-label={t`Refresh credits`}
               disabled={pending}
-              onClick={() =>
-                void action(async () => {
-                  const { url } = await rpc.billing.portal();
-                  window.location.assign(url);
-                })
-              }
+              onClick={() => void action(refresh)}
             >
-              <Trans>Manage billing</Trans>
+              <RefreshCw />
             </Button>
+            {status.canManage ? (
+              <Button
+                size="sm"
+                disabled={!status.creditPurchasesEnabled}
+                onClick={() => setPurchaseOpen(true)}
+              >
+                <Trans>Add credits</Trans>
+              </Button>
+            ) : null}
+          </SettingsRow>
+          {status.canManage ? (
+            <SettingsRow label={<Trans>Monthly credits</Trans>} target="monthly-credits">
+              <div className="w-40">
+                <CreditAmountSelect monthly size="default" value={amount} onChange={setAmount} />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={
+                  pending ||
+                  !status.creditPurchasesEnabled ||
+                  Boolean(recurring && amount === status.monthlyAmountCents)
+                }
+                onClick={() =>
+                  void action(async () => {
+                    if (recurring) {
+                      await rpc.billing.setMonthlyCredits({ amountCents: amount });
+                      await refresh();
+                    } else {
+                      const { url } = await rpc.billing.purchaseCredits({
+                        amountCents: amount,
+                        monthly: true,
+                      });
+                      window.location.assign(url);
+                    }
+                  })
+                }
+              >
+                {recurring ? (
+                  amount > (status.monthlyAmountCents ?? 0) ? (
+                    <Trans>Upgrade now</Trans>
+                  ) : amount < (status.monthlyAmountCents ?? 0) ? (
+                    <Trans>Downgrade at renewal</Trans>
+                  ) : (
+                    <Trans>Update</Trans>
+                  )
+                ) : (
+                  <Trans>Subscribe</Trans>
+                )}
+              </Button>
+            </SettingsRow>
           ) : null}
-        </div>
-      ) : null}
-      {status.canManage && status.funding === "byok" && (status.balanceUsd ?? 0) > 0 ? (
-        <Button
-          variant="ghost"
-          disabled={pending || !status.creditPurchasesEnabled}
-          onClick={() =>
-            void action(async () => {
-              await rpc.billing.selectFunding({ funding: "credits" });
-              window.location.reload();
-            })
-          }
-        >
-          <Trans>Use Rakazo credits</Trans>
-        </Button>
-      ) : null}
-      {status.canManage && status.funding !== "byok" && (!recurring || status.cancelAtPeriodEnd) ? (
-        <Button
-          variant="ghost"
-          disabled={pending}
-          onClick={() =>
-            void action(async () => {
-              await rpc.billing.selectFunding({ funding: "byok" });
-              window.location.assign("/onboarding");
-            })
-          }
-        >
-          <Trans>Use my API key</Trans>
-        </Button>
-      ) : null}
-      {error ? (
-        <p role="alert" className="text-sm text-destructive">
-          <Trans>Could not update billing</Trans>
-        </p>
-      ) : null}
+          {status.canManage ? (
+            <div className="flex flex-wrap gap-2 py-3 empty:hidden">
+              {status.hasCustomer ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pending}
+                  onClick={() =>
+                    void action(async () => {
+                      const { url } = await rpc.billing.portal();
+                      window.location.assign(url);
+                    })
+                  }
+                >
+                  <Trans>Manage billing</Trans>
+                </Button>
+              ) : null}
+              {status.funding === "byok" && (status.balanceUsd ?? 0) > 0 ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={pending || !status.creditPurchasesEnabled}
+                  onClick={() =>
+                    void action(async () => {
+                      await rpc.billing.selectFunding({ funding: "credits" });
+                      window.location.reload();
+                    })
+                  }
+                >
+                  <Trans>Use Rakazo credits</Trans>
+                </Button>
+              ) : null}
+              {status.funding !== "byok" && (!recurring || status.cancelAtPeriodEnd) ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={pending}
+                  onClick={() =>
+                    void action(async () => {
+                      await rpc.billing.selectFunding({ funding: "byok" });
+                      window.location.assign("/onboarding");
+                    })
+                  }
+                >
+                  <Trans>Use my API key</Trans>
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+          {error ? (
+            <p role="alert" className="py-3 text-[13px] text-destructive">
+              <Trans>Could not update billing</Trans>
+            </p>
+          ) : null}
+        </SettingsSection>
+      </SettingsStack>
       <Dialog open={purchaseOpen} onOpenChange={setPurchaseOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>

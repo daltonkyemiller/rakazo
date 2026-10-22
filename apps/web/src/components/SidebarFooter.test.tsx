@@ -6,7 +6,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { DesktopUpdatesProvider } from "./DesktopUpdates";
-import { SidebarFooter, sidebarMarkCount } from "./SidebarFooter";
+import { SidebarFooter } from "./SidebarFooter";
 
 vi.mock("@lingui/react/macro", () => ({
   useLingui: () => ({
@@ -127,15 +127,14 @@ it("shows the account image and falls back to the initial after a load error", a
   expect(image.src).toBe("https://example.test/avatar.png");
   await act(async () => image.dispatchEvent(new Event("error")));
   expect(trigger.querySelector("img")).toBeNull();
-  expect(trigger.textContent).toBe("AL");
+  expect(trigger.querySelector('[data-testid="user-menu-avatar"]')?.textContent).toBe("AL");
+  expect(trigger.textContent).toContain("Ada Lovelace");
 });
 
 it("opens integrations and keeps the existing account actions and links", async () => {
   const onIntegrations = vi.fn();
   await render("Demo User", undefined, onIntegrations, vi.fn());
-  const connect = [...host.querySelectorAll("button")].find((button) =>
-    button.textContent?.includes("Connect apps"),
-  )!;
+  const connect = host.querySelector<HTMLButtonElement>('[data-testid="connect-apps-trigger"]')!;
   await act(async () => connect.click());
   expect(onIntegrations).toHaveBeenCalledOnce();
   const menu = document.querySelector('[data-slot="popover-content"]')!;
@@ -174,9 +173,7 @@ it("falls back when app artwork fails and accepts replacement artwork", async ()
   await render("Demo User", undefined, undefined, undefined, [
     { name: "Slack", logo: "https://example.test/slack.svg" },
   ]);
-  const pill = [...host.querySelectorAll("button")].find((button) =>
-    button.textContent?.includes("Connect apps"),
-  )!;
+  const pill = host.querySelector<HTMLButtonElement>('[data-testid="connect-apps-trigger"]')!;
   await act(async () => pill.querySelector("img")!.dispatchEvent(new Event("error")));
   expect(pill.querySelector("img")).toBeNull();
   expect(pill.textContent).toContain("S");
@@ -218,20 +215,6 @@ it.each(["throw", "state"] as const)(
     await vi.waitFor(() => expect(notice()).toBeNull());
   },
 );
-
-it.each([
-  [-20, 0],
-  [0, 0],
-  [25, 0],
-  [26, 1],
-  [47, 1],
-  [48, 2],
-  [69, 2],
-  [70, 3],
-  [200, 3],
-])("fits marks into %ipx without consuming label or padding space", (width, count) => {
-  expect(sidebarMarkCount(width)).toBe(count);
-});
 
 it("keeps at most three marks with the same tile and a missing-logo fallback", async () => {
   await render("Demo User", undefined, undefined, undefined, [

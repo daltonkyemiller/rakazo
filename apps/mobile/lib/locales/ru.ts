@@ -1,4 +1,9 @@
 export const RU_MESSAGES: Record<string, string> = {
+  "Close integrations": "Закрыть интеграции",
+  "Connected integrations": "Подключённые интеграции",
+  "No available integrations.": "Нет доступных интеграций.",
+  "No connected integrations.": "Нет подключённых интеграций.",
+  "{count} connected": "Подключено: {count}",
   "Add an AI model to keep chatting": "Добавьте ИИ-модель, чтобы продолжить общение",
   "Not Now": "Не сейчас",
   "Add Model": "Добавить модель",

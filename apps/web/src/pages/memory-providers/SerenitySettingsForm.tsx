@@ -1,6 +1,7 @@
 import { Trans } from "@lingui/react/macro";
 import { Button, Field, FieldError, FieldLabel, Input, Toggle } from "@rakazo/ui-web";
 import { useId, useState } from "react";
+import { segmentedGroupClass, segmentedItemClass } from "../../components/SettingsLayout";
 import type { MemoryProviderSettingsFormProps } from "./registry";
 import type { SerenityEndpointFieldError } from "./serenity-settings";
 import { SERENITY_ENDPOINT_PLACEHOLDER, serenityConnectionDraft } from "./serenity-settings";
@@ -88,12 +89,12 @@ export function SerenitySettingsForm({ busy, onConnect }: MemoryProviderSettings
         <FieldLabel id={writesLabelId}>
           <Trans>Allow writing</Trans>
         </FieldLabel>
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+        <div className={`${segmentedGroupClass} grid-cols-2`}>
           <Toggle
             pressed={!allowWrites}
             disabled={busy}
             onPressedChange={() => setAllowWrites(false)}
-            className="text-[13px] aria-pressed:bg-background aria-pressed:shadow-sm"
+            className={segmentedItemClass}
           >
             <Trans>Recall only</Trans>
           </Toggle>
@@ -101,7 +102,7 @@ export function SerenitySettingsForm({ busy, onConnect }: MemoryProviderSettings
             pressed={allowWrites}
             disabled={busy}
             onPressedChange={() => setAllowWrites(true)}
-            className="text-[13px] aria-pressed:bg-background aria-pressed:shadow-sm"
+            className={segmentedItemClass}
           >
             <Trans>Recall and write</Trans>
           </Toggle>
@@ -111,7 +112,7 @@ export function SerenitySettingsForm({ busy, onConnect }: MemoryProviderSettings
       <Button
         type="button"
         variant="secondary"
-        className="mt-5 rounded-full"
+        className="mt-5"
         disabled={busy || token.trim().length < 8}
         onClick={() => void connect()}
       >

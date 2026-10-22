@@ -1,7 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Input } from "@rakazo/ui-web";
+import { settingsTargetClass, settingsTargetId } from "../../components/SettingsLayout";
 import { providerRowHint } from "../../lib/localized-provider-hint";
-
 import type { ModelSettingsState } from "./use-model-settings";
 
 export function ProviderList({
@@ -64,7 +64,10 @@ export function ProviderList({
   }
 
   return (
-    <div className="flex min-h-0 shrink-0 flex-col md:w-[310px]">
+    <div
+      id={settingsTargetId("model-providers")}
+      className={`${settingsTargetClass} flex min-h-0 shrink-0 flex-col md:w-[310px]`}
+    >
       <div className="mb-3 text-[13.5px] text-muted-foreground">
         <Trans>Providers</Trans>
       </div>

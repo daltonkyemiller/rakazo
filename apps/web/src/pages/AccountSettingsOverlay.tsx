@@ -8,24 +8,29 @@ import {
   Field,
   FieldLabel,
   Input,
-  Label,
   NativeSelect,
   NativeSelectOption,
   OptionSelect,
   Switch,
-  Toggle,
   ToggleGroup,
   ToggleGroupItem,
 } from "@rakazo/ui-web";
 import { Disclosure } from "@rakazo/ui-web/components/ui/disclosure";
 import type { RefObject } from "react";
-import { useId, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { Link } from "react-router-dom";
 import { AccountAccess } from "../components/AccountAccess";
 import { SuccessPop } from "../components/ai/primitives";
 import { ComputersUnavailableHint } from "../components/ComputersUnavailableHint";
 import { DesktopUpdateSection } from "../components/DesktopUpdates";
 import { PasskeySettings } from "../components/PasskeySettings";
+import {
+  SettingsRow,
+  SettingsSection,
+  SettingsStack,
+  segmentedGroupClass,
+  segmentedItemClass,
+} from "../components/SettingsLayout";
 import type { ServerUpdateLoad } from "../components/SoftwareUpdateSection";
 import { hasServerUpdates, SoftwareUpdateSection } from "../components/SoftwareUpdateSection";
 import { authClient } from "../lib/auth";
@@ -71,7 +76,18 @@ export type SettingsGeneralProps = {
   messagingEnabled?: boolean;
   onOpenMessaging?: () => void;
   isDeploymentOwner?: boolean;
+  /** Opens the desktop app's native server window; absent outside the desktop app. */
+  onOpenServerSettings?: () => void;
+  /** A search result to reveal; Advanced opens when the target lives inside it. */
+  revealTarget?: string | null;
 };
+
+const ADVANCED_TARGETS: ReadonlySet<string> = new Set([
+  "send-with-enter",
+  "stream-replies",
+  "tool-activity",
+  "remote-images",
+]);
 
 export function GeneralSettingsPanels({
   email,
@@ -83,6 +99,8 @@ export function GeneralSettingsPanels({
   messagingEnabled = false,
   onOpenMessaging,
   isDeploymentOwner = false,
+  onOpenServerSettings,
+  revealTarget = null,
 }: SettingsGeneralProps) {
   const { t } = useLingui();
   const account = accountDisplay({ name, email }, t`You`);
@@ -98,6 +116,12 @@ export function GeneralSettingsPanels({
     () => "comfortable",
   );
   const sidebarDensityLabelId = useId();
+  const appearanceLabelId = useId();
+  const avatarLabelId = useId();
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  useEffect(() => {
+    if (revealTarget && ADVANCED_TARGETS.has(revealTarget)) setAdvancedOpen(true);
+  }, [revealTarget]);
   const [streamReplies, setStreamReplies] = useState(
     () => getResponseStreamingPreference() === "on",
   );
@@ -160,49 +184,41 @@ export function GeneralSettingsPanels({
   }
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-xl border border-border px-4 py-4">
-        <h3 className="text-[15px] font-medium text-foreground">
-          <Trans>Account</Trans>
-        </h3>
-        <p className="mt-3 text-[14px] text-foreground/75">{account.label}</p>
-        {email && account.label !== email ? (
-          <p className="mt-1 text-[13px] text-muted-foreground/70">{email}</p>
-        ) : null}
-      </section>
-
-      {accountSecurity?.hasPassword && accountSecurity.passwordChangeEnabled !== false ? (
-        <ChangePasswordSection email={email} />
-      ) : null}
-
-      <PasskeySettings />
-
-      {messagingEnabled && onOpenMessaging ? (
-        <section className="rounded-xl border border-border px-4 py-4">
-          <h3 className="text-[15px] font-medium text-foreground">
-            <Trans>Messaging</Trans>
-          </h3>
-          <Button variant="secondary" className="mt-3 rounded-full" onClick={onOpenMessaging}>
-            <Trans>Manage messaging settings</Trans>
-          </Button>
-        </section>
-      ) : null}
-
-      <section className="rounded-xl border border-border px-4 py-4">
-        <h3 className="text-[15px] font-medium text-foreground">
-          <Trans>Appearance</Trans>
-        </h3>
-        <AppearancePicker
-          value={appearance}
-          onChange={(next) => {
-            setAppearance(next);
-            setUiAppearance(next);
-          }}
+    <SettingsStack>
+      <SettingsSection title={<Trans>Account</Trans>} target="account">
+        <SettingsRow
+          label={<span dir="auto">{account.label}</span>}
+          description={email && account.label !== email ? email : undefined}
         />
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <span id={sidebarDensityLabelId} className="text-[13px] text-foreground/75">
-            <Trans>Sidebar density</Trans>
-          </span>
+        {accountSecurity?.hasPassword && accountSecurity.passwordChangeEnabled !== false ? (
+          <ChangePasswordRow email={email} />
+        ) : null}
+        <PasskeySettings />
+        {messagingEnabled && onOpenMessaging ? (
+          <SettingsRow label={<Trans>Messaging</Trans>} target="messaging">
+            <Button variant="outline" size="sm" onClick={onOpenMessaging}>
+              <Trans>Manage messaging settings</Trans>
+            </Button>
+          </SettingsRow>
+        ) : null}
+      </SettingsSection>
+
+      <SettingsSection title={<Trans>Appearance</Trans>}>
+        <SettingsRow label={<Trans>Theme</Trans>} labelId={appearanceLabelId} target="theme">
+          <AppearancePicker
+            labelledBy={appearanceLabelId}
+            value={appearance}
+            onChange={(next) => {
+              setAppearance(next);
+              setUiAppearance(next);
+            }}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={<Trans>Sidebar density</Trans>}
+          labelId={sidebarDensityLabelId}
+          target="sidebar-density"
+        >
           <ToggleGroup
             aria-labelledby={sidebarDensityLabelId}
             data-testid="bots-sidebar-density-select"
@@ -211,193 +227,215 @@ export function GeneralSettingsPanels({
               if (next) setBotsSidebarDensity(next as BotsSidebarDensity);
             }}
             spacing={1}
-            className="grid min-w-0 grid-cols-2 rounded-lg bg-muted p-1"
+            className={`${segmentedGroupClass} w-full grid-cols-2 sm:w-56`}
           >
             <ToggleGroupItem
               value="comfortable"
               data-testid="bots-sidebar-density-comfortable"
-              className="text-[13px] aria-pressed:bg-background aria-pressed:shadow-sm"
+              className={segmentedItemClass}
             >
               <Trans>Comfortable</Trans>
             </ToggleGroupItem>
             <ToggleGroupItem
               value="compact"
               data-testid="bots-sidebar-density-compact"
-              className="text-[13px] aria-pressed:bg-background aria-pressed:shadow-sm"
+              className={segmentedItemClass}
             >
               <Trans>Compact</Trans>
             </ToggleGroupItem>
           </ToggleGroup>
-        </div>
-      </section>
-
-      <section className="rounded-xl border border-border px-4 py-4">
-        <h3 className="text-[15px] font-medium text-foreground">
-          <Trans>Language</Trans>
-        </h3>
-        <UiLocalePicker value={locale} onChange={chooseLocale} />
-      </section>
-
-      {onTimezoneChange ? (
-        <section
-          className="rounded-xl border border-border px-4 py-4"
-          data-testid="timezone-settings"
+        </SettingsRow>
+        <SettingsRow
+          label={<Trans>Avatars</Trans>}
+          labelId={avatarLabelId}
+          target="avatars"
+          testId="avatar-style-select"
+          description={
+            avatarError ? (
+              <span role="alert" className="text-destructive">
+                {avatarError}
+              </span>
+            ) : undefined
+          }
         >
-          <h3 id={timezoneId} className="text-[15px] font-medium text-foreground">
-            <Trans>Timezone</Trans>
-          </h3>
-          <NativeSelect
-            aria-labelledby={timezoneId}
-            data-testid="timezone-select"
-            value={timezone ?? deviceTimezone}
-            disabled={timezonePending}
-            onChange={(event) => void chooseTimezone(event.target.value)}
-            className="mt-3 w-full"
+          <ToggleGroup
+            aria-labelledby={avatarLabelId}
+            value={[avatarStyle]}
+            onValueChange={([next]) => {
+              if (next) void chooseAvatarStyle(next as AvatarStyle);
+            }}
+            disabled={avatarPending}
+            spacing={1}
+            className={`${segmentedGroupClass} w-full grid-cols-2 sm:w-56`}
           >
-            {timezoneOptions(timezone ?? deviceTimezone).map((zone) => (
-              <NativeSelectOption key={zone} value={zone}>
-                {zone.replaceAll("_", " ")}
-              </NativeSelectOption>
+            {(["robot", "organic"] as const).map((style) => (
+              <ToggleGroupItem
+                key={style}
+                value={style}
+                data-testid={`avatar-style-${style}`}
+                className={`${segmentedItemClass} gap-1.5`}
+              >
+                <BotAvatar
+                  color="#D9508A"
+                  identity="avatar-style-preview"
+                  size={18}
+                  variant={style}
+                />
+                {style === "robot" ? <Trans>Robot</Trans> : <Trans>Organic</Trans>}
+              </ToggleGroupItem>
             ))}
-          </NativeSelect>
-          {!timezone || !sameTimeZone(timezone, deviceTimezone) ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-3 h-auto max-w-full py-1.5 text-left whitespace-normal"
+          </ToggleGroup>
+        </SettingsRow>
+      </SettingsSection>
+
+      <SettingsSection title={<Trans>Language and region</Trans>}>
+        <SettingsRow label={<Trans>Language</Trans>} target="language">
+          <UiLocalePicker value={locale} onChange={chooseLocale} />
+        </SettingsRow>
+        {onTimezoneChange ? (
+          <SettingsRow
+            label={<Trans>Timezone</Trans>}
+            labelFor={timezoneId}
+            target="timezone"
+            testId="timezone-settings"
+            description={
+              timezoneError ? (
+                <span role="alert" className="text-destructive">
+                  {timezoneError}
+                </span>
+              ) : !timezone || !sameTimeZone(timezone, deviceTimezone) ? (
+                <Button
+                  variant="text"
+                  size="xs"
+                  className="h-auto max-w-full text-start text-[12.5px] font-normal whitespace-normal"
+                  disabled={timezonePending}
+                  data-testid="timezone-use-device"
+                  onClick={() => void chooseTimezone(deviceTimezone)}
+                >
+                  <Trans comment="Switches the saved timezone to this device's, e.g. 'Use Pacific/Auckland'">
+                    Use {deviceTimezone.replaceAll("_", " ")}
+                  </Trans>
+                </Button>
+              ) : undefined
+            }
+          >
+            <NativeSelect
+              id={timezoneId}
+              data-testid="timezone-select"
+              value={timezone ?? deviceTimezone}
               disabled={timezonePending}
-              data-testid="timezone-use-device"
-              onClick={() => void chooseTimezone(deviceTimezone)}
+              onChange={(event) => void chooseTimezone(event.target.value)}
+              className="w-full sm:w-56"
             >
-              <Trans comment="Switches the saved timezone to this device's, e.g. 'Use Pacific/Auckland'">
-                Use {deviceTimezone.replaceAll("_", " ")}
-              </Trans>
-            </Button>
-          ) : null}
-          {timezoneError ? (
-            <p role="alert" className="mt-3 text-[12.5px] text-destructive">
-              {timezoneError}
-            </p>
-          ) : null}
-        </section>
-      ) : null}
-
-      <section
-        className="rounded-xl border border-border px-4 py-4"
-        data-testid="avatar-style-select"
-      >
-        <h3 className="text-[15px] font-medium text-foreground">
-          <Trans>Avatars</Trans>
-        </h3>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          {(["robot", "organic"] as const).map((style) => (
-            <Toggle
-              key={style}
-              variant="outline"
-              pressed={style === avatarStyle}
-              disabled={avatarPending}
-              onPressedChange={() => void chooseAvatarStyle(style)}
-              data-testid={`avatar-style-${style}`}
-              className="h-auto justify-start gap-3 px-3.5 py-3 text-[14px] font-normal"
-            >
-              <BotAvatar
-                color="#D9508A"
-                identity="avatar-style-preview"
-                size={32}
-                variant={style}
-              />
-              <span>{style === "robot" ? <Trans>Robot</Trans> : <Trans>Organic</Trans>}</span>
-            </Toggle>
-          ))}
-        </div>
-        {avatarError ? (
-          <p role="alert" className="mt-3 text-[12.5px] text-destructive">
-            {avatarError}
-          </p>
+              {timezoneOptions(timezone ?? deviceTimezone).map((zone) => (
+                <NativeSelectOption key={zone} value={zone}>
+                  {zone.replaceAll("_", " ")}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </SettingsRow>
         ) : null}
-      </section>
+      </SettingsSection>
 
-      {isDeploymentOwner ? (
-        <Link to="/integrations/setup" className={buttonVariants({ variant: "outline" })}>
-          <Trans>Server integrations</Trans>
-        </Link>
+      {onOpenServerSettings || isDeploymentOwner ? (
+        <SettingsSection title={<Trans>Server</Trans>}>
+          {onOpenServerSettings ? (
+            <SettingsRow label={<Trans>Server settings</Trans>} target="server-settings">
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label={t`Server settings`}
+                onClick={onOpenServerSettings}
+              >
+                <Trans>Open</Trans>
+              </Button>
+            </SettingsRow>
+          ) : null}
+          {isDeploymentOwner ? (
+            <SettingsRow label={<Trans>Server integrations</Trans>} target="server-integrations">
+              <Link
+                to="/integrations/setup"
+                aria-label={t`Server integrations`}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                <Trans>Open</Trans>
+              </Link>
+            </SettingsRow>
+          ) : null}
+        </SettingsSection>
       ) : null}
 
       <Disclosure
         data-testid="advanced-settings"
-        className="group rounded-xl border border-border"
+        open={advancedOpen}
+        onOpenChange={setAdvancedOpen}
         summary={<Trans>Advanced</Trans>}
-        summaryClassName="w-full flex items-center justify-between gap-4 px-4 py-4 text-[14px] text-foreground/75"
+        summaryClassName="text-[13px] font-medium text-muted-foreground hover:text-foreground"
+        contentClassName="divide-y divide-border pt-1"
       >
-        <div className="border-t border-border px-4 pb-5">
-          <div className="flex items-start gap-3 pt-5">
-            <Switch
-              id={enterToSendId}
-              data-testid="composer-enter-to-send-toggle"
-              className="mt-0.5"
-              checked={enterToSend}
-              onCheckedChange={(checked) => setComposerEnterToSend(checked)}
-            />
-            <Label htmlFor={enterToSendId} className="text-[14px] font-normal text-foreground/75">
-              <Trans>Send with Enter</Trans>
-            </Label>
-          </div>
-          <div className="flex items-start gap-3 pt-5">
-            <Switch
-              id={streamRepliesId}
-              data-testid="response-streaming-toggle"
-              className="mt-0.5"
-              checked={streamReplies}
-              onCheckedChange={(checked) => {
-                setStreamReplies(checked);
-                setResponseStreamingPreference(checked ? "on" : "off");
-              }}
-            />
-            <Label htmlFor={streamRepliesId} className="text-[14px] font-normal text-foreground/75">
-              <Trans>Stream replies</Trans>
-            </Label>
-          </div>
-          <div className="flex items-start gap-3 pt-4">
-            <Switch
-              id={showToolActivityId}
-              data-testid="tool-activity-toggle"
-              className="mt-0.5"
-              checked={showToolActivity}
-              onCheckedChange={(checked) => {
-                setShowToolActivity(checked);
-                setToolActivityPreference(checked ? "on" : "off");
-              }}
-            />
-            <Label
-              htmlFor={showToolActivityId}
-              className="text-[14px] font-normal text-foreground/75"
-            >
-              <Trans>Show tool activity</Trans>
-            </Label>
-          </div>
-          <div className="flex items-start gap-3 pt-4">
-            <Switch
-              id={loadRemoteImagesId}
-              data-testid="remote-images-toggle"
-              className="mt-0.5"
-              checked={loadRemoteImages}
-              onCheckedChange={(checked) => {
-                setLoadRemoteImages(checked);
-                setRemoteImagesPreference(checked ? "on" : "off");
-              }}
-            />
-            <Label
-              htmlFor={loadRemoteImagesId}
-              className="text-[14px] font-normal text-foreground/75"
-            >
-              <Trans>Load web images automatically</Trans>
-            </Label>
-          </div>
-        </div>
+        <SettingsRow
+          label={<Trans>Send with Enter</Trans>}
+          labelFor={enterToSendId}
+          target="send-with-enter"
+        >
+          <Switch
+            id={enterToSendId}
+            data-testid="composer-enter-to-send-toggle"
+            checked={enterToSend}
+            onCheckedChange={(checked) => setComposerEnterToSend(checked)}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={<Trans>Stream replies</Trans>}
+          labelFor={streamRepliesId}
+          target="stream-replies"
+        >
+          <Switch
+            id={streamRepliesId}
+            data-testid="response-streaming-toggle"
+            checked={streamReplies}
+            onCheckedChange={(checked) => {
+              setStreamReplies(checked);
+              setResponseStreamingPreference(checked ? "on" : "off");
+            }}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={<Trans>Show tool activity</Trans>}
+          labelFor={showToolActivityId}
+          target="tool-activity"
+        >
+          <Switch
+            id={showToolActivityId}
+            data-testid="tool-activity-toggle"
+            checked={showToolActivity}
+            onCheckedChange={(checked) => {
+              setShowToolActivity(checked);
+              setToolActivityPreference(checked ? "on" : "off");
+            }}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={<Trans>Load web images automatically</Trans>}
+          labelFor={loadRemoteImagesId}
+          target="remote-images"
+        >
+          <Switch
+            id={loadRemoteImagesId}
+            data-testid="remote-images-toggle"
+            checked={loadRemoteImages}
+            onCheckedChange={(checked) => {
+              setLoadRemoteImages(checked);
+              setRemoteImagesPreference(checked ? "on" : "off");
+            }}
+          />
+        </SettingsRow>
       </Disclosure>
 
-      <AccountAccess onSecurity={setAccountSecurity} />
-    </div>
+      <SettingsSection target="delete-account">
+        <AccountAccess onSecurity={setAccountSecurity} />
+      </SettingsSection>
+    </SettingsStack>
   );
 }
 
@@ -414,25 +452,25 @@ export function UsageSettingsPanel({
   panelRef?: RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div
-      ref={panelRef}
-      tabIndex={-1}
-      data-testid="usage-settings"
-      className="rounded-xl border border-border px-4 py-4 outline-none"
-    >
-      <h3 className="text-[15px] font-medium text-foreground">
-        <Trans>Usage</Trans>
-      </h3>
-      {usage ? (
-        <p className="mt-3 text-[14px] text-foreground/75">
-          <Trans>
-            {usage.runs} runs · {usage.totalTokens ?? "—"} tokens
-          </Trans>
-        </p>
-      ) : null}
-      <p className={`text-[12.5px] text-muted-foreground/80 ${usage ? "mt-2" : "mt-3"}`}>
-        <Trans>Model spend uses your provider keys.</Trans>
-      </p>
+    <div ref={panelRef} tabIndex={-1} data-testid="usage-settings" className="outline-none">
+      <SettingsStack>
+        <SettingsSection>
+          <SettingsRow
+            label={
+              usage ? (
+                <span className="tabular-nums">
+                  <Trans>
+                    {usage.runs} runs · {usage.totalTokens ?? "—"} tokens
+                  </Trans>
+                </span>
+              ) : (
+                <Trans>Usage</Trans>
+              )
+            }
+            description={<Trans>Model spend uses your provider keys.</Trans>}
+          />
+        </SettingsSection>
+      </SettingsStack>
     </div>
   );
 }
@@ -447,34 +485,31 @@ export function ComputerSettingsPanel({
   onRecoveryDismissed?: () => void;
 }) {
   return (
-    <div
-      data-testid="computers-setup-settings"
-      className="rounded-xl border border-border px-4 py-4"
-    >
-      <h3 className="text-[15px] font-medium text-foreground">
-        <Trans>Computers</Trans>
-      </h3>
-      <ComputersUnavailableHint
-        className="mt-3 text-[13px] leading-relaxed text-muted-foreground"
-        sandboxProvider={sandboxProvider}
-        onRecovered={onSandboxProviderChange}
-        onRecoveryDismissed={onRecoveryDismissed}
-      />
-    </div>
+    <SettingsStack>
+      <SettingsSection title={<Trans>Computers</Trans>} testId="computers-setup-settings">
+        <ComputersUnavailableHint
+          className="py-3 text-[13px] leading-relaxed text-muted-foreground"
+          sandboxProvider={sandboxProvider}
+          onRecovered={onSandboxProviderChange}
+          onRecoveryDismissed={onRecoveryDismissed}
+        />
+      </SettingsSection>
+    </SettingsStack>
   );
 }
 
 export function UpdatesSettingsPanel({ serverUpdate }: { serverUpdate: ServerUpdateLoad }) {
   return (
-    <div className="space-y-5">
+    <SettingsStack>
       <DesktopUpdateSection />
       {hasServerUpdates(serverUpdate) ? <SoftwareUpdateSection load={serverUpdate} /> : null}
-    </div>
+    </SettingsStack>
   );
 }
 
-function ChangePasswordSection({ email }: { email?: string | null }) {
+function ChangePasswordRow({ email }: { email?: string | null }) {
   const { t } = useLingui();
+  const [open, setOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -505,6 +540,7 @@ function ChangePasswordSection({ email }: { email?: string | null }) {
       setNewPassword("");
       setConfirmation("");
       setSaved(true);
+      setOpen(false);
     } catch {
       setError(t`Could not reach the server`);
     } finally {
@@ -512,12 +548,33 @@ function ChangePasswordSection({ email }: { email?: string | null }) {
     }
   }
 
+  if (!open) {
+    return (
+      <SettingsRow label={<Trans>Password</Trans>} target="password">
+        {saved ? <SuccessPop label={t`Password updated`} /> : null}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setSaved(false);
+            setOpen(true);
+          }}
+        >
+          <Trans>Change password</Trans>
+        </Button>
+      </SettingsRow>
+    );
+  }
+
   return (
-    <section className="rounded-xl border border-border px-4 py-4">
-      <h3 className="text-[15px] font-medium text-foreground">
-        <Trans>Password</Trans>
-      </h3>
-      <div className="mt-3 grid gap-3">
+    <SettingsRow label={<Trans>Password</Trans>} target="password" stacked>
+      <form
+        className="grid max-w-sm gap-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void changePassword();
+        }}
+      >
         <input
           type="text"
           name="username"
@@ -546,23 +603,30 @@ function ChangePasswordSection({ email }: { email?: string | null }) {
           value={confirmation}
           onChange={setConfirmation}
         />
-      </div>
-      {error ? (
-        <p role="alert" className="mt-3 text-[12.5px] text-destructive">
-          {error}
-        </p>
-      ) : null}
-      <div className="mt-4 flex items-center gap-3">
-        <Button
-          className="rounded-full"
-          disabled={pending || !currentPassword || !newPassword}
-          onClick={() => void changePassword()}
-        >
-          {pending ? <Trans>Changing…</Trans> : <Trans>Change password</Trans>}
-        </Button>
-        {saved ? <SuccessPop label={t`Password updated`} /> : null}
-      </div>
-    </section>
+        {error ? (
+          <p role="alert" className="text-[12.5px] text-destructive">
+            {error}
+          </p>
+        ) : null}
+        <div className="flex items-center gap-2">
+          <Button type="submit" size="sm" disabled={pending || !currentPassword || !newPassword}>
+            {pending ? <Trans>Changing…</Trans> : <Trans>Change password</Trans>}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={pending}
+            onClick={() => {
+              setOpen(false);
+              setError(null);
+            }}
+          >
+            <Trans>Cancel</Trans>
+          </Button>
+        </div>
+      </form>
+    </SettingsRow>
   );
 }
 
@@ -595,9 +659,11 @@ function SettingsPasswordInput({
 }
 
 function AppearancePicker({
+  labelledBy,
   value,
   onChange,
 }: {
+  labelledBy: string;
   value: AppearancePreference;
   onChange: (next: AppearancePreference) => void;
 }) {
@@ -610,21 +676,21 @@ function AppearancePicker({
 
   return (
     <ToggleGroup
-      aria-label={t`Appearance`}
+      aria-labelledby={labelledBy}
       data-testid="ui-appearance-select"
       value={[value]}
       onValueChange={([next]) => {
         if (next) onChange(next as AppearancePreference);
       }}
       spacing={1}
-      className="mt-3 grid w-full min-w-0 grid-cols-3 rounded-lg bg-muted p-1"
+      className={`${segmentedGroupClass} w-full grid-cols-3 sm:w-56`}
     >
       {options.map((option) => (
         <ToggleGroupItem
           key={option.value}
           value={option.value}
           data-testid={`ui-appearance-${option.value}`}
-          className="text-[13px] aria-pressed:bg-background aria-pressed:shadow-sm"
+          className={segmentedItemClass}
         >
           {option.label}
         </ToggleGroupItem>
@@ -643,7 +709,7 @@ function UiLocalePicker({
   const { t } = useLingui();
   return (
     <OptionSelect
-      className="mt-3"
+      className="w-full sm:w-56"
       data-testid="ui-locale-select"
       aria-label={t`Language`}
       options={UI_LOCALES.map((code) => ({ value: code, label: UI_LOCALE_LABELS[code] }))}

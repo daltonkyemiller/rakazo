@@ -1,10 +1,12 @@
 import { t } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ActionApprovalRule, ActionAutoReviewSettings } from "@rakazo/contracts";
-import { Button, Label, Switch } from "@rakazo/ui-web";
+import { Button, Switch } from "@rakazo/ui-web";
+import { Plus } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { useSpaceRpc } from "../lib/space-rpc";
 import { errorText } from "../lib/user-error";
+import { SettingsRow, SettingsSection, SettingsStack } from "./SettingsLayout";
 
 function describeRule(rule: ActionApprovalRule): string {
   if (rule.effect === "require_approval") {
@@ -108,69 +110,80 @@ export function ApprovalRulesSettings() {
     }
   }
 
+  const hasPreset = (matchValue: "email" | "purchase") =>
+    rules.some(
+      (rule) =>
+        rule.effect === "require_approval" &&
+        rule.matchKind === "category" &&
+        rule.matchValue === matchValue,
+    );
+  const presets = [
+    { matchValue: "email" as const, label: <Trans>Ask before sending external email</Trans> },
+    { matchValue: "purchase" as const, label: <Trans>Ask before purchases</Trans> },
+  ].filter((preset) => !hasPreset(preset.matchValue));
+
   return (
-    <div data-testid="action-confirmation-settings" className="pt-5">
-      <div className="flex flex-col items-start gap-2">
-        <Button
-          variant="outline"
-          disabled={loading || savingPreset !== null}
-          onClick={() => void setPreset("email")}
-        >
-          <Trans>Ask before sending external email</Trans>
-        </Button>
-        <Button
-          variant="outline"
-          disabled={loading || savingPreset !== null}
-          onClick={() => void setPreset("purchase")}
-        >
-          <Trans>Ask before purchases</Trans>
-        </Button>
-      </div>
-      <div className="mt-5 flex items-start gap-3">
-        <Switch
-          id={autoReviewId}
-          data-testid="auto-review-toggle"
-          className="mt-0.5"
-          checked={autoReview?.enabled ?? false}
-          disabled={loading || savingAutoReview || !autoReview}
-          onCheckedChange={(checked) => void toggleAutoReview(checked)}
-        />
-        <div>
-          <Label htmlFor={autoReviewId} className="text-[14px] font-normal text-foreground/75">
-            <Trans>Flag unexpected actions</Trans>
-          </Label>
-          {autoReview?.enabled && !autoReview.checkerAvailable ? (
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              <Trans>Add a model in Settings to use this.</Trans>
+    <div data-testid="action-confirmation-settings">
+      <SettingsStack>
+        <SettingsSection>
+          <SettingsRow
+            label={<Trans>Flag unexpected actions</Trans>}
+            labelFor={autoReviewId}
+            target="auto-review"
+            description={
+              autoReview?.enabled && !autoReview.checkerAvailable ? (
+                <Trans>Add a model in Settings to use this.</Trans>
+              ) : undefined
+            }
+          >
+            <Switch
+              id={autoReviewId}
+              data-testid="auto-review-toggle"
+              checked={autoReview?.enabled ?? false}
+              disabled={loading || savingAutoReview || !autoReview}
+              onCheckedChange={(checked) => void toggleAutoReview(checked)}
+            />
+          </SettingsRow>
+        </SettingsSection>
+
+        <SettingsSection title={<Trans>Rules</Trans>} target="approval-rules">
+          {loading ? (
+            <p className="py-3 text-[13px] text-muted-foreground">
+              <Trans>Loading rules…</Trans>
             </p>
+          ) : (
+            rules.map((rule) => (
+              <SettingsRow key={rule.id} label={describeRule(rule)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground"
+                  onClick={() => void removeRule(rule.id)}
+                >
+                  <Trans>Remove</Trans>
+                </Button>
+              </SettingsRow>
+            ))
+          )}
+          {!loading && presets.length > 0 ? (
+            <div className="flex flex-wrap gap-2 py-3">
+              {presets.map((preset) => (
+                <Button
+                  key={preset.matchValue}
+                  variant="outline"
+                  size="sm"
+                  disabled={savingPreset !== null}
+                  onClick={() => void setPreset(preset.matchValue)}
+                >
+                  <Plus data-icon="inline-start" />
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
           ) : null}
-        </div>
-      </div>
-      {error ? <p className="mt-3 text-[13px] text-destructive">{error}</p> : null}
-      {loading ? (
-        <p className="mt-4 text-[13px] text-muted-foreground">
-          <Trans>Loading rules…</Trans>
-        </p>
-      ) : rules.length > 0 ? (
-        <ul className="mt-4 space-y-2">
-          {rules.map((rule) => (
-            <li
-              key={rule.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border px-3.5 py-2"
-            >
-              <span className="text-[13.5px] text-foreground/75">{describeRule(rule)}</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground"
-                onClick={() => void removeRule(rule.id)}
-              >
-                <Trans>Remove</Trans>
-              </Button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+          {error ? <p className="py-3 text-[13px] text-destructive">{error}</p> : null}
+        </SettingsSection>
+      </SettingsStack>
     </div>
   );
 }

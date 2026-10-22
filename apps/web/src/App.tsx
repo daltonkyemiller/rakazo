@@ -303,7 +303,7 @@ function ShellSkeleton() {
       className="flex h-full overflow-hidden bg-background"
       data-rakazo-app-state="session-pending"
     >
-      <aside className="hidden w-[316px] shrink-0 border-e border-sidebar-border bg-sidebar px-3.5 pt-16 md:block">
+      <aside className="hidden w-[300px] shrink-0 border-e border-sidebar-border bg-sidebar px-3.5 pt-16 md:block">
         <Skeleton className="h-10 rounded-xl" />
         <div className="mt-5 space-y-2 px-1">
           {[0, 1, 2, 3].map((row) => (

@@ -1,4 +1,9 @@
 export const ZH_MESSAGES: Record<string, string> = {
+  "Close integrations": "关闭集成",
+  "Connected integrations": "已连接的集成",
+  "No available integrations.": "没有可用的集成。",
+  "No connected integrations.": "没有已连接的集成。",
+  "{count} connected": "已连接 {count} 个",
   "Add an AI model to keep chatting": "添加一个 AI 模型以继续聊天",
   "Not Now": "暂不",
   "Add Model": "添加模型",

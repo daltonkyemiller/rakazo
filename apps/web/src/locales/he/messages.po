@@ -123,6 +123,10 @@ msgstr "המחשב של {botName}"
 msgid "{commandVariable} is reserved and cannot be used as a command variable. Choose another name."
 msgstr "{commandVariable} שמור ואי אפשר להשתמש בו כמשתנה פקודה. יש לבחור שם אחר."
 
+#: src/pages/PluginsOverlay.tsx
+msgid "{connectedCount} connected"
+msgstr ""
+
 #: src/lib/billing.ts
 msgid "{count} days"
 msgstr "{count} ימים"
@@ -350,6 +354,7 @@ msgid "Access token (optional)"
 msgstr "טוקן גישה (אופציונלי)"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Account"
 msgstr "חשבון"
 
@@ -388,6 +393,7 @@ msgid "Active"
 msgstr "פעיל"
 
 #: src/pages/ModelSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Active model"
 msgstr "מודל פעיל"
 
@@ -512,10 +518,6 @@ msgstr "הוספת Treg"
 #: src/pages/RoutineEditor.tsx
 msgid "Add trigger"
 msgstr "הוספת טריגר"
-
-#: src/pages/PluginsOverlay.tsx
-msgid "Added"
-msgstr "נוסף"
 
 #: src/pages/McpServersOverlay.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -693,6 +695,10 @@ msgstr "החלה"
 msgid "Approval boundaries"
 msgstr "גבולות אישור"
 
+#: src/pages/SettingsOverlay.tsx
+msgid "Approval rules"
+msgstr ""
+
 #: src/pages/MessagingSettingsOverlay.tsx
 #: src/pages/shell/message-cards.tsx
 msgid "Approve"
@@ -834,21 +840,30 @@ msgid "Avatar Studio"
 msgstr "Avatar Studio"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Avatars"
 msgstr "אווטארים"
 
 #: src/pages/Auth.tsx
 #: src/pages/Board.tsx
-#: src/pages/PluginsOverlay.tsx
 #: src/pages/RoutineEditor.tsx
 msgid "Back"
 msgstr "חזרה"
+
+#: src/pages/PluginsOverlay.tsx
+msgid "Back to connected integrations"
+msgstr ""
+
+#: src/pages/PluginsOverlay.tsx
+msgid "Back to integrations"
+msgstr ""
 
 #: src/pages/Auth.tsx
 msgid "Back to sign in"
 msgstr "חזרה להתחברות"
 
 #: src/pages/ModelBackupsSettings.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Backup models"
 msgstr "מודלי גיבוי"
 
@@ -986,6 +1001,7 @@ msgstr "לא ניתן לקרוא תמונות"
 #: src/components/markdown-link-prompt.tsx
 #: src/components/PasskeySettings.tsx
 #: src/components/teach/TeachComputerOverlay.tsx
+#: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/Artifacts.tsx
 #: src/pages/KnowledgeSection.tsx
 #: src/pages/model-settings/connection-controls.tsx
@@ -1051,6 +1067,7 @@ msgid "Chat Settings"
 msgstr "הגדרות צ׳אט"
 
 #: src/lib/identity-display.ts
+#: src/pages/shell/command-palette.tsx
 msgid "Chats"
 msgstr "צ׳אטים"
 
@@ -1294,6 +1311,7 @@ msgid "Complete"
 msgstr "הושלם"
 
 #: src/pages/SettingsOverlay.tsx
+#: src/pages/Shell.tsx
 #: src/pages/shell/bot-panel.tsx
 #: src/pages/shell/message-view.tsx
 msgid "Computer"
@@ -1327,10 +1345,6 @@ msgstr "המחשבים זמינים. אפשר לטעון מחדש או לפתו�
 #: src/components/ComputersUnavailableHint.tsx
 msgid "Computers are off. Set SANDBOX_PROVIDER=docker with SANDBOX_SUPERVISOR_TOKEN, or set SANDBOX_PROVIDER to e2b, daytona, or boat with its API key. Recreate the stack after changing .env."
 msgstr "המחשבים כבויים. יש להגדיר SANDBOX_PROVIDER=docker עם SANDBOX_SUPERVISOR_TOKEN, או להגדיר את SANDBOX_PROVIDER ל-e2b, daytona או boat עם מפתח ה-API שלו. אחרי שינוי .env יש ליצור מחדש את ה-stack."
-
-#: src/pages/PluginsOverlay.tsx
-msgid "Configure a plugin catalog on the server to connect apps."
-msgstr "כדי לחבר אפליקציות, יש להגדיר קטלוג תוספים בשרת."
 
 #: src/pages/ModelSettingsOverlay.tsx
 msgid "Configured by deployment"
@@ -1375,6 +1389,7 @@ msgid "Connect API key"
 msgstr "חיבור מפתח API"
 
 #: src/components/SidebarFooter.tsx
+#: src/pages/PluginsOverlay.tsx
 msgid "Connect apps"
 msgstr "חיבור אפליקציות"
 
@@ -1398,6 +1413,7 @@ msgstr "חיבור Treg"
 #: src/pages/McpOAuthCallback.tsx
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/model-settings/provider-list.tsx
+#: src/pages/PluginsOverlay.tsx
 #: src/pages/shell/message-cards.tsx
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Connected"
@@ -1407,6 +1423,10 @@ msgstr "מחובר"
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Connected {0}."
 msgstr "{0} מחובר."
+
+#: src/pages/PluginsOverlay.tsx
+msgid "Connected integrations"
+msgstr ""
 
 #: src/pages/shell/message-cards.tsx
 msgid "Connected. Its tools are available from your next message."
@@ -2020,6 +2040,10 @@ msgstr "פרטי הגישה מוצפנים ולעולם לא נשלחים למו
 msgid "Credit amount"
 msgstr ""
 
+#: src/components/ModelCredits.tsx
+msgid "Credits"
+msgstr ""
+
 #: src/pages/RoutineSchedule.tsx
 msgid "Cron"
 msgstr "Cron"
@@ -2088,6 +2112,7 @@ msgid "Default ({0})"
 msgstr "ברירת מחדל ({0})"
 
 #: src/pages/MemorySettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Default scope"
 msgstr "היקף ברירת מחדל"
 
@@ -2124,6 +2149,7 @@ msgid "Delete {0}?"
 msgstr "למחוק את {0}?"
 
 #: src/components/AccountAccess.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Delete account"
 msgstr "מחיקת החשבון"
 
@@ -2179,6 +2205,7 @@ msgid "Description"
 msgstr "תיאור"
 
 #: src/components/DesktopUpdates.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Desktop app"
 msgstr "אפליקציית הדסקטופ"
 
@@ -2578,6 +2605,7 @@ msgid "Finishing MCP connection…"
 msgstr "משלים את חיבור ה-MCP…"
 
 #: src/components/ApprovalRulesSettings.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Flag unexpected actions"
 msgstr "סימון פעולות לא צפויות"
 
@@ -2819,7 +2847,7 @@ msgstr "אפשרויות אינטגרציה"
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Integrations"
-msgstr "אינטגרציות"
+msgstr ""
 
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
@@ -2880,8 +2908,13 @@ msgid "Knowledge"
 msgstr "ידע"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Language"
 msgstr "שפה"
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Language and region"
+msgstr ""
 
 #. placeholder {0}: new Date(state.checkedAt).toLocaleString()
 #: src/pages/RoutineEditor.tsx
@@ -2947,6 +2980,7 @@ msgid "Load older runs"
 msgstr "טעינת הרצות ישנות יותר"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Load web images automatically"
 msgstr "טעינה אוטומטית של תמונות מהרשת"
 
@@ -3126,6 +3160,10 @@ msgstr ""
 msgid "Memory"
 msgstr "זיכרון"
 
+#: src/pages/SettingsOverlay.tsx
+msgid "Memory provider"
+msgstr ""
+
 #: src/pages/shell/bot-panel.tsx
 msgid "Memory scope"
 msgstr "היקף הזיכרון"
@@ -3178,6 +3216,7 @@ msgstr "נשלחה הודעה אל {peer}"
 
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/MessagingSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Messaging"
 msgstr "הודעות"
 
@@ -3198,10 +3237,6 @@ msgstr "מינימלי"
 #: src/pages/WindowChrome.tsx
 msgid "Minimize"
 msgstr "מזעור"
-
-#: src/pages/shell/sidebar-header.tsx
-msgid "Minimize bots"
-msgstr "מזעור הבוטים"
 
 #: src/components/call/CallCard.tsx
 msgid "Minimize call"
@@ -3241,6 +3276,10 @@ msgstr "מזהה מודל"
 #: src/pages/model-settings/model-picker.tsx
 msgid "Model options"
 msgstr "אפשרויות מודל"
+
+#: src/pages/SettingsOverlay.tsx
+msgid "Model providers"
+msgstr ""
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Model spend uses your provider keys."
@@ -3427,9 +3466,9 @@ msgstr "ללא אימות"
 msgid "No authentication"
 msgstr "ללא אימות"
 
-#: src/pages/shell/command-palette.tsx
-msgid "No bots"
-msgstr "אין בוטים"
+#: src/pages/PluginsOverlay.tsx
+msgid "No available integrations."
+msgstr ""
 
 #: src/pages/GroupPanel.tsx
 #: src/pages/shell/bot-picker.tsx
@@ -3439,6 +3478,10 @@ msgstr "אין בוטים תואמים"
 #: src/pages/MessagingSettingsOverlay.tsx
 msgid "No chat apps linked yet."
 msgstr "עדיין לא קושרו אפליקציות צ׳אט."
+
+#: src/pages/PluginsOverlay.tsx
+msgid "No connected integrations."
+msgstr ""
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "No credentials saved for this bot."
@@ -3498,6 +3541,8 @@ msgid "No remote MCP servers found"
 msgstr "לא נמצאו שרתי MCP מרוחקים"
 
 #: src/pages/PluginsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
+#: src/pages/shell/command-palette.tsx
 #: src/pages/SpaceSearch.tsx
 msgid "No results"
 msgstr "אין תוצאות"
@@ -3537,10 +3582,6 @@ msgstr "טרם נבדק"
 #: src/pages/ModelBackupsSettings.tsx
 msgid "Not connected"
 msgstr "לא מחובר"
-
-#: src/pages/PluginsOverlay.tsx
-msgid "Not in the plugin catalog"
-msgstr "לא נמצא בקטלוג התוספים"
 
 #: src/pages/shell/message-cards.tsx
 msgid "Not now"
@@ -3615,6 +3656,7 @@ msgid "Only empty spaces can be deleted. Delete its bots and groups first."
 msgstr "אפשר למחוק רק מרחבים ריקים. יש למחוק קודם את הבוטים והקבוצות שבו."
 
 #: src/components/markdown-link-prompt.tsx
+#: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/ScratchpadSection.tsx
 #: src/pages/shell/computer-panel.tsx
 #: src/pages/shell/message-view.tsx
@@ -3741,6 +3783,7 @@ msgid "Passkey"
 msgstr "מפתח גישה"
 
 #: src/components/PasskeySettings.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Passkeys"
 msgstr "מפתחות גישה"
 
@@ -3830,6 +3873,10 @@ msgstr "הצמדה"
 #: src/pages/Shell.tsx
 msgid "Pinned"
 msgstr "מוצמדים"
+
+#: src/pages/BillingSettingsPanel.tsx
+msgid "Plan"
+msgstr ""
 
 #: src/components/ArtifactFileCard.tsx
 msgid "Play {name}"
@@ -4018,7 +4065,6 @@ msgstr "כתובת הפניה (Redirect URI)"
 
 #: src/App.tsx
 #: src/components/ErrorBoundary.tsx
-#: src/components/ModelCredits.tsx
 #: src/pages/RoutineRunHistory.tsx
 msgid "Refresh"
 msgstr "רענון"
@@ -4307,6 +4353,10 @@ msgstr "רוטינות"
 msgid "Routines that run while you're away"
 msgstr "רוטינות שרצות גם כשלא נמצאים"
 
+#: src/components/ApprovalRulesSettings.tsx
+msgid "Rules"
+msgstr ""
+
 #: src/pages/RoutineEditor.tsx
 msgid "Run at"
 msgstr "הרצה ב-"
@@ -4416,10 +4466,11 @@ msgstr "היקפים (אופציונלי)"
 
 #: src/pages/model-settings/model-picker.tsx
 #: src/pages/PluginsOverlay.tsx
-#: src/pages/Shell.tsx
+#: src/pages/SettingsOverlay.tsx
 #: src/pages/shell/bot-picker.tsx
 #: src/pages/shell/chat-model-picker.tsx
 #: src/pages/shell/command-palette.tsx
+#: src/pages/shell/sidebar-header.tsx
 msgid "Search"
 msgstr "חיפוש"
 
@@ -4433,8 +4484,8 @@ msgid "Search artifacts…"
 msgstr "חיפוש תוצרים…"
 
 #: src/pages/shell/command-palette.tsx
-msgid "Search bots and switch conversations"
-msgstr "חיפוש בוטים ומעבר בין שיחות"
+msgid "Search bots and chats"
+msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Search by domain"
@@ -4457,12 +4508,17 @@ msgstr "חיפוש ספקים"
 msgid "Search runs"
 msgstr "חיפוש הרצות"
 
+#: src/pages/SettingsOverlay.tsx
+msgid "Search settings"
+msgstr ""
+
 #. placeholder {0}: filters.query.trim()
 #: src/pages/ActivityList.tsx
 msgid "Search: {0}"
 msgstr "חיפוש: {0}"
 
 #: src/pages/PluginsOverlay.tsx
+#: src/pages/shell/command-palette.tsx
 #: src/pages/SpaceSearch.tsx
 msgid "Searching…"
 msgstr "מחפש…"
@@ -4500,6 +4556,7 @@ msgid "Send reset link"
 msgstr "שליחת קישור לאיפוס"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Send with Enter"
 msgstr "שליחה ב-Enter"
 
@@ -4515,15 +4572,25 @@ msgstr "התראת Sentry"
 msgid "Serenity endpoint is required."
 msgstr "נדרשת נקודת קצה של Serenity."
 
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Server"
+msgstr ""
+
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/LocalSettings.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Server integrations"
 msgstr "אינטגרציות שרת"
 
 #: src/pages/McpServersOverlay.tsx
 msgid "Server name"
 msgstr "שם השרת"
+
+#: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
+msgid "Server settings"
+msgstr ""
 
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/McpServersOverlay.tsx
@@ -4540,6 +4607,10 @@ msgstr "URL של השרת"
 #: src/pages/Shell.tsx
 msgid "Settings"
 msgstr "הגדרות"
+
+#: src/pages/SettingsOverlay.tsx
+msgid "Settings results"
+msgstr ""
 
 #: src/pages/shell/composer-mentions.tsx
 msgid "Settings: General"
@@ -4568,6 +4639,7 @@ msgid "Shared chat with {GROUP_MEMBER_MIN}-{GROUP_MEMBER_MAX} bots. They all rep
 msgstr "צ׳אט משותף עם {GROUP_MEMBER_MIN}-{GROUP_MEMBER_MAX} בוטים. כולם עונים באותו שרשור."
 
 #: src/pages/KnowledgeSection.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Shared documents"
 msgstr "מסמכים משותפים"
 
@@ -4608,6 +4680,7 @@ msgid "Show settings"
 msgstr "הצגת הגדרות"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Show tool activity"
 msgstr "הצגת פעילות כלים"
 
@@ -4616,6 +4689,7 @@ msgid "Show transcript"
 msgstr "הצגת תמליל"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Sidebar density"
 msgstr "צפיפות סרגל הצד"
 
@@ -4691,6 +4765,7 @@ msgid "Slide up to lock"
 msgstr ""
 
 #: src/components/SoftwareUpdateSection.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Software update"
 msgstr "עדכון תוכנה"
 
@@ -4800,6 +4875,7 @@ msgid "Stored encrypted"
 msgstr "נשמר מוצפן"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Stream replies"
 msgstr "הזרמת תשובות"
 
@@ -4831,10 +4907,6 @@ msgstr "תומך בתמונות"
 #: src/pages/Onboarding.tsx
 msgid "Supports thinking"
 msgstr "תומך בחשיבה"
-
-#: src/pages/shell/command-palette.tsx
-msgid "Switch bot"
-msgstr "החלפת בוט"
 
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Switching…"
@@ -4921,6 +4993,11 @@ msgstr "הספק מגביל את קצב הבקשות."
 #: src/pages/MemorySettingsOverlay.tsx
 msgid "The selected memory provider is not available in this build."
 msgstr "ספק הזיכרון שנבחר אינו זמין בגרסה הזו."
+
+#: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
+msgid "Theme"
+msgstr ""
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "These saved settings can't be read. Remove it and add it again."
@@ -5029,6 +5106,7 @@ msgid "Time of day"
 msgstr "שעה ביום"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Timezone"
 msgstr ""
 
@@ -5372,6 +5450,10 @@ msgstr "צפייה בצ׳אט"
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Voice"
 msgstr "קול"
+
+#: src/pages/SettingsOverlay.tsx
+msgid "Voice providers"
+msgstr ""
 
 #: src/lib/model-connection-preflight.ts
 msgid "Wait a moment and test again."

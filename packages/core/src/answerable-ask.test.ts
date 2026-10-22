@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   answerableAskMessageIds,
+  askChoiceOptions,
   dismissableAskMessageIds,
+  isChoiceAskBlock,
   resolveAskChoice,
   selectedAskActionLabel,
 } from "./answerable-ask.js";
@@ -151,5 +153,38 @@ describe("dismissableAskMessageIds", () => {
     ).toEqual(new Set());
     expect(dismissableAskMessageIds(null, "owner")).toEqual(new Set());
     expect(answerableAskMessageIds(snapshot).has("secret")).toBe(true);
+  });
+});
+
+describe("choice asks", () => {
+  const actions = [
+    { id: "choice-1", label: "Client and billing issues" },
+    { id: "choice-2", label: "Hiring" },
+  ];
+
+  it("treats only a bot's plain multiple-choice question as a choice ask", () => {
+    expect(isChoiceAskBlock({ kind: "ask", actions })).toBe(true);
+    expect(isChoiceAskBlock({ kind: "ask" })).toBe(false);
+    expect(isChoiceAskBlock({ kind: "ask", actions: [] })).toBe(false);
+    expect(
+      isChoiceAskBlock({
+        kind: "ask",
+        approvalEffectId: "effect-1",
+        actions: [
+          { id: "allow", label: "Allow" },
+          { id: "deny", label: "Deny" },
+        ],
+      }),
+    ).toBe(false);
+    expect(isChoiceAskBlock({ kind: "ask", instructionUpdate: {}, actions })).toBe(false);
+    expect(isChoiceAskBlock({ kind: "ask", approvalEffectId: "effect-1", actions })).toBe(false);
+    expect(isChoiceAskBlock({ kind: "ask", input: "secret", actions })).toBe(false);
+  });
+
+  it("letters options in offered order", () => {
+    expect(askChoiceOptions(actions)).toEqual([
+      { id: "choice-1", label: "Client and billing issues", letter: "A" },
+      { id: "choice-2", label: "Hiring", letter: "B" },
+    ]);
   });
 });

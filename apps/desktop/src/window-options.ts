@@ -19,6 +19,7 @@ function windowChrome(platform: NodeJS.Platform) {
     show: true,
     autoHideMenuBar: true,
     frame: mac,
+    ...(mac ? { roundedCorners: true, hasShadow: true } : {}),
     titleBarStyle: mac ? ("hiddenInset" as const) : undefined,
     trafficLightPosition: mac ? { x: 16, y: 16 } : undefined,
   };

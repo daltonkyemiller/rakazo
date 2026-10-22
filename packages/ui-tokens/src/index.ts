@@ -273,3 +273,41 @@ export function renderTokensCss(): string {
     renderBlock('[data-theme="light"]', "light", lightTokens),
   ].join("\n\n")}\n`;
 }
+
+/** Bot identity carried into a readable outgoing message surface. */
+export function botChatColors(color: string | undefined, appearance: ResolvedAppearance) {
+  const palette = tokensForAppearance(appearance);
+  const parse = (value: string) => {
+    const match = /^#([0-9a-f]{6})$/i.exec(value);
+    return match
+      ? [0, 2, 4].map((offset) => Number.parseInt(match[1]!.slice(offset, offset + 2), 16))
+      : null;
+  };
+  const identity = color ? parse(color) : null;
+  if (!identity) return { background: palette.chatUser, foreground: palette.chatUserForeground };
+  const base = parse(palette.background)!;
+  const foreground = parse(palette.foreground)!;
+  const luminance = (channels: number[]) =>
+    channels.reduce((sum, channel, index) => {
+      const value = channel / 255;
+      const linear = value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      return sum + linear * [0.2126, 0.7152, 0.0722][index]!;
+    }, 0);
+  const textLuminance = luminance(foreground);
+  for (
+    let weight = appearance === "dark" ? 0.5 : 0.2;
+    weight >= 0;
+    weight = Math.max(0, weight - 0.05)
+  ) {
+    const channels = base.map((channel, index) =>
+      Math.round(channel * (1 - weight) + identity[index]! * weight),
+    );
+    const surfaceLuminance = luminance(channels);
+    const contrast =
+      (Math.max(textLuminance, surfaceLuminance) + 0.05) /
+      (Math.min(textLuminance, surfaceLuminance) + 0.05);
+    if (contrast >= 4.5 || weight === 0)
+      return { background: `rgb(${channels.join(", ")})`, foreground: palette.foreground };
+  }
+  return { background: palette.chatUser, foreground: palette.chatUserForeground };
+}

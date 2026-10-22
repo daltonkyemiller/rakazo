@@ -56,7 +56,7 @@ const Button = ({
 beforeEach(() => vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true));
 afterEach(() => vi.unstubAllGlobals());
 
-it("keeps only Activity, Search and Create in the transparent native home header", () => {
+it("keeps Activity, Artifacts and Create in the transparent native home header", () => {
   const setOptions = vi.fn();
   evaluate(slice(home, "  useLayoutEffect(() => {", "  const openBot ="), {
     useLayoutEffect: (effect: () => void) => effect(),
@@ -77,12 +77,12 @@ it("keeps only Activity, Search and Create in the transparent native home header
     options
       .unstable_headerRightItems()
       .map((item: { accessibilityLabel: string }) => item.accessibilityLabel),
-  ).toEqual(["Activity", "Search", "Create"]);
+  ).toEqual(["Activity", "Artifacts", "Create"]);
   expect(options.headerTransparent).toBe(true);
   expect(options.headerStyle).toEqual({ backgroundColor: "transparent" });
 });
 
-it.each(["android", "ios"])("omits Artifacts from the %s fallback header", (platform) => {
+it.each(["android", "ios"])("keeps Artifacts reachable from the %s fallback header", (platform) => {
   const header = slice(
     home,
     "      {nativeHeader ? null : (",
@@ -124,7 +124,7 @@ it.each(["android", "ios"])("omits Artifacts from the %s fallback header", (plat
       Array.from(container.querySelectorAll("[aria-label]"), (node) =>
         node.getAttribute("aria-label"),
       ),
-    ).toEqual(["Account", "Activity", "Search", "Create"]);
+    ).toEqual(["Account", "Activity", "Artifacts", "Create"]);
   } finally {
     act(() => root.unmount());
   }

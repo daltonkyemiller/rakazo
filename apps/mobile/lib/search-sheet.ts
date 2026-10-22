@@ -43,6 +43,8 @@ export function searchSheetRows(
   const bots = spaces.flatMap((space) => space.bots);
   const groups = spaces.flatMap((space) => space.groups);
   const needle = query.trim().toLowerCase();
+  const botsById = new Map(bots.map((bot) => [bot.id, bot]));
+  const groupsById = new Map(groups.map((group) => [group.id, group]));
   const rows: SearchSheetRow[] = [
     ...filterBots(bots, query).map(
       (bot): SearchSheetRow => ({
@@ -84,8 +86,8 @@ export function searchSheetRows(
       chats.has(hit.groupId ? `group-${hit.groupId}` : `bot-${hit.botId}`)
     )
       continue;
-    const bot = hit.botId ? bots.find((bot) => bot.id === hit.botId) : undefined;
-    const group = hit.groupId ? groups.find((group) => group.id === hit.groupId) : undefined;
+    const bot = hit.botId ? botsById.get(hit.botId) : undefined;
+    const group = hit.groupId ? groupsById.get(hit.groupId) : undefined;
     rows.push({
       key: searchHitListKey(hit),
       title: hit.title,

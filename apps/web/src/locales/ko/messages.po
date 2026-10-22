@@ -123,6 +123,10 @@ msgstr "{botName}의 컴퓨터"
 msgid "{commandVariable} is reserved and cannot be used as a command variable. Choose another name."
 msgstr "{commandVariable}은(는) 예약되어 있어 명령 변수로 사용할 수 없습니다. 다른 이름을 선택하세요."
 
+#: src/pages/PluginsOverlay.tsx
+msgid "{connectedCount} connected"
+msgstr ""
+
 #: src/lib/billing.ts
 msgid "{count} days"
 msgstr ""
@@ -350,6 +354,7 @@ msgid "Access token (optional)"
 msgstr "액세스 토큰(선택 사항)"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Account"
 msgstr "계정"
 
@@ -388,6 +393,7 @@ msgid "Active"
 msgstr "활성"
 
 #: src/pages/ModelSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Active model"
 msgstr "현재 모델"
 
@@ -512,10 +518,6 @@ msgstr "Treg 추가"
 #: src/pages/RoutineEditor.tsx
 msgid "Add trigger"
 msgstr "트리거 추가"
-
-#: src/pages/PluginsOverlay.tsx
-msgid "Added"
-msgstr ""
 
 #: src/pages/McpServersOverlay.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -693,6 +695,10 @@ msgstr "적용"
 msgid "Approval boundaries"
 msgstr "승인이 필요한 범위"
 
+#: src/pages/SettingsOverlay.tsx
+msgid "Approval rules"
+msgstr ""
+
 #: src/pages/MessagingSettingsOverlay.tsx
 #: src/pages/shell/message-cards.tsx
 msgid "Approve"
@@ -834,21 +840,30 @@ msgid "Avatar Studio"
 msgstr "아바타 스튜디오"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Avatars"
 msgstr "아바타"
 
 #: src/pages/Auth.tsx
 #: src/pages/Board.tsx
-#: src/pages/PluginsOverlay.tsx
 #: src/pages/RoutineEditor.tsx
 msgid "Back"
 msgstr "뒤로"
+
+#: src/pages/PluginsOverlay.tsx
+msgid "Back to connected integrations"
+msgstr ""
+
+#: src/pages/PluginsOverlay.tsx
+msgid "Back to integrations"
+msgstr ""
 
 #: src/pages/Auth.tsx
 msgid "Back to sign in"
 msgstr "로그인으로 돌아가기"
 
 #: src/pages/ModelBackupsSettings.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Backup models"
 msgstr "백업 모델"
 
@@ -986,6 +1001,7 @@ msgstr "이미지를 읽을 수 없음"
 #: src/components/markdown-link-prompt.tsx
 #: src/components/PasskeySettings.tsx
 #: src/components/teach/TeachComputerOverlay.tsx
+#: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/Artifacts.tsx
 #: src/pages/KnowledgeSection.tsx
 #: src/pages/model-settings/connection-controls.tsx
@@ -1051,6 +1067,7 @@ msgid "Chat Settings"
 msgstr "채팅 설정"
 
 #: src/lib/identity-display.ts
+#: src/pages/shell/command-palette.tsx
 msgid "Chats"
 msgstr "채팅"
 
@@ -1294,6 +1311,7 @@ msgid "Complete"
 msgstr "완료"
 
 #: src/pages/SettingsOverlay.tsx
+#: src/pages/Shell.tsx
 #: src/pages/shell/bot-panel.tsx
 #: src/pages/shell/message-view.tsx
 msgid "Computer"
@@ -1327,10 +1345,6 @@ msgstr ""
 #: src/components/ComputersUnavailableHint.tsx
 msgid "Computers are off. Set SANDBOX_PROVIDER=docker with SANDBOX_SUPERVISOR_TOKEN, or set SANDBOX_PROVIDER to e2b, daytona, or boat with its API key. Recreate the stack after changing .env."
 msgstr "컴퓨터가 꺼져 있습니다. SANDBOX_PROVIDER=docker와 SANDBOX_SUPERVISOR_TOKEN을 설정하거나, SANDBOX_PROVIDER를 e2b, daytona, boat 중 하나로 두고 해당 API 키를 넣으세요. .env 변경 후 스택을 다시 만드세요."
-
-#: src/pages/PluginsOverlay.tsx
-msgid "Configure a plugin catalog on the server to connect apps."
-msgstr ""
 
 #: src/pages/ModelSettingsOverlay.tsx
 msgid "Configured by deployment"
@@ -1375,6 +1389,7 @@ msgid "Connect API key"
 msgstr "API 키 연결"
 
 #: src/components/SidebarFooter.tsx
+#: src/pages/PluginsOverlay.tsx
 msgid "Connect apps"
 msgstr "앱 연결"
 
@@ -1398,6 +1413,7 @@ msgstr "Treg 연결"
 #: src/pages/McpOAuthCallback.tsx
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/model-settings/provider-list.tsx
+#: src/pages/PluginsOverlay.tsx
 #: src/pages/shell/message-cards.tsx
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Connected"
@@ -1407,6 +1423,10 @@ msgstr "연결됨"
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Connected {0}."
 msgstr "{0}에 연결했습니다."
+
+#: src/pages/PluginsOverlay.tsx
+msgid "Connected integrations"
+msgstr ""
 
 #: src/pages/shell/message-cards.tsx
 msgid "Connected. Its tools are available from your next message."
@@ -2020,6 +2040,10 @@ msgstr "인증 정보는 암호화되며 모델에 전송되지 않습니다."
 msgid "Credit amount"
 msgstr ""
 
+#: src/components/ModelCredits.tsx
+msgid "Credits"
+msgstr ""
+
 #: src/pages/RoutineSchedule.tsx
 msgid "Cron"
 msgstr "Cron"
@@ -2088,6 +2112,7 @@ msgid "Default ({0})"
 msgstr ""
 
 #: src/pages/MemorySettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Default scope"
 msgstr "기본 기억 범위"
 
@@ -2124,6 +2149,7 @@ msgid "Delete {0}?"
 msgstr "{0}을 삭제할까요?"
 
 #: src/components/AccountAccess.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Delete account"
 msgstr "계정 삭제"
 
@@ -2179,6 +2205,7 @@ msgid "Description"
 msgstr "설명"
 
 #: src/components/DesktopUpdates.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Desktop app"
 msgstr ""
 
@@ -2578,6 +2605,7 @@ msgid "Finishing MCP connection…"
 msgstr "MCP 연결을 마무리하는 중…"
 
 #: src/components/ApprovalRulesSettings.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Flag unexpected actions"
 msgstr "예상하지 못한 작업 표시"
 
@@ -2819,7 +2847,7 @@ msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Integrations"
-msgstr "앱·도구 연동"
+msgstr ""
 
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
@@ -2880,8 +2908,13 @@ msgid "Knowledge"
 msgstr "지식"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Language"
 msgstr "언어"
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Language and region"
+msgstr ""
 
 #. placeholder {0}: new Date(state.checkedAt).toLocaleString()
 #: src/pages/RoutineEditor.tsx
@@ -2947,6 +2980,7 @@ msgid "Load older runs"
 msgstr "이전 실행 불러오기"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Load web images automatically"
 msgstr "웹 이미지 자동으로 불러오기"
 
@@ -3126,6 +3160,10 @@ msgstr ""
 msgid "Memory"
 msgstr "기억"
 
+#: src/pages/SettingsOverlay.tsx
+msgid "Memory provider"
+msgstr ""
+
 #: src/pages/shell/bot-panel.tsx
 msgid "Memory scope"
 msgstr "기억 사용 범위"
@@ -3178,6 +3216,7 @@ msgstr "{peer}에게 메시지 보냄"
 
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/MessagingSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Messaging"
 msgstr "메시징"
 
@@ -3198,10 +3237,6 @@ msgstr ""
 #: src/pages/WindowChrome.tsx
 msgid "Minimize"
 msgstr "최소화"
-
-#: src/pages/shell/sidebar-header.tsx
-msgid "Minimize bots"
-msgstr ""
 
 #: src/components/call/CallCard.tsx
 msgid "Minimize call"
@@ -3241,6 +3276,10 @@ msgstr "모델 ID"
 #: src/pages/model-settings/model-picker.tsx
 msgid "Model options"
 msgstr "모델 선택지"
+
+#: src/pages/SettingsOverlay.tsx
+msgid "Model providers"
+msgstr ""
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Model spend uses your provider keys."
@@ -3427,8 +3466,8 @@ msgstr "인증 없음"
 msgid "No authentication"
 msgstr "인증 없음"
 
-#: src/pages/shell/command-palette.tsx
-msgid "No bots"
+#: src/pages/PluginsOverlay.tsx
+msgid "No available integrations."
 msgstr ""
 
 #: src/pages/GroupPanel.tsx
@@ -3439,6 +3478,10 @@ msgstr ""
 #: src/pages/MessagingSettingsOverlay.tsx
 msgid "No chat apps linked yet."
 msgstr "아직 연결된 채팅 앱이 없습니다."
+
+#: src/pages/PluginsOverlay.tsx
+msgid "No connected integrations."
+msgstr ""
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "No credentials saved for this bot."
@@ -3498,6 +3541,8 @@ msgid "No remote MCP servers found"
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
+#: src/pages/shell/command-palette.tsx
 #: src/pages/SpaceSearch.tsx
 msgid "No results"
 msgstr "검색 결과가 없습니다"
@@ -3537,10 +3582,6 @@ msgstr "아직 확인되지 않음"
 #: src/pages/ModelBackupsSettings.tsx
 msgid "Not connected"
 msgstr "연결되지 않음"
-
-#: src/pages/PluginsOverlay.tsx
-msgid "Not in the plugin catalog"
-msgstr "플러그인 카탈로그에 없음"
 
 #: src/pages/shell/message-cards.tsx
 msgid "Not now"
@@ -3615,6 +3656,7 @@ msgid "Only empty spaces can be deleted. Delete its bots and groups first."
 msgstr ""
 
 #: src/components/markdown-link-prompt.tsx
+#: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/ScratchpadSection.tsx
 #: src/pages/shell/computer-panel.tsx
 #: src/pages/shell/message-view.tsx
@@ -3741,6 +3783,7 @@ msgid "Passkey"
 msgstr "패스키"
 
 #: src/components/PasskeySettings.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Passkeys"
 msgstr "패스키"
 
@@ -3830,6 +3873,10 @@ msgstr "고정"
 #: src/pages/Shell.tsx
 msgid "Pinned"
 msgstr "고정됨"
+
+#: src/pages/BillingSettingsPanel.tsx
+msgid "Plan"
+msgstr ""
 
 #: src/components/ArtifactFileCard.tsx
 msgid "Play {name}"
@@ -4018,7 +4065,6 @@ msgstr "리디렉션 URI"
 
 #: src/App.tsx
 #: src/components/ErrorBoundary.tsx
-#: src/components/ModelCredits.tsx
 #: src/pages/RoutineRunHistory.tsx
 msgid "Refresh"
 msgstr "새로고침"
@@ -4307,6 +4353,10 @@ msgstr "자동 실행"
 msgid "Routines that run while you're away"
 msgstr ""
 
+#: src/components/ApprovalRulesSettings.tsx
+msgid "Rules"
+msgstr ""
+
 #: src/pages/RoutineEditor.tsx
 msgid "Run at"
 msgstr "실행 시간"
@@ -4416,10 +4466,11 @@ msgstr "범위 (선택 사항)"
 
 #: src/pages/model-settings/model-picker.tsx
 #: src/pages/PluginsOverlay.tsx
-#: src/pages/Shell.tsx
+#: src/pages/SettingsOverlay.tsx
 #: src/pages/shell/bot-picker.tsx
 #: src/pages/shell/chat-model-picker.tsx
 #: src/pages/shell/command-palette.tsx
+#: src/pages/shell/sidebar-header.tsx
 msgid "Search"
 msgstr "검색"
 
@@ -4433,7 +4484,7 @@ msgid "Search artifacts…"
 msgstr ""
 
 #: src/pages/shell/command-palette.tsx
-msgid "Search bots and switch conversations"
+msgid "Search bots and chats"
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
@@ -4457,12 +4508,17 @@ msgstr "AI 서비스 검색"
 msgid "Search runs"
 msgstr "실행 검색"
 
+#: src/pages/SettingsOverlay.tsx
+msgid "Search settings"
+msgstr ""
+
 #. placeholder {0}: filters.query.trim()
 #: src/pages/ActivityList.tsx
 msgid "Search: {0}"
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
+#: src/pages/shell/command-palette.tsx
 #: src/pages/SpaceSearch.tsx
 msgid "Searching…"
 msgstr "검색 중…"
@@ -4500,6 +4556,7 @@ msgid "Send reset link"
 msgstr "재설정 링크 보내기"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Send with Enter"
 msgstr "Enter 키로 전송"
 
@@ -4515,15 +4572,25 @@ msgstr "Sentry 알림"
 msgid "Serenity endpoint is required."
 msgstr ""
 
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Server"
+msgstr ""
+
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/LocalSettings.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Server integrations"
 msgstr ""
 
 #: src/pages/McpServersOverlay.tsx
 msgid "Server name"
 msgstr "서버 이름"
+
+#: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
+msgid "Server settings"
+msgstr ""
 
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/McpServersOverlay.tsx
@@ -4540,6 +4607,10 @@ msgstr "서버 URL"
 #: src/pages/Shell.tsx
 msgid "Settings"
 msgstr "설정"
+
+#: src/pages/SettingsOverlay.tsx
+msgid "Settings results"
+msgstr ""
 
 #: src/pages/shell/composer-mentions.tsx
 msgid "Settings: General"
@@ -4568,6 +4639,7 @@ msgid "Shared chat with {GROUP_MEMBER_MIN}-{GROUP_MEMBER_MAX} bots. They all rep
 msgstr ""
 
 #: src/pages/KnowledgeSection.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Shared documents"
 msgstr "공유 문서"
 
@@ -4608,6 +4680,7 @@ msgid "Show settings"
 msgstr "설정 보기"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Show tool activity"
 msgstr ""
 
@@ -4616,6 +4689,7 @@ msgid "Show transcript"
 msgstr "대화 기록 표시"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Sidebar density"
 msgstr ""
 
@@ -4691,6 +4765,7 @@ msgid "Slide up to lock"
 msgstr ""
 
 #: src/components/SoftwareUpdateSection.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Software update"
 msgstr "소프트웨어 업데이트"
 
@@ -4800,6 +4875,7 @@ msgid "Stored encrypted"
 msgstr "암호화해 저장"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Stream replies"
 msgstr "답변 스트리밍"
 
@@ -4831,10 +4907,6 @@ msgstr "이미지 지원"
 #: src/pages/Onboarding.tsx
 msgid "Supports thinking"
 msgstr "사고 모드 지원"
-
-#: src/pages/shell/command-palette.tsx
-msgid "Switch bot"
-msgstr ""
 
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Switching…"
@@ -4921,6 +4993,11 @@ msgstr "서비스가 요청 속도를 제한하고 있습니다."
 #: src/pages/MemorySettingsOverlay.tsx
 msgid "The selected memory provider is not available in this build."
 msgstr "선택한 기억 서비스는 현재 빌드에서 사용할 수 없습니다."
+
+#: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
+msgid "Theme"
+msgstr ""
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "These saved settings can't be read. Remove it and add it again."
@@ -5029,6 +5106,7 @@ msgid "Time of day"
 msgstr "실행 시각"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Timezone"
 msgstr ""
 
@@ -5372,6 +5450,10 @@ msgstr "채팅 보기"
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Voice"
 msgstr "음성"
+
+#: src/pages/SettingsOverlay.tsx
+msgid "Voice providers"
+msgstr ""
 
 #: src/lib/model-connection-preflight.ts
 msgid "Wait a moment and test again."

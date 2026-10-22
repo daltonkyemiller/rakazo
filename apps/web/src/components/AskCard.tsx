@@ -3,11 +3,25 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { ChatMarkdown } from "@rakazo/chat-ui/web";
 import type { ThreadMessage } from "@rakazo/contracts";
 import { BOT_INSTRUCTIONS_MAX_LENGTH, commandVariableName } from "@rakazo/contracts";
-import { isApprovalAskBlock, isSecretAskBlock, selectedAskActionLabel } from "@rakazo/core";
+import type { BotColorDef } from "@rakazo/core";
+import {
+  askChoiceOptions,
+  isApprovalAskBlock,
+  isChoiceAskBlock,
+  isSecretAskBlock,
+  resolveAskChoice,
+  selectedAskActionLabel,
+} from "@rakazo/core";
 import { Button, Input, Textarea } from "@rakazo/ui-web";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { rpc } from "../lib/rpc";
 import { errorText } from "../lib/user-error";
+import {
+  ChoiceAnswer,
+  ChoiceOption,
+  questionSurfaceClass,
+  questionTextClass,
+} from "./QuestionChoices";
 
 export type AskBlock = Extract<ThreadMessage["blocks"][number], { kind: "ask" }>;
 
@@ -27,6 +41,10 @@ function formatAnsweredState(
   if (answer === "allow") return t`Allowed once`;
   if (answer === "always") return t`Always allowed`;
   if (answer === "deny") return t`Denied`;
+  return t`Answered: ${answer}`;
+}
+
+function answeredAnnouncement(answer: string): string {
   return t`Answered: ${answer}`;
 }
 
@@ -52,12 +70,15 @@ function secretFieldLabel(purpose: AskBlock["purpose"]): string {
 
 export function AskCard({
   block,
+  accent,
   canAnswer,
   canDismiss,
   onAnswer,
   onDismiss,
 }: {
   block: AskBlock;
+  /** The asking bot's identity color, which marks the picked option. */
+  accent?: BotColorDef;
   canAnswer: boolean;
   canDismiss: boolean;
   onAnswer: (text: string, username?: string) => Promise<void>;
@@ -65,6 +86,7 @@ export function AskCard({
   onDismiss: () => Promise<void>;
 }) {
   const { t } = useLingui();
+  const questionId = useId();
   const [editing, setEditing] = useState(false);
   const [answer, setAnswer] = useState(block.instructionUpdate?.after ?? "");
   const [dismissed, setDismissed] = useState(false);
@@ -166,6 +188,61 @@ export function AskCard({
         </div>
       </div>
     );
+
+  if (isChoiceAskBlock(block) && askActions) {
+    const options = askChoiceOptions(askActions);
+    const pickedId = displayedAnswer
+      ? resolveAskChoice(displayedAnswer, askActions)?.id
+      : undefined;
+    const picked = options.find((option) => option.id === pickedId);
+    const answerLabel = picked?.label ?? displayedAnswer;
+    return (
+      <div data-testid="question-card" className={questionSurfaceClass}>
+        <div id={questionId} className={questionTextClass(answered)}>
+          <ChatMarkdown>{block.text}</ChatMarkdown>
+        </div>
+        {block.detail && !answered ? (
+          <p
+            className={`mt-1 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[13.5px] leading-[1.45] text-muted-foreground ${block.detailFormat === "code" ? "font-mono text-[12.5px]" : ""}`}
+          >
+            {block.detail}
+          </p>
+        ) : null}
+        {answered ? (
+          answerLabel ? (
+            <ChoiceAnswer
+              letter={picked?.letter}
+              label={answerLabel}
+              accent={accent}
+              announcement={answeredAnnouncement(answerLabel)}
+            />
+          ) : null
+        ) : !canAnswer ? (
+          <div className="mt-2 text-[13.5px] text-muted-foreground">
+            <Trans>No longer active</Trans>
+          </div>
+        ) : (
+          <fieldset aria-labelledby={questionId} className="mt-2 flex min-w-0 flex-col gap-0.5">
+            {options.map((option) => (
+              <ChoiceOption
+                key={option.id}
+                letter={option.letter}
+                label={option.label}
+                pending={pendingAction === option.id}
+                disabled={submitting}
+                onChoose={() => void submitAnswer(option.id)}
+              />
+            ))}
+          </fieldset>
+        )}
+        {error ? (
+          <p role="alert" className="mt-2 text-[13px] text-destructive">
+            {error}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div

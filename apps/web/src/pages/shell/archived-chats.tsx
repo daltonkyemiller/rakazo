@@ -14,7 +14,6 @@ import type { createSpaceRpc } from "../../lib/rpc";
 export function ArchivedChats({
   archivedBots,
   archivedGroups,
-  showSpaceSearch,
   rpc,
   refreshBots,
   setDeleteTarget,
@@ -22,7 +21,6 @@ export function ArchivedChats({
 }: {
   archivedBots: Bot[];
   archivedGroups: Group[];
-  showSpaceSearch: boolean;
   rpc: ReturnType<typeof createSpaceRpc>;
   refreshBots: (includeArchived?: boolean) => Promise<void>;
   setDeleteTarget: (bot: Bot) => void;
@@ -30,7 +28,7 @@ export function ArchivedChats({
 }) {
   const { t } = useLingui();
   const [archivedOpen, setArchivedOpen] = useState(false);
-  return archivedBots.length + archivedGroups.length > 0 && !showSpaceSearch ? (
+  return archivedBots.length + archivedGroups.length > 0 ? (
     <Collapsible
       open={archivedOpen}
       onOpenChange={setArchivedOpen}

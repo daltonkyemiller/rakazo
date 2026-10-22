@@ -310,7 +310,7 @@ export function ConnectionControls({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="mt-3 rounded-full"
+                className="mt-3"
                 disabled={busy || preflightTesting || apiKey.trim().length < 8}
                 onClick={() => void testApiKeyConnection()}
               >
@@ -327,7 +327,7 @@ export function ConnectionControls({
           <Button
             type="button"
             variant="secondary"
-            className="mt-3 rounded-full"
+            className="mt-3"
             size="sm"
             disabled={busy || !cloudflareRoutingReady || apiKey.trim().length < 8}
             onClick={() => void connectKey()}
@@ -392,7 +392,7 @@ export function CompatibleKeyControls({
       <Button
         type="button"
         variant="secondary"
-        className="mt-3 rounded-full"
+        className="mt-3"
         size="sm"
         disabled={busy || !openAiCompatibleReady}
         onClick={() => void connectKey()}
@@ -436,7 +436,6 @@ export function SaveModelButton({
       <Button
         type="button"
         variant="secondary"
-        className="rounded-full"
         size="sm"
         disabled={
           busy ||

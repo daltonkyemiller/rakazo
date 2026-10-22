@@ -1,10 +1,17 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { MessageBlock } from "@rakazo/contracts";
+import type { BotColorDef } from "@rakazo/core";
 import { appConnectedInput, waitForConnection } from "@rakazo/core";
 import { Button, Dialog, DialogClose, DialogContent, DialogTitle } from "@rakazo/ui-web";
 import { X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { BuiCard, SuccessPop } from "../../components/ai/primitives";
+import {
+  ChoiceAnswer,
+  ChoiceOption,
+  questionSurfaceClass,
+  questionTextClass,
+} from "../../components/QuestionChoices";
 import type { ArtifactTarget } from "../../lib/artifact-open";
 import { chartViewport } from "../../lib/chart-viewport";
 import { connectMcpOauth } from "../../lib/mcp-connect";
@@ -16,32 +23,37 @@ import { errorText } from "../../lib/user-error";
 export function ChoiceCard({
   botId,
   block,
+  accent,
   onBotChanged,
 }: {
   botId: string;
   block: Extract<MessageBlock, { kind: "choice" }>;
+  accent?: BotColorDef;
   onBotChanged: () => Promise<void>;
 }) {
   const { t } = useLingui();
-  const [pending, setPending] = useState(false);
+  const questionId = useId();
+  const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [locallyDismissed, setLocallyDismissed] = useState(false);
+  const pending = pendingId !== null;
   const dismissed = locallyDismissed || block.answerId === "_dismissed";
+  const picked = block.options.find((option) => option.id === block.answerId);
 
   async function choose(optionId: string) {
-    setPending(true);
+    setPendingId(optionId);
     setError(null);
     try {
       await rpc.onboarding.choose({ botId, optionId });
       await onBotChanged();
     } catch (err) {
       setError(errorText(err, t`Could not save this choice`));
-      setPending(false);
+      setPendingId(null);
     }
   }
 
   async function dismiss() {
-    setPending(true);
+    setPendingId("_dismissed");
     setError(null);
     try {
       await rpc.onboarding.dismissFocus({ botId });
@@ -49,15 +61,19 @@ export function ChoiceCard({
       void onBotChanged().catch(() => undefined);
     } catch (err) {
       setError(errorText(err, t`Could not dismiss`));
-      setPending(false);
+      setPendingId(null);
     }
   }
 
   if (dismissed) return null;
 
+  const optionLabel = (option: (typeof block.options)[number]) => (
+    <OnboardingFocusOptionLabel id={option.id} label={option.label} question={block.question} />
+  );
+
   return (
     <div className="flex justify-start">
-      <div className="relative w-[420px] max-w-full rounded-[20px] bg-card px-[18px] py-[14px]">
+      <div data-testid="choice-card" className={`relative ${questionSurfaceClass}`}>
         {!block.answerId ? (
           <Button
             variant="ghost"
@@ -70,42 +86,35 @@ export function ChoiceCard({
             <X size={16} strokeWidth={1.8} />
           </Button>
         ) : null}
-        <div className="pe-8 text-[15.5px] text-foreground/90">
+        <div id={questionId} className={`pe-8 ${questionTextClass(Boolean(block.answerId))}`}>
           <OnboardingFocusQuestion question={block.question} />
         </div>
-        {block.subtitle ? (
-          <div className="mt-0.5 text-[13px] text-foreground/75">{block.subtitle}</div>
+        {block.subtitle && !block.answerId ? (
+          <div className="mt-0.5 text-[13.5px] text-muted-foreground">{block.subtitle}</div>
         ) : null}
-        <div className="mt-3 space-y-2">
-          {block.options
-            .filter((option) => !block.answerId || option.id === block.answerId)
-            .map((option) => (
-              <button
+        {block.answerId ? (
+          picked ? (
+            <ChoiceAnswer letter={picked.letter} label={optionLabel(picked)} accent={accent} />
+          ) : null
+        ) : (
+          <fieldset aria-labelledby={questionId} className="mt-2 flex min-w-0 flex-col gap-0.5">
+            {block.options.map((option) => (
+              <ChoiceOption
                 key={option.id}
-                type="button"
-                disabled={Boolean(block.answerId) || pending}
-                onClick={() => void choose(option.id)}
-                className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-start text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:opacity-60 ${block.answerId ? "bg-foreground/10" : "bg-background enabled:hover:bg-foreground/5 enabled:active:bg-foreground/15"}`}
-              >
-                <span className="grid h-[24px] w-[24px] shrink-0 place-items-center rounded-[7px] bg-card text-[12.5px] leading-none font-medium text-foreground/75">
-                  {option.letter}
-                </span>
-                <span
-                  className={`flex-1 text-[15px] leading-[1.35] ${block.answerId ? "text-foreground/75" : "text-foreground"}`}
-                >
-                  <OnboardingFocusOptionLabel
-                    id={option.id}
-                    label={option.label}
-                    question={block.question}
-                  />
-                </span>
-                {block.answerId === option.id ? (
-                  <span className="text-foreground/75">✓</span>
-                ) : null}
-              </button>
+                letter={option.letter}
+                label={optionLabel(option)}
+                pending={pendingId === option.id}
+                disabled={pending}
+                onChoose={() => void choose(option.id)}
+              />
             ))}
-        </div>
-        {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
+          </fieldset>
+        )}
+        {error ? (
+          <p role="alert" className="mt-2 text-[13px] text-destructive">
+            {error}
+          </p>
+        ) : null}
       </div>
     </div>
   );

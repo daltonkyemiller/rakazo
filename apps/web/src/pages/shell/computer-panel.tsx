@@ -1,15 +1,21 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { Bot, ComputerStatus, Routine } from "@rakazo/contracts";
+import { BotAvatar } from "@rakazo/ui-web";
 import { Maximize2 } from "lucide-react";
 import type { ReactNode } from "react";
+import { ComputerMaintenanceActions } from "../../components/ComputerMaintenanceActions";
 import { ComputersUnavailableHint } from "../../components/ComputersUnavailableHint";
 import { screenIframeSandbox } from "../../lib/computer-screen";
+import { computerPanelNeedsMaintenance } from "../../lib/thread-events";
 import { RoutineListHeader, RoutineListRow } from "../RoutineEditor";
+import { BotPanelHero } from "./bot-panel";
 import { computerLabel, computerPlaceholder, DesktopKindEmptyState } from "./computer-view";
 
 type ComputerPanelProps = {
   bot: Bot;
+  nav?: ReactNode;
+  onComputerChanged: () => Promise<void>;
   computer: ComputerStatus | null;
   computerOpen: boolean;
   embeddedScreenUrl: string | null;
@@ -33,6 +39,8 @@ type ComputerPanelProps = {
 
 export function ComputerPanel({
   bot,
+  nav,
+  onComputerChanged,
   computer,
   computerOpen,
   embeddedScreenUrl,
@@ -55,9 +63,15 @@ export function ComputerPanel({
 }: ComputerPanelProps) {
   return (
     <div>
+      <BotPanelHero
+        avatar={<BotAvatar color={bot.color} identity={bot.id} size={64} status={bot.status} />}
+        name={bot.name}
+        title={bot.title}
+        nav={nav}
+      />
       <div
         data-testid="computer-preview"
-        className={`group relative rounded-[14px] bg-background ${
+        className={`group relative mt-5 rounded-[14px] bg-background ${
           showingRecoveryHint ? "" : "aspect-[16/10] overflow-hidden"
         }`}
       >
@@ -112,9 +126,21 @@ export function ComputerPanel({
           </button>
         ) : null}
       </div>
-      <p className="mt-2 truncate text-[13.5px] text-muted-foreground" dir="auto">
-        {t`${bot.name}'s screen`}
-      </p>
+      <div className="mt-2 flex min-h-7 items-center gap-2">
+        <p className="min-w-0 flex-1 truncate text-[13.5px] text-muted-foreground" dir="auto">
+          {t`${bot.name}'s screen`}
+        </p>
+        {computer?.state ? (
+          <span className="shrink-0 text-[12.5px] text-muted-foreground/80">{computer.state}</span>
+        ) : null}
+        {!computerOpen && computerPanelNeedsMaintenance(computer?.state, booting) ? (
+          <ComputerMaintenanceActions
+            botId={bot.id}
+            computer={computer}
+            onChanged={onComputerChanged}
+          />
+        ) : null}
+      </div>
 
       <RoutineListHeader onCreate={onCreateRoutine} />
       {routines.map((routine) => (

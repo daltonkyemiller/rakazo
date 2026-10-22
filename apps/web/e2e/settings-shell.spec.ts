@@ -1,6 +1,46 @@
 import { expect, test } from "@playwright/test";
 import { captureScreenshot, completeOnboarding, openUserSettings, signup } from "./helpers";
 
+test("settings search reveals advanced options and navigates across sections", async ({
+  page,
+}, testInfo) => {
+  await signup(page, `settings-search-${Date.now()}@rakazo.test`, "password12", "Settings Demo");
+  await completeOnboarding(page);
+  const settings = await openUserSettings(page);
+  const search = settings.getByRole("combobox", { name: "Search settings" });
+  for (const theme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: theme });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+    await captureScreenshot(page, testInfo, `settings-flat-general-${theme}`);
+  }
+  await page.keyboard.press("Control+f");
+  await expect(search).toBeFocused();
+  await search.fill("stream");
+  await expect(settings.getByRole("option", { name: "Stream replies General" })).toBeVisible();
+  await captureScreenshot(page, testInfo, "settings-search-advanced-result");
+  await search.press("Enter");
+  const streaming = settings.getByTestId("response-streaming-toggle");
+  await expect(streaming).toBeFocused();
+  await expect(streaming).toBeInViewport();
+  await expect(
+    settings.getByTestId("advanced-settings").locator("button[aria-expanded]"),
+  ).toHaveAttribute("aria-expanded", "true");
+
+  await page.keyboard.press("Control+f");
+  await search.fill("transcription");
+  await search.press("Enter");
+  await expect(settings).toHaveAttribute("data-settings-section", "voice");
+  await expect(settings.getByTestId("voice-settings")).toBeVisible();
+  await expect(search).toHaveValue("");
+  await captureScreenshot(page, testInfo, "settings-search-voice-target");
+
+  await search.fill("no-matching-setting");
+  await expect(settings.getByRole("status")).toHaveText("No results");
+  await search.press("Escape");
+  await expect(settings).toBeVisible();
+  await expect(search).toHaveValue("");
+});
+
 test("changing language updates settings overflow without resizing", async ({ page }, testInfo) => {
   const stamp = Date.now();
   await signup(page, `settings-language-${stamp}@rakazo.test`, "password12", "Settings");

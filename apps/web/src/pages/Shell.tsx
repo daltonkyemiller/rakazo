@@ -25,7 +25,7 @@ import {
   attachmentSizeLabel,
   normalizeCreateBotProfile,
 } from "@rakazo/contracts";
-import type { ComposerMention, ReadBoundary } from "@rakazo/core";
+import type { ComposerMention, MentionPickerConnector, ReadBoundary } from "@rakazo/core";
 import {
   accountDisplay,
   answerableAskMessageIds,
@@ -40,6 +40,7 @@ import {
   isRetryableError,
   isRunTerminalEvent,
   isRunWorking,
+  mentionPickerConnectors,
   reorderBotTo,
   resolveComposerSendPlan,
   runThreadSubscription,
@@ -68,6 +69,7 @@ import {
 } from "@rakazo/ui-web";
 import { useIsMobile } from "@rakazo/ui-web/hooks/use-mobile";
 import {
+  ChevronRight,
   Menu,
   Monitor,
   Pencil,
@@ -92,7 +94,6 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ComputerMaintenanceActions } from "../components/ComputerMaintenanceActions";
 import { computersAreUnavailable } from "../components/ComputersUnavailableHint";
 import { ComputerUpdateProgress } from "../components/ComputerUpdateProgress";
 import { CallCard, CallReturnBar } from "../components/call/CallCard";
@@ -148,6 +149,7 @@ import {
   screenFrameStarted,
 } from "../lib/computer-screen";
 import { connectedAppMarks } from "../lib/connected-apps";
+import { desktopBridge } from "../lib/desktop";
 import { scheduleFocusPrompt } from "../lib/focus-prompt";
 import { localTimezone } from "../lib/local-timezone";
 import {
@@ -178,7 +180,6 @@ import {
   activeThreadRuns,
   applyThreadSendReceipt,
   clearActiveThreadRuns,
-  computerPanelNeedsMaintenance,
   computerPanelNeedsScreen,
   computerTakeoverBlocked,
   isComputerStatusEvent,
@@ -201,7 +202,6 @@ import { HostComputerPrompt } from "./HostComputerPrompt";
 import { ResizableSidePanel } from "./ResizableSidePanel";
 import { RoutineEditor } from "./RoutineEditor";
 import type { SettingsSection } from "./SettingsOverlay";
-import { SpaceSearchResults } from "./SpaceSearch";
 import { ArchivedChats } from "./shell/archived-chats";
 import { BotSettings, CreateBotForm } from "./shell/bot-panel";
 import type { PendingAttachment } from "./shell/chat-shared";
@@ -338,9 +338,6 @@ function SpaceShell() {
   useEffect(() => {
     setBotsSidebarCollapsed(readBotsSidebarCollapsed(userId));
   }, [userId]);
-  const [query, setQuery] = useState("");
-  const [searchHits, setSearchHits] = useState<SearchHit[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
   const [snapshot, setSnapshot] = useState<ThreadSnapshot | null>(null);
   const snapshotRef = useRef<ThreadSnapshot | null>(null);
   const streamResponses = useSyncExternalStore(
@@ -416,14 +413,7 @@ function SpaceShell() {
   const [agentSkills, setAgentSkills] = useState<AgentSkillCatalogEntry[]>([]);
   const [mentionRoutines, setMentionRoutines] = useState<Array<Routine & { botName?: string }>>([]);
   const [footerLogos, setFooterLogos] = useState<Array<{ name: string; logo: string | null }>>([]);
-  const [mentionConnectors, setMentionConnectors] = useState<
-    Array<{
-      id: string;
-      name: string;
-      authStatus: "connected" | "needs_auth";
-      connectionId?: string;
-    }>
-  >([]);
+  const [mentionConnectors, setMentionConnectors] = useState<MentionPickerConnector[]>([]);
   const [teachBusy, setTeachBusy] = useState(false);
   const [computer, setComputer] = useState<ComputerStatus | null>(null);
   const computerRef = useRef<ComputerStatus | null>(null);
@@ -547,7 +537,6 @@ function SpaceShell() {
     Number(Boolean(activityFilters.dateRange.from)) +
     Number(Boolean(activityFilters.dateRange.to));
   const toggleActivityMode = useCallback(() => {
-    setQuery("");
     setActivityFilters(emptyActivityFilters());
     setActivityFiltersExpanded(false);
     setActivityMode((on) => {
@@ -1610,13 +1599,12 @@ function SpaceShell() {
   );
   const sidebarGroups = useMemo(
     () =>
-      sidebarGroupsForSpaces(sidebarSpaces, miniSidebar ? "" : query, {
+      sidebarGroupsForSpaces(sidebarSpaces, "", {
         pinned: t`Pinned`,
         unassigned: t`Unassigned`,
       }),
-    [sidebarSpaces, query, miniSidebar, t],
+    [sidebarSpaces, t],
   );
-  // The Dock badge ignores the roster search box: a filter must not hide unread chats.
   const unreadChatCount = useMemo(
     () => countUnreadChats(sidebarGroupsForSpaces(sidebarSpaces, "")),
     [sidebarSpaces],
@@ -1785,39 +1773,7 @@ function SpaceShell() {
     },
     [draggedBot, refreshBots, reorderRosterBot, rosterDropAction, t],
   );
-  const spaceQuery = query.trim();
-  const showSpaceSearch = !activityMode && spaceQuery.length > 0;
-
-  useEffect(() => {
-    if (!showSpaceSearch) {
-      setSearchHits([]);
-      setSearchLoading(false);
-      return;
-    }
-    const abort = new AbortController();
-    const timer = window.setTimeout(() => {
-      setSearchLoading(true);
-      void rpc.search
-        .query({ q: spaceQuery })
-        .then((result) => {
-          if (!abort.signal.aborted) setSearchHits(result.hits);
-        })
-        .catch(() => {
-          if (!abort.signal.aborted) setSearchHits([]);
-        })
-        .finally(() => {
-          if (!abort.signal.aborted) setSearchLoading(false);
-        });
-    }, 200);
-    return () => {
-      abort.abort();
-      window.clearTimeout(timer);
-    };
-  }, [showSpaceSearch, spaceQuery]);
-
   async function jumpToSearchHit(hit: SearchHit) {
-    setQuery("");
-    setSearchHits([]);
     const params = new URLSearchParams();
     if (hit.messageId) params.set("m", hit.messageId);
     if (hit.routineId) params.set("routine", hit.routineId);
@@ -2078,37 +2034,10 @@ function SpaceShell() {
       catalogRequest,
     ]).then(([connections, catalog]) => {
       if (cancelled) return;
-      const connected = connections?.filter((row) => row.status === "connected") ?? [];
       if (catalog && connections) setFooterLogos(connectedAppMarks(catalog, connections));
-      const options: Array<{
-        id: string;
-        name: string;
-        authStatus: "connected" | "needs_auth";
-        connectionId?: string;
-      }> = connected.map((row) => ({
-        id: row.id,
-        name: row.displayName,
-        authStatus: "connected" as const,
-        connectionId: row.id,
-      }));
-      for (const item of catalog ?? []) {
-        if (item.connected || item.noAuth) continue;
-        if (
-          connected.some(
-            (row) =>
-              row.provider.toLowerCase() === item.slug.toLowerCase() ||
-              row.displayName.toLowerCase() === item.name.toLowerCase(),
-          )
-        ) {
-          continue;
-        }
-        options.push({
-          id: `catalog:${item.connectorId}:${item.slug}`,
-          name: item.name,
-          authStatus: "needs_auth",
-        });
-      }
-      setMentionConnectors(bots.length ? options : []);
+      setMentionConnectors(
+        bots.length ? mentionPickerConnectors(connections ?? [], catalog ?? []) : [],
+      );
     });
     return () => {
       cancelled = true;
@@ -2561,6 +2490,29 @@ function SpaceShell() {
     setSettingsSection(section);
     setSettingsOpen(true);
   }
+
+  useEffect(
+    () =>
+      desktopBridge()?.settings?.onOpen(() => {
+        setSettingsSpaceId(null);
+        setSettingsSection("general");
+        setSettingsOpen(true);
+      }),
+    [],
+  );
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "," || (!event.metaKey && !event.ctrlKey) || event.altKey || event.shiftKey)
+        return;
+      event.preventDefault();
+      setSettingsSpaceId(null);
+      setSettingsSection("general");
+      setSettingsOpen(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Space-scoped sections bind their own rpc client to this space, so another
   // space's settings open in place without switching the app or reloading.
@@ -3077,6 +3029,28 @@ function SpaceShell() {
       }}
     />
   ) : null;
+  const botPanelTabs = active ? (
+    <div className="flex items-center gap-1">
+      {(
+        [
+          ["settings", t`Show settings`, t`Settings`],
+          ["computer", t`Show computer`, t`Computer`],
+        ] as const
+      ).map(([target, label, text]) => (
+        <button
+          key={target}
+          type="button"
+          aria-label={label}
+          aria-pressed={panel === target}
+          onClick={() => setPanel(target)}
+          className="h-7 rounded-md px-2.5 text-[13px] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring aria-pressed:bg-muted aria-pressed:font-medium aria-pressed:text-foreground motion-reduce:transition-none"
+        >
+          {text}
+        </button>
+      ))}
+    </div>
+  ) : null;
+
   const shell = (
     <BotsSidebarLayout
       userId={userId}
@@ -3170,7 +3144,10 @@ function SpaceShell() {
             if (miniSidebar) setBotsSidebarCollapsedPref(false);
             toggleActivityMode();
           }}
-          setBotsSidebarCollapsedPref={setBotsSidebarCollapsedPref}
+          onSearch={() => {
+            setMobileSidebarOpen(false);
+            setCommandPaletteOpen(true);
+          }}
           bots={bots}
           setMobileSidebarOpen={setMobileSidebarOpen}
           setPanel={setPanel}
@@ -3178,132 +3155,97 @@ function SpaceShell() {
           setNewSpaceOpen={setNewSpaceOpen}
           setPickerInfoTopic={setPickerInfoTopic}
         />
-        {miniSidebar ? (
-          <IconTooltip label={t`Search`}>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t`Search`}
-              className="mx-auto mb-1"
-              onClick={() => {
-                setBotsSidebarCollapsedPref(false);
-                requestAnimationFrame(() =>
-                  document.querySelector<HTMLInputElement>('input[name="sidebar-search"]')?.focus(),
-                );
-              }}
-            >
-              <Search size={16} aria-hidden="true" />
-            </Button>
-          </IconTooltip>
-        ) : (
+        {activityMode && !miniSidebar ? (
           <InputGroup
             data-testid="sidebar-search"
-            className="mx-2.5 mb-3 w-auto rounded-xl bg-card dark:bg-input border border-border text-muted-foreground focus-within:border-ring"
+            className="mx-3 mb-2 h-8 w-auto rounded-full border border-sidebar-border bg-sidebar-accent text-muted-foreground focus-within:border-ring"
           >
             <InputGroupAddon>
-              <Search size={16} strokeWidth={1.8} aria-hidden="true" />
+              <Search size={15} strokeWidth={1.8} aria-hidden="true" />
             </InputGroupAddon>
             <InputGroupInput
-              value={activityMode ? activityFilters.query : query}
-              onChange={(e) => {
-                if (activityMode) setActivityFilters({ ...activityFilters, query: e.target.value });
-                else setQuery(e.target.value);
-              }}
+              value={activityFilters.query}
+              onChange={(e) => setActivityFilters({ ...activityFilters, query: e.target.value })}
               onKeyDown={(event) => {
-                if (activityMode && event.key === "Escape") {
-                  setActivityFilters({ ...activityFilters, query: "" });
-                }
+                if (event.key === "Escape") setActivityFilters({ ...activityFilters, query: "" });
               }}
-              placeholder={activityMode ? t`Search runs` : t`Search`}
-              aria-label={activityMode ? t`Search runs` : t`Search`}
+              placeholder={t`Search runs`}
+              aria-label={t`Search runs`}
               autoComplete="off"
               name="sidebar-search"
             />
-            {activityMode ? (
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton
-                  size="icon-sm"
-                  aria-label={t`Filters`}
-                  aria-expanded={activityFiltersExpanded}
-                  aria-controls={activityFiltersId}
-                  onClick={() => setActivityFiltersExpanded((expanded) => !expanded)}
-                  className="relative rounded-lg"
-                >
-                  <SlidersHorizontal size={16} aria-hidden="true" />
-                  {activityFilterCount > 0 ? (
-                    <span
-                      data-testid="activity-filter-indicator"
-                      aria-hidden="true"
-                      className="absolute end-1 top-1 size-1.5 rounded-full bg-primary"
-                    />
-                  ) : null}
-                </InputGroupButton>
-              </InputGroupAddon>
-            ) : null}
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                size="icon-sm"
+                aria-label={t`Filters`}
+                aria-expanded={activityFiltersExpanded}
+                aria-controls={activityFiltersId}
+                onClick={() => setActivityFiltersExpanded((expanded) => !expanded)}
+                className="relative rounded-full"
+              >
+                <SlidersHorizontal size={15} aria-hidden="true" />
+                {activityFilterCount > 0 ? (
+                  <span
+                    data-testid="activity-filter-indicator"
+                    aria-hidden="true"
+                    className="absolute end-1 top-1 size-1.5 rounded-full bg-primary"
+                  />
+                ) : null}
+              </InputGroupButton>
+            </InputGroupAddon>
           </InputGroup>
-        )}
-        <div className="rk-scroll scroll-fade-y scroll-fade-12 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2.5 pb-2.5">
-          {showSpaceSearch && !miniSidebar ? (
-            <SpaceSearchResults
-              hits={searchHits}
-              loading={searchLoading}
-              onSelect={(hit) => void jumpToSearchHit(hit)}
+        ) : null}
+        <div className="rk-scroll scroll-fade-y scroll-fade-12 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-2.5">
+          {activityMode && !miniSidebar ? (
+            <ActivityList
+              filters={activityFilters}
+              onFiltersChange={setActivityFilters}
+              filtersExpanded={activityFiltersExpanded}
+              filtersId={activityFiltersId}
+              onOpenRun={(run) => {
+                setMobileSidebarOpen(false);
+                if (run.groupId) navigate(`/app/g/${run.groupId}`);
+                else navigate(`/app/${run.botId}`);
+              }}
             />
-          ) : (
-            <>
-              {activityMode && !miniSidebar ? (
-                <ActivityList
-                  filters={activityFilters}
-                  onFiltersChange={setActivityFilters}
-                  filtersExpanded={activityFiltersExpanded}
-                  filtersId={activityFiltersId}
-                  onOpenRun={(run) => {
-                    setMobileSidebarOpen(false);
-                    if (run.groupId) navigate(`/app/g/${run.groupId}`);
-                    else navigate(`/app/${run.botId}`);
-                  }}
-                />
-              ) : null}
-              <SidebarRoster
-                mini={miniSidebar}
-                sidebarGroups={sidebarGroups}
-                collapsedSidebarSections={collapsedSidebarSections}
-                collapsedRosterParents={collapsedRosterParents}
-                bootstrapMe={bootstrapMe}
-                botSections={botSections}
-                spaces={spaces}
-                rosterDropKey={rosterDropKey}
-                setRosterDropKey={setRosterDropKey}
-                rosterDropAction={rosterDropAction}
-                applyRosterDrop={applyRosterDrop}
-                openSpaceChat={openSpaceChat}
-                spaceMenuAnchor={spaceMenuAnchor}
-                setSpaceMenu={setSpaceMenu}
-                setRenameSectionTarget={setRenameSectionTarget}
-                setDeleteSectionTarget={setDeleteSectionTarget}
-                toggleSidebarSection={toggleSidebarSection}
-                inGroup={inGroup}
-                active={active}
-                activeGroup={activeGroup}
-                botsSidebarDensity={botsSidebarDensity}
-                dismissedRunErrorIds={dismissedRunErrorIds}
-                displayedRunError={displayedRunError}
-                draggedBotId={draggedBotId}
-                setDraggedBotId={setDraggedBotId}
-                toggleRosterParent={toggleRosterParent}
-                botMenu={botMenu}
-                setBotMenu={setBotMenu}
-                reorderRosterBot={reorderRosterBot}
-                activeSnapshot={activeSnapshot}
-                botMenuContent={botMenuContent}
-              />
-            </>
-          )}
+          ) : null}
+          <SidebarRoster
+            mini={miniSidebar}
+            sidebarGroups={sidebarGroups}
+            collapsedSidebarSections={collapsedSidebarSections}
+            collapsedRosterParents={collapsedRosterParents}
+            bootstrapMe={bootstrapMe}
+            botSections={botSections}
+            spaces={spaces}
+            rosterDropKey={rosterDropKey}
+            setRosterDropKey={setRosterDropKey}
+            rosterDropAction={rosterDropAction}
+            applyRosterDrop={applyRosterDrop}
+            openSpaceChat={openSpaceChat}
+            spaceMenuAnchor={spaceMenuAnchor}
+            setSpaceMenu={setSpaceMenu}
+            setRenameSectionTarget={setRenameSectionTarget}
+            setDeleteSectionTarget={setDeleteSectionTarget}
+            toggleSidebarSection={toggleSidebarSection}
+            inGroup={inGroup}
+            active={active}
+            activeGroup={activeGroup}
+            botsSidebarDensity={botsSidebarDensity}
+            dismissedRunErrorIds={dismissedRunErrorIds}
+            displayedRunError={displayedRunError}
+            draggedBotId={draggedBotId}
+            setDraggedBotId={setDraggedBotId}
+            toggleRosterParent={toggleRosterParent}
+            botMenu={botMenu}
+            setBotMenu={setBotMenu}
+            reorderRosterBot={reorderRosterBot}
+            activeSnapshot={activeSnapshot}
+            botMenuContent={botMenuContent}
+          />
           <div className={miniSidebar ? "hidden" : "contents"}>
             <ArchivedChats
               archivedBots={archivedBots}
               archivedGroups={archivedGroups}
-              showSpaceSearch={showSpaceSearch}
               rpc={rpc}
               refreshBots={refreshBots}
               setDeleteTarget={setDeleteTarget}
@@ -3366,7 +3308,7 @@ function SpaceShell() {
         data-space-switch="main"
         aria-hidden={mobileSidebarOpen || undefined}
         inert={mobileSidebarOpen}
-        className="isolate flex min-w-0 flex-1 flex-col bg-background"
+        className="isolate flex min-w-0 flex-1 flex-col overflow-hidden bg-background"
       >
         {/* Inside main so the composer and its menus stay above it. */}
         {!mobileSidebarOpen ? (
@@ -3376,7 +3318,7 @@ function SpaceShell() {
             className="absolute bottom-20 start-0 top-16 z-20 w-8 touch-none md:hidden"
           />
         ) : null}
-        <div className="app-drag flex items-center justify-between border-b border-sidebar-border px-3 py-[17px] md:px-[22px]">
+        <div className="app-drag relative flex min-h-[52px] items-center justify-between gap-2 px-3 py-2 md:px-4">
           <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
@@ -3386,34 +3328,38 @@ function SpaceShell() {
             >
               <Menu size={19} strokeWidth={1.7} />
             </button>
-            <button
-              type="button"
-              data-testid="bot-settings-trigger"
-              onClick={() => setPanel(inGroup ? "group-settings" : "settings")}
-              className="app-no-drag flex min-w-0 items-center gap-3"
-            >
-              {inGroup ? (
-                <GroupAvatar
-                  members={activeSnapshot?.members ?? activeGroup?.members ?? []}
-                  size={26}
-                />
-              ) : active ? (
-                <BotAvatar
-                  color={active.color}
-                  identity={active.id}
-                  size={26}
-                  status={active.status}
-                />
-              ) : null}
-              <span className="min-w-0">
-                <span className="block truncate text-[16px] font-medium text-foreground" dir="auto">
-                  {inGroup
-                    ? (activeGroup?.name ?? activeSnapshot?.groupName ?? t`Group`)
-                    : (active?.name ?? t`Select a bot`)}
-                </span>
-              </span>
-            </button>
           </div>
+          <button
+            type="button"
+            data-testid="bot-settings-trigger"
+            onClick={() => setPanel(inGroup ? "group-settings" : "settings")}
+            className="app-no-drag group/identity absolute top-1/2 left-1/2 flex h-9 max-w-[calc(100%-200px)] -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full border border-border bg-card/85 ps-1.5 pe-3 shadow-sm backdrop-blur-md outline-none hover:bg-card focus-visible:ring-2 focus-visible:ring-ring max-md:max-w-[calc(100%-140px)]"
+          >
+            {inGroup ? (
+              <GroupAvatar
+                members={activeSnapshot?.members ?? activeGroup?.members ?? []}
+                size={24}
+              />
+            ) : active ? (
+              <BotAvatar
+                color={active.color}
+                identity={active.id}
+                size={24}
+                status={active.status}
+              />
+            ) : null}
+            <span className="min-w-0 truncate text-[14px] font-medium text-foreground" dir="auto">
+              {inGroup
+                ? (activeGroup?.name ?? activeSnapshot?.groupName ?? t`Group`)
+                : (active?.name ?? t`Select a bot`)}
+            </span>
+            <ChevronRight
+              size={14}
+              strokeWidth={2}
+              aria-hidden="true"
+              className="-me-1 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/identity:opacity-100 group-focus-visible/identity:opacity-100 motion-reduce:transition-none rtl:rotate-180"
+            />
+          </button>
           <div className="flex items-center gap-1">
             {bootstrapMe?.phoneCallsEnabled && !inGroup && active ? (
               <IconTooltip label={call?.botId === active.id ? t`Open call` : t`Call`}>
@@ -3582,59 +3528,39 @@ function SpaceShell() {
         panel={panel ?? "closed"}
       >
         {panel && (active || activeGroup || panel === "create") ? (
-          <div className="rk-scroll h-full w-full overflow-y-auto px-5 py-[17px]">
-            {panel !== "routine" &&
-            panel !== "create" &&
-            panel !== "create-group" &&
-            panel !== "group-settings" ? (
+          <div className="rk-scroll relative h-full w-full overflow-y-auto px-5 py-[17px]">
+            {active && (panel === "computer" || panel === "settings") ? (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={t`Close panel`}
+                onClick={() => setPanel(null)}
+                className="absolute end-3 top-3 z-10 text-muted-foreground"
+              >
+                <X size={16} strokeWidth={1.8} />
+              </Button>
+            ) : panel === "computer" && activeGroup ? (
               <div className="mb-4 flex items-center justify-between">
                 <span className="text-[13.5px] text-muted-foreground">
-                  {panel === "settings" ? (
-                    <Trans>Settings</Trans>
-                  ) : active ? (
-                    (computer?.state ?? active.status)
-                  ) : (
-                    <Trans>Group</Trans>
-                  )}
+                  <Trans>Group</Trans>
                 </span>
-                <div className="flex gap-1">
-                  {active &&
-                  panel === "computer" &&
-                  !computerOpen &&
-                  computerPanelNeedsMaintenance(computer?.state, booting) ? (
-                    <ComputerMaintenanceActions
-                      botId={active.id}
-                      computer={computer}
-                      onChanged={async () => {
-                        await refreshThread(active.id);
-                      }}
-                    />
-                  ) : null}
-                  {active ? (
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label={panel === "settings" ? t`Show computer` : t`Show settings`}
-                      onClick={() => setPanel(panel === "settings" ? "computer" : "settings")}
-                      className={panel === "settings" ? "text-foreground" : "text-muted-foreground"}
-                    >
-                      <Settings size={16} strokeWidth={1.7} />
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={t`Close panel`}
-                    onClick={() => setPanel(null)}
-                  >
-                    <X size={16} strokeWidth={1.8} />
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t`Close panel`}
+                  onClick={() => setPanel(null)}
+                >
+                  <X size={16} strokeWidth={1.8} />
+                </Button>
               </div>
             ) : null}
             {panel === "computer" && active ? (
               <ComputerPanel
                 bot={active}
+                nav={botPanelTabs}
+                onComputerChanged={async () => {
+                  await refreshThread(active.id);
+                }}
                 computer={computer}
                 computerOpen={computerOpen}
                 embeddedScreenUrl={embeddedScreenUrl}
@@ -3715,6 +3641,7 @@ function SpaceShell() {
               <BotSettings
                 key={active.id}
                 bot={active}
+                nav={botPanelTabs}
                 memoryProviderConfigured={memoryProviderConfig != null}
                 onSkillsChange={setAgentSkills}
                 onSave={async ({ computerMode, ...patch }) => {
@@ -3951,6 +3878,10 @@ function SpaceShell() {
           onSelectBot={(id) => {
             setMobileSidebarOpen(false);
             navigate(`/app/${id}`);
+          }}
+          onSelectHit={(hit) => {
+            setMobileSidebarOpen(false);
+            void jumpToSearchHit(hit);
           }}
         />
 

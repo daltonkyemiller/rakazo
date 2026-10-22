@@ -5,6 +5,7 @@ import type { buildComposerMentionOptions, ComposerMention, SlashActionId } from
 import {
   mentionChipKey,
   SLASH_ACTIONS,
+  searchComposerMentions,
   serializeComposerPrompt,
   truncateSlashDescription,
 } from "@rakazo/core";
@@ -16,6 +17,7 @@ import { Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } fro
 import { useI18n } from "../lib/i18n";
 import { useMobileTokens, useResolvedAppearance } from "../lib/native";
 import type { ComposerSnapshot } from "../lib/thread-feedback";
+import { ConnectorIcon } from "./connector-icon";
 import { GlassSurface } from "./glass-surface";
 import { NativeSymbol } from "./native-symbol";
 
@@ -98,10 +100,7 @@ export function ThreadComposer({
   }));
   const mentionOptions = useMemo(() => {
     if (mentionQuery === null || composerMentionTargets.length === 0) return [];
-    const query = mentionQuery.trim().toLowerCase();
-    return composerMentionTargets
-      .filter((target) => !query || target.name.toLowerCase().startsWith(query))
-      .slice(0, 10);
+    return searchComposerMentions(composerMentionTargets, mentionQuery, 10);
   }, [composerMentionTargets, mentionQuery]);
   const slashQueryNormalized = slashQuery?.trim().toLowerCase() ?? null;
   const slashSkillOptions =
@@ -564,7 +563,9 @@ function MentionOptionIcon({ mention }: { mention: ComposerMention }) {
     );
   }
   if (mention.kind === "connector") {
-    return (
+    return mention.logo ? (
+      <ConnectorIcon name={mention.name} logo={mention.logo} size={16} />
+    ) : (
       <NativeSymbol
         ios="puzzlepiece.extension"
         android="extension-puzzle-outline"
@@ -625,7 +626,9 @@ function MentionChipIcon({ mention }: { mention: ComposerMention }) {
     );
   }
   if (mention.kind === "connector") {
-    return (
+    return mention.logo ? (
+      <ConnectorIcon name={mention.name} logo={mention.logo} size={14} />
+    ) : (
       <NativeSymbol
         ios="puzzlepiece.extension"
         android="extension-puzzle-outline"

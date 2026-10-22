@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { build } from "esbuild";
 
 await build({
@@ -9,7 +10,10 @@ await build({
   target: "node22",
   sourcemap: true,
   banner: {
-    js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);',
+    js: 'import { createRequire as createBundleRequire } from "node:module"; const require = createBundleRequire(import.meta.url);',
   },
   external: ["electron", "electron-updater", "koffi", "@sentry/electron"],
 });
+
+// Check the final bundle too: injected imports can collide with bundled source.
+execFileSync(process.execPath, ["--check", "dist/main.js"], { stdio: "inherit" });

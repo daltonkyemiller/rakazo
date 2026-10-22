@@ -87,6 +87,7 @@ test("sidebar Now and Recent surface active and terminal runs", async ({ page },
   await expect(aside.getByRole("textbox")).toHaveCount(1);
   const searchBox = (await page.getByTestId("sidebar-search").boundingBox())!;
   const rowBox = (await activityRow(page, "Chief").boundingBox())!;
+  expect(searchBox.y + searchBox.height).toBeLessThanOrEqual(rowBox.y);
   expect(Math.abs(searchBox.x - rowBox.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(searchBox.width - rowBox.width)).toBeLessThanOrEqual(1);
   await runSearch.fill("keep working");
@@ -117,9 +118,8 @@ test("sidebar Now and Recent surface active and terminal runs", async ({ page },
   await page.emulateMedia({ colorScheme: "light" });
   await runSearch.fill("Chief");
   await activityToggle.click();
-  const normalSearch = aside.getByRole("textbox", { name: "Search", exact: true });
-  await expect(normalSearch).toHaveValue("");
-  await normalSearch.fill("Chief");
+  await expect(aside.getByRole("textbox")).toHaveCount(0);
+  await expect(page.getByTestId("sidebar-search-trigger")).toBeVisible();
   await expect(aside.getByTestId("activity-list")).toHaveCount(0);
   await activityToggle.click();
   await expect(runSearch).toHaveValue("");

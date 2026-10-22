@@ -5,9 +5,11 @@ import {
   buildComposerMentionOptions,
   connectorIntentLine,
   mentionChipKey,
+  mentionPickerConnectors,
   partitionComposerMentions,
   resolveComposerSendPlan,
   routineScheduleSubtitle,
+  searchComposerMentions,
   stripMentionKinds,
   stripMentionToken,
   toThreadMentionPayload,
@@ -21,10 +23,21 @@ describe("buildComposerMentionOptions", () => {
       bots: [{ id: "b1", name: "Chief", color: "#111" }],
       groups: [{ id: "g1", name: "Planning" }],
       routines: [
-        { id: "r1", name: "Daily digest", crons: ["0 9 * * 1-5"], botId: "b1", botName: "Chief" },
+        {
+          id: "r1",
+          name: "Daily digest",
+          crons: ["0 9 * * 1-5"],
+          botId: "b1",
+          botName: "Chief",
+        },
       ],
       connectors: [
-        { id: "c1", name: "Gmail", authStatus: "connected", connectionId: "c1" },
+        {
+          id: "c1",
+          name: "Gmail",
+          authStatus: "connected",
+          connectionId: "c1",
+        },
         { id: "catalog:stripe", name: "Stripe", authStatus: "needs_auth" },
       ],
     });
@@ -48,8 +61,20 @@ describe("buildComposerMentionOptions", () => {
       bots: [],
       groups: [],
       routines: [
-        { id: "r1", name: "Daily", crons: ["0 9 * * *"], botId: "b1", botName: "Chief" },
-        { id: "r2", name: "Daily", crons: ["0 10 * * *"], botId: "b2", botName: "Writer" },
+        {
+          id: "r1",
+          name: "Daily",
+          crons: ["0 9 * * *"],
+          botId: "b1",
+          botName: "Chief",
+        },
+        {
+          id: "r2",
+          name: "Daily",
+          crons: ["0 10 * * *"],
+          botId: "b2",
+          botName: "Writer",
+        },
       ],
       connectors: [],
     });
@@ -86,7 +111,12 @@ describe("buildComposerMentionOptions", () => {
       groups: [],
       routines: [],
       connectors: [
-        { id: "c1", name: "Gmail", authStatus: "connected", connectionId: "c1" },
+        {
+          id: "c1",
+          name: "Gmail",
+          authStatus: "connected",
+          connectionId: "c1",
+        },
         { id: "c2", name: "Granola", authStatus: "needs_auth" },
       ],
       limit: 10,
@@ -104,10 +134,101 @@ describe("buildComposerMentionOptions", () => {
       bots,
       groups: [],
       routines: [],
-      connectors: [{ id: "c1", name: "Gmail", authStatus: "connected", connectionId: "c1" }],
+      connectors: [
+        {
+          id: "c1",
+          name: "Gmail",
+          authStatus: "connected",
+          connectionId: "c1",
+        },
+      ],
     });
     expect(options).toHaveLength(81);
     expect(options.at(-1)?.name).toBe("Gmail");
+  });
+});
+
+describe("mentionPickerConnectors", () => {
+  const connection = (id: string, provider: string, displayName: string) => ({
+    id,
+    connectorId: "managed",
+    provider,
+    displayName,
+    status: "connected" as const,
+    capabilities: [],
+    createdAt: "2026-01-01T00:00:00.000Z",
+  });
+  const catalogItem = (slug: string, name: string, logo: string | null) => ({
+    connectorId: "managed",
+    slug,
+    name,
+    logo,
+    connected: false,
+    noAuth: false,
+  });
+
+  it("gives every connected profile its app logo and keeps its own name and id", () => {
+    const options = mentionPickerConnectors(
+      [
+        connection("c1", "gmail", "Gmail"),
+        connection("c2", "GMAIL", "Work"),
+        connection("c3", "custom", "Notes"),
+      ],
+      [
+        catalogItem("gmail", "Gmail", "https://logos.example/gmail.svg"),
+        catalogItem("linear", "Linear", null),
+      ],
+    );
+    expect(options).toEqual([
+      {
+        id: "c1",
+        name: "Gmail",
+        authStatus: "connected",
+        connectionId: "c1",
+        logo: "https://logos.example/gmail.svg",
+      },
+      {
+        id: "c2",
+        name: "Work",
+        authStatus: "connected",
+        connectionId: "c2",
+        logo: "https://logos.example/gmail.svg",
+      },
+      {
+        id: "c3",
+        name: "Notes",
+        authStatus: "connected",
+        connectionId: "c3",
+        logo: null,
+      },
+      {
+        id: "catalog:managed:linear",
+        name: "Linear",
+        authStatus: "needs_auth",
+        logo: null,
+      },
+    ]);
+  });
+
+  it("carries the logo into the picker option for each profile", () => {
+    const options = buildComposerMentionOptions({
+      query: "",
+      bots: [],
+      groups: [],
+      routines: [],
+      connectors: mentionPickerConnectors(
+        [connection("c1", "gmail", "Gmail"), connection("c2", "gmail", "Work")],
+        [catalogItem("gmail", "Gmail", "https://logos.example/gmail.svg")],
+      ),
+    });
+    expect(options.map(({ id, name, logo }) => ({ id, name, logo }))).toEqual([
+      { id: "c1", name: "Gmail", logo: "https://logos.example/gmail.svg" },
+      { id: "c2", name: "Work", logo: "https://logos.example/gmail.svg" },
+    ]);
+    expect(toThreadMentionPayload(options)).toEqual([
+      { kind: "connector", id: "c1" },
+      { kind: "connector", id: "c2" },
+    ]);
   });
 });
 
@@ -171,7 +292,13 @@ describe("partition and payload", () => {
       { kind: "bot", id: "b1", name: "Chief" },
       { kind: "group", id: "g1", name: "Planning" },
       { kind: "routine", id: "r1", name: "Digest" },
-      { kind: "connector", id: "c1", name: "Gmail", authStatus: "connected", connectionId: "c1" },
+      {
+        kind: "connector",
+        id: "c1",
+        name: "Gmail",
+        authStatus: "connected",
+        connectionId: "c1",
+      },
       { kind: "everyone", id: "everyone", name: "everyone" },
     ]);
     expect(parts.bots).toHaveLength(1);
@@ -254,5 +381,67 @@ it("searches the readable fallback when a mention name is opaque", () => {
       routines: [],
       connectors: [],
     }),
-  ).toEqual([{ kind: "bot", id: "bot-1", name: "Bot", subtitle: "Bot", color: undefined }]);
+  ).toEqual([
+    {
+      kind: "bot",
+      id: "bot-1",
+      name: "Bot",
+      subtitle: "Bot",
+      color: undefined,
+    },
+  ]);
+});
+
+describe("mention search relevance", () => {
+  const mentions = [
+    { kind: "bot" as const, id: "bot-slack", name: "Slackbot" },
+    {
+      kind: "connector" as const,
+      id: "catalog-slack",
+      name: "Slack",
+      authStatus: "needs_auth" as const,
+    },
+    {
+      kind: "connector" as const,
+      id: "work",
+      name: "visor-slack",
+      authStatus: "connected" as const,
+    },
+    { kind: "bot" as const, id: "partial", name: "MySlackHelper" },
+  ];
+
+  it("ranks a complete profile word above a bot prefix and applies the limit afterward", () => {
+    expect(searchComposerMentions(mentions, "slack").map((item) => item.id)).toEqual([
+      "work",
+      "bot-slack",
+      "partial",
+      "catalog-slack",
+    ]);
+    expect(searchComposerMentions(mentions, "slack", 1).map((item) => item.id)).toEqual(["work"]);
+  });
+
+  it("keeps exact bot names ahead of partial profiles and connected profiles win ties", () => {
+    const exact = { kind: "bot" as const, id: "exact", name: "Slack" };
+    expect(searchComposerMentions([exact, ...mentions], "slack")[0]?.id).toBe("exact");
+    expect(
+      searchComposerMentions(
+        [exact, { ...exact, id: "connected", kind: "connector", authStatus: "connected" }],
+        "slack",
+      )[0]?.id,
+    ).toBe("connected");
+  });
+
+  it("finds words across separators regardless of case or accents without changing empty-query order", () => {
+    const profiles = [
+      {
+        kind: "connector" as const,
+        id: "work",
+        name: "Vísor-Slack team",
+        authStatus: "connected" as const,
+      },
+    ];
+    expect(searchComposerMentions(profiles, " SLACK visor ")).toEqual(profiles);
+    expect(searchComposerMentions(profiles, "slack calendar")).toEqual([]);
+    expect(searchComposerMentions(mentions, "")).toEqual(mentions);
+  });
 });

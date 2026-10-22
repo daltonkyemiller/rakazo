@@ -235,6 +235,8 @@ the shell somewhere else without changing the saved instance, or `RAKAZO_FORCE_S
 setup again.
 
 Mobile build and release instructions live in [docs/mobile-release.md](./docs/mobile-release.md).
+For separate local Mac and iOS builds against an existing server, including standalone
+builds that need no development server, see [local apps](./docs/local-apps.md).
 
 ## UI language
 

@@ -71,3 +71,33 @@ export function resolveAskChoice(
   const lower = trimmed.toLowerCase();
   return actions.find((action) => action.label.trim().toLowerCase() === lower);
 }
+
+type ChoiceAsk = {
+  kind: string;
+  input?: string;
+  approvalEffectId?: string;
+  instructionUpdate?: unknown;
+  actions?: Array<{ id: string; label: string }>;
+};
+
+/** A bot's own multiple-choice question, not an approval, instruction update, or secret. */
+export function isChoiceAskBlock(block: ChoiceAsk): boolean {
+  return (
+    block.kind === "ask" &&
+    Boolean(block.actions?.length) &&
+    !block.approvalEffectId &&
+    !block.instructionUpdate &&
+    block.input !== "secret"
+  );
+}
+
+/** Options lettered A, B, C… in the order the bot offered them. */
+export function askChoiceOptions(
+  actions: readonly { id: string; label: string }[],
+): { id: string; label: string; letter: string }[] {
+  return actions.map((action, index) => ({
+    id: action.id,
+    label: action.label,
+    letter: String.fromCharCode(65 + index),
+  }));
+}

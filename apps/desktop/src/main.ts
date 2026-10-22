@@ -5,7 +5,17 @@ import path from "node:path";
 import type { DesktopReachability, DesktopSetup } from "@rakazo/contracts";
 import { LOCAL_SETTINGS_PAGE } from "@rakazo/contracts/local-settings";
 import type { Session } from "electron";
-import { app, BrowserWindow, dialog, ipcMain, Menu, net, session, shell } from "electron";
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  nativeTheme,
+  net,
+  session,
+  shell,
+} from "electron";
 import type { AppDocumentState } from "./app-document-state.js";
 import { APP_DOCUMENT_STATE_SCRIPT } from "./app-document-state.js";
 import { createAppOpener } from "./app-opener.js";
@@ -21,6 +31,7 @@ import { prepareHostComputer } from "./host-computer.js";
 import { requestLocalSettings } from "./local-settings.js";
 import {
   LocalStackController,
+  readLocalStackImageTag,
   readStackToken,
   readStackWebUrl,
   resolveImageTag,
@@ -34,6 +45,7 @@ import {
   refreshDesktopMonitoringUser,
   reportDesktopError,
 } from "./monitoring.js";
+import { installNativeGlass, supportsNativeGlass } from "./native-glass.js";
 import { oauthCallbackFrom } from "./oauth-callback.js";
 import {
   bundledRendererCandidates,
@@ -69,6 +81,11 @@ import {
 
 process.setSourceMapsEnabled(true);
 installDesktopEarlyErrorReporting();
+const LOCAL_BUILD = process.env.RAKAZO_LOCAL_BUILD === "1" || app.getName() === "Rakazo Local";
+if (LOCAL_BUILD) {
+  app.setName("Rakazo Local");
+  app.setPath("userData", path.join(app.getPath("appData"), "Rakazo Local"));
+}
 
 const PERFORMANCE_USER_DATA = process.env.RAKAZO_PERFORMANCE_USER_DATA;
 /** Test hook: where the app-managed stack answers. Mode `new` still requires loopback. */
@@ -106,7 +123,7 @@ const WARM_WINDOW_TTL_MS = warmWindowTtlMs(process.env.RAKAZO_WARM_WINDOW_TTL_MS
 const updaterEnvironment = {
   packaged: app.isPackaged,
   version: app.getVersion(),
-  disabled: process.env.RAKAZO_DISABLE_AUTO_UPDATE === "1",
+  disabled: LOCAL_BUILD || process.env.RAKAZO_DISABLE_AUTO_UPDATE === "1",
 };
 const desktopUpdater = new DesktopUpdateController(
   updaterEnvironment,
@@ -261,8 +278,17 @@ async function defaultSessionHasOriginData(origin: string): Promise<boolean> {
 function createWindow(url: string, partition: string | null) {
   markOnce("rk:main:window-create-start");
   const icon = developmentIcon();
+  const systemVersion = process.platform === "darwin" ? process.getSystemVersion() : "0";
+  const glass = supportsNativeGlass(
+    process.platform,
+    systemVersion,
+    nativeTheme.prefersReducedTransparency,
+    nativeTheme.shouldUseHighContrastColors,
+  );
   const win = new BrowserWindow({
     ...browserWindowOptions(process.platform),
+    // Keep the native window shape so window managers can read its corner radii.
+    ...(glass ? { backgroundColor: "#00000000" } : {}),
     ...(icon ? { icon } : {}),
     webPreferences: {
       preload: path.join(import.meta.dirname, "preload.cjs"),
@@ -275,6 +301,7 @@ function createWindow(url: string, partition: string | null) {
   win.on("unresponsive", () =>
     reportDesktopError(new Error("Renderer unresponsive"), "desktop.unresponsive"),
   );
+  if (glass) installNativeGlass(win, systemVersion);
   mainWindow = win;
   appWindowTargets.set(win, url);
   const targetOrigin = safeOrigin(url);
@@ -490,19 +517,22 @@ async function installBundledRenderer(
   partition: string | null,
   managedLocalStack: boolean,
 ) {
-  if (!app.isPackaged || process.env.RAKAZO_DISABLE_BUNDLED_RENDERER === "1") return;
-  if (!servesBundledRenderer(targetUrl, managedLocalStack)) return;
+  if ((!app.isPackaged && !LOCAL_BUILD) || process.env.RAKAZO_DISABLE_BUNDLED_RENDERER === "1")
+    return;
+  if (!servesBundledRenderer(targetUrl, managedLocalStack, LOCAL_BUILD)) return;
   const webUrl = new URL(targetUrl);
   const installationKey = `${partition ?? "default"}:${webUrl.protocol}`;
   if (bundledRendererInstallations.has(installationKey)) return;
-  const root = path.join(process.resourcesPath, "web");
+  const root = app.isPackaged
+    ? path.join(process.resourcesPath, "web")
+    : path.resolve(app.getAppPath(), "../web/dist");
 
   await targetSession.protocol.handle(webUrl.protocol.slice(0, -1), async (request) => {
     const forward = () => {
       return targetSession.fetch(request, forwardedRendererRequestInit(request, webUrl.origin));
     };
-    // Mode can change on the same origin/session; only managed "new" keeps the overlay.
-    if (partition !== "local-server-settings" && currentSetup?.mode !== "new") {
+    // Production bundles follow stack ownership when the selected mode changes.
+    if (!LOCAL_BUILD && partition !== "local-server-settings" && currentSetup?.mode !== "new") {
       return forward();
     }
     if (request.method !== "GET" && request.method !== "HEAD") {
@@ -604,9 +634,21 @@ async function showLocalSettings() {
   if (openingSettings) return;
   openingSettings = true;
   try {
-    const url = localStack.webUrl();
-    const token = await readStackToken(stackDir(app.getPath("userData")));
-    if (!token || !(await localStack.matchesDesiredStack(url))) {
+    let url = localStack.webUrl();
+    let token = await readStackToken(stackDir(app.getPath("userData")));
+    let available = !!token && (await localStack.matchesDesiredStack(url));
+    if (!available && LOCAL_BUILD) {
+      // The local client can manage the installed release's stack without starting another one.
+      const hostStack = stackDir(path.join(app.getPath("appData"), "Rakazo"));
+      const hostUrl = await readStackWebUrl(hostStack, DEFAULT_LOCAL_WEB_URL);
+      const hostToken = await readStackToken(hostStack);
+      if (hostToken && (await probeManagedStack(hostUrl, hostToken))) {
+        url = hostUrl;
+        token = hostToken;
+        available = true;
+      }
+    }
+    if (!available || !token) {
       await dialog.showMessageBox({
         message: "Start the local server before opening its settings.",
         type: "info",
@@ -685,10 +727,19 @@ function installApplicationMenu() {
         .catch(() => undefined);
     },
   };
+  const appSettings: Electron.MenuItemConstructorOptions = {
+    id: "app-settings",
+    label: "Settings…",
+    accelerator: "CmdOrCtrl+,",
+    click: () => {
+      mainWindow?.show();
+      mainWindow?.focus();
+      mainWindow?.webContents.send("desktop.settings.open");
+    },
+  };
   const localSettings: Electron.MenuItemConstructorOptions = {
     id: "local-server-settings",
     label: "Local Server Settings…",
-    accelerator: "CmdOrCtrl+,",
     click: () => {
       void showLocalSettings();
     },
@@ -733,6 +784,7 @@ function installApplicationMenu() {
             submenu: [
               { role: "about" },
               { type: "separator" },
+              appSettings,
               localSettings,
               computerAccess,
               revokeComputerAccess,
@@ -764,6 +816,7 @@ function installApplicationMenu() {
           {
             label: "File",
             submenu: [
+              appSettings,
               localSettings,
               computerAccess,
               revokeComputerAccess,
@@ -1095,7 +1148,11 @@ app.whenReady().then(async () => {
     imageTag: resolveImageTag({
       version: app.getVersion(),
       packaged: app.isPackaged,
-      override: process.env.RAKAZO_IMAGE_TAG,
+      override:
+        process.env.RAKAZO_IMAGE_TAG?.trim() ||
+        (LOCAL_BUILD
+          ? ((await readLocalStackImageTag(stackDir(userDataDir))) ?? undefined)
+          : undefined),
     }),
     probe: (url, signal, token) => probeManagedStack(url, token, signal),
     randomHex: (bytes) => randomBytes(bytes).toString("hex"),
@@ -1249,6 +1306,18 @@ app.whenReady().then(async () => {
     "desktop.badge.set",
     createBadgeHandler(permissionTarget, (count) => app.setBadgeCount(count)),
   );
+  ipcMain.handle("desktop.settings.openServer", async (event) => {
+    if (!fromMainWindow(event) || event.senderFrame !== mainWindow?.webContents.mainFrame) return;
+    await showLocalSettings();
+  });
+  ipcMain.handle("desktop.appearance.set", (event, preference: unknown) => {
+    if (!fromMainWindow(event) || event.senderFrame !== mainWindow?.webContents.mainFrame) return;
+    if (
+      (preference === "system" || preference === "light" || preference === "dark") &&
+      nativeTheme.themeSource !== preference
+    )
+      nativeTheme.themeSource = preference;
+  });
   ipcMain.handle("desktop.platform", () => process.platform);
   ipcMain.handle("desktop.window.close", (event) => {
     windowFrom(event)?.close();

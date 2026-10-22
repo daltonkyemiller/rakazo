@@ -1,6 +1,7 @@
 import { Trans } from "@lingui/react/macro";
 import { Field, FieldLabel, Input, Toggle } from "@rakazo/ui-web";
 import { useId } from "react";
+import { segmentedGroupClass, segmentedItemClass } from "../../components/SettingsLayout";
 
 export type ConnectionMode = "cloud" | "local";
 
@@ -28,14 +29,14 @@ export function ConnectionModeFields({
         <FieldLabel id={connectionLabelId}>
           <Trans>Connection</Trans>
         </FieldLabel>
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+        <div className={`${segmentedGroupClass} grid-cols-2`}>
           {(["cloud", "local"] as const).map((option) => (
             <Toggle
               key={option}
               pressed={mode === option}
               disabled={busy}
               onPressedChange={() => onModeChange(option)}
-              className="text-[13px] aria-pressed:bg-background aria-pressed:shadow-sm"
+              className={segmentedItemClass}
             >
               {option === "cloud" ? <Trans>Cloud</Trans> : <Trans>Local</Trans>}
             </Toggle>

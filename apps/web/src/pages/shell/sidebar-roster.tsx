@@ -316,7 +316,7 @@ export function SidebarRoster({
                     <BotAvatar
                       color={item.chat.color}
                       identity={item.chat.id}
-                      size={mini ? 40 : compact ? 28 : 38}
+                      size={mini ? 40 : compact ? 28 : 36}
                       status={item.chat.status}
                     />
                   ) : (
@@ -326,7 +326,7 @@ export function SidebarRoster({
                           ? (activeSnapshot.members ?? item.chat.members)
                           : item.chat.members
                       }
-                      size={mini ? 40 : compact ? 28 : 38}
+                      size={mini ? 40 : compact ? 28 : 36}
                     />
                   );
                 const chatTrigger = (
@@ -406,7 +406,7 @@ export function SidebarRoster({
                         ? "mx-auto size-12 justify-center rounded-xl"
                         : compact
                           ? "w-full min-h-11 gap-2 rounded-xl px-2.5 py-1.5"
-                          : "w-full gap-3 rounded-xl px-2.5 py-[10px]"
+                          : "w-full min-h-[54px] gap-2.5 rounded-xl px-2 py-2"
                     } text-start ${
                       item.kind === "bot" ? "cursor-grab active:cursor-grabbing" : ""
                     } ${
@@ -490,13 +490,6 @@ export function SidebarRoster({
                             ) : null}
                           </div>
                         </div>
-                        {!compact && item.kind === "bot" && item.chat.title ? (
-                          <div className="mt-1 flex">
-                            <span className="max-w-full truncate rounded-md border border-border bg-muted px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
-                              {item.chat.title}
-                            </span>
-                          </div>
-                        ) : null}
                         {compact ? (
                           compactStatusLabel ? (
                             <div
@@ -521,18 +514,28 @@ export function SidebarRoster({
                             </div>
                           ) : null
                         ) : (
-                          <div
-                            dir="auto"
-                            data-roster-preview={!workStatusLabel ? "true" : undefined}
-                            className={`mt-1 line-clamp-2 text-[12.5px] break-words whitespace-normal ${
-                              workStatusLabel
-                                ? "font-semibold text-status-working"
-                                : item.chat.unread
-                                  ? "font-medium text-foreground/75"
-                                  : "text-muted-foreground/60"
-                            }`}
-                          >
-                            {rosterLine}
+                          <div className="mt-0.5 flex min-w-0 items-baseline gap-1.5 text-[12.5px]">
+                            {item.kind === "bot" && item.chat.title ? (
+                              <span
+                                dir="auto"
+                                className="max-w-[45%] shrink-0 truncate text-muted-foreground"
+                              >
+                                {item.chat.title}
+                              </span>
+                            ) : null}
+                            <div
+                              dir="auto"
+                              data-roster-preview={!workStatusLabel ? "true" : undefined}
+                              className={`min-w-0 flex-1 line-clamp-1 break-all ${
+                                workStatusLabel
+                                  ? "font-semibold text-status-working"
+                                  : item.chat.unread
+                                    ? "font-medium text-foreground/75"
+                                    : "text-muted-foreground/60"
+                              }`}
+                            >
+                              {rosterLine}
+                            </div>
                           </div>
                         )}
                       </div>

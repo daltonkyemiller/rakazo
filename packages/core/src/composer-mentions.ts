@@ -1,3 +1,4 @@
+import type { Connection, ConnectionCatalogItem } from "@rakazo/contracts";
 import { formatCron } from "./cron.js";
 import { displayName } from "./display-name.js";
 import { hasMentionToken } from "./group-mentions.js";
@@ -18,6 +19,8 @@ export type ComposerMention = {
   /** Connected connection row id when kind is connector + connected. */
   connectionId?: string;
   authStatus?: "connected" | "needs_auth";
+  /** Catalog artwork for connector chips. */
+  logo?: string | null;
 };
 
 export type MentionPickerBot = { id: string; name: string; color?: string };
@@ -34,7 +37,51 @@ export type MentionPickerConnector = {
   name: string;
   authStatus: "connected" | "needs_auth";
   connectionId?: string;
+  logo?: string | null;
 };
+
+/**
+ * One `@` option per connected profile (keeping its own display name and id), then catalog
+ * apps that still need authorization. Each carries its catalog app's logo.
+ */
+export function mentionPickerConnectors(
+  connections: readonly Connection[],
+  catalog: readonly ConnectionCatalogItem[],
+): MentionPickerConnector[] {
+  const connected = connections.filter((row) => row.status === "connected");
+  const logoFor = (row: Connection) =>
+    catalog.find(
+      (item) =>
+        item.connectorId === row.connectorId &&
+        item.slug.toLowerCase() === row.provider.toLowerCase(),
+    )?.logo ?? null;
+  const options: MentionPickerConnector[] = connected.map((row) => ({
+    id: row.id,
+    name: row.displayName,
+    authStatus: "connected",
+    connectionId: row.id,
+    logo: logoFor(row),
+  }));
+  for (const item of catalog) {
+    if (item.connected || item.noAuth) continue;
+    if (
+      connected.some(
+        (row) =>
+          row.provider.toLowerCase() === item.slug.toLowerCase() ||
+          row.displayName.toLowerCase() === item.name.toLowerCase(),
+      )
+    ) {
+      continue;
+    }
+    options.push({
+      id: `catalog:${item.connectorId}:${item.slug}`,
+      name: item.name,
+      authStatus: "needs_auth",
+      logo: item.logo,
+    });
+  }
+  return options;
+}
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -145,6 +192,45 @@ export function routineScheduleSubtitle(crons: readonly string[], botName?: stri
   return schedule;
 }
 
+function normalizeMentionSearch(value: string): string {
+  return value.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().trim();
+}
+
+/** Exact names and complete words beat prefixes; connected profiles win equal matches. */
+export function searchComposerMentions(
+  mentions: readonly ComposerMention[],
+  query: string,
+  limit?: number,
+): ComposerMention[] {
+  const phrase = normalizeMentionSearch(query);
+  if (!phrase) return limit == null ? [...mentions] : mentions.slice(0, limit);
+  const terms = phrase.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  if (!terms.length) return [];
+  const ranked = mentions.flatMap((mention, index) => {
+    const name = normalizeMentionSearch(mention.name);
+    const words = name.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+    let score = name === phrase ? 100 : 0;
+    for (const term of terms) {
+      if (words.includes(term)) score += 30;
+      else if (name.startsWith(term)) score += 20;
+      else if (words.some((word) => word.startsWith(term))) score += 10;
+      else if (name.includes(term)) score += 1;
+      else return [];
+    }
+    return [{ mention, index, score }];
+  });
+  ranked.sort(
+    (a, b) =>
+      Number(a.mention.authStatus === "needs_auth") -
+        Number(b.mention.authStatus === "needs_auth") ||
+      b.score - a.score ||
+      Number(b.mention.authStatus === "connected") - Number(a.mention.authStatus === "connected") ||
+      a.index - b.index,
+  );
+  const matches = ranked.map(({ mention }) => mention);
+  return limit == null ? matches : matches.slice(0, limit);
+}
+
 export function buildComposerMentionOptions(input: {
   query: string;
   bots: readonly MentionPickerBot[];
@@ -156,12 +242,9 @@ export function buildComposerMentionOptions(input: {
   /** When omitted, return every match (catalog build). When set, apply after query filter. */
   limit?: number;
 }): ComposerMention[] {
-  const query = input.query.trim().toLowerCase();
   const options: ComposerMention[] = [];
 
-  const matches = (name: string) => !query || name.toLowerCase().startsWith(query);
-
-  if (input.includeEveryone && matches("everyone")) {
+  if (input.includeEveryone) {
     options.push({
       kind: "everyone",
       id: "everyone",
@@ -173,7 +256,6 @@ export function buildComposerMentionOptions(input: {
 
   for (const bot of input.bots) {
     const name = displayName(bot.name, "Bot");
-    if (!matches(name)) continue;
     options.push({
       kind: "bot",
       id: bot.id,
@@ -186,7 +268,6 @@ export function buildComposerMentionOptions(input: {
   for (const group of input.groups) {
     if (input.currentGroupId && group.id === input.currentGroupId) continue;
     const name = displayName(group.name, "Group");
-    if (!matches(name)) continue;
     options.push({
       kind: "group",
       id: group.id,
@@ -202,7 +283,6 @@ export function buildComposerMentionOptions(input: {
   }
   for (const routine of input.routines) {
     const name = displayName(routine.name, "Routine");
-    if (!matches(name)) continue;
     const duplicate = (routineNameCounts.get(name.toLowerCase()) ?? 0) > 1;
     options.push({
       kind: "routine",
@@ -214,19 +294,18 @@ export function buildComposerMentionOptions(input: {
   }
 
   for (const connector of input.connectors) {
-    if (!matches(connector.name)) continue;
     options.push({
       kind: "connector",
       id: connector.id,
       name: connector.name,
       connectionId: connector.connectionId,
       authStatus: connector.authStatus,
+      logo: connector.logo,
       subtitle: connector.authStatus === "connected" ? "Connected" : "Needs auth",
     });
   }
 
-  if (input.limit == null) return options;
-  return options.slice(0, input.limit);
+  return searchComposerMentions(options, input.query, input.limit);
 }
 
 /**

@@ -13,8 +13,21 @@ const alert = vi.hoisted(() => vi.fn());
 vi.mock("react-native", async () => {
   const { createElement } = await import("react");
 
-  function MockView(props: { children?: ReactNode; testID?: string }) {
-    return createElement("div", { "data-testid": props.testID }, props.children);
+  function MockView(props: {
+    children?: ReactNode;
+    testID?: string;
+    accessibilityLabel?: string;
+    style?: unknown;
+  }) {
+    return createElement(
+      "div",
+      {
+        "data-testid": props.testID,
+        "aria-label": props.accessibilityLabel,
+        "data-style": JSON.stringify(Object.assign({}, ...[props.style].flat())),
+      },
+      props.children,
+    );
   }
 
   function MockText(props: { children?: ReactNode; accessibilityRole?: string; style?: unknown }) {
@@ -33,7 +46,7 @@ vi.mock("react-native", async () => {
     onPress?: () => void;
     disabled?: boolean;
     accessibilityLabel?: string;
-    accessibilityState?: { disabled?: boolean; selected?: boolean };
+    accessibilityState?: { disabled?: boolean; selected?: boolean; busy?: boolean };
     testID?: string;
   }) {
     const disabled = Boolean(props.disabled || props.accessibilityState?.disabled);
@@ -44,6 +57,7 @@ vi.mock("react-native", async () => {
         disabled,
         "aria-label": props.accessibilityLabel,
         "aria-selected": props.accessibilityState?.selected ? "true" : "false",
+        "aria-busy": props.accessibilityState?.busy ? "true" : "false",
         "data-testid": props.testID,
         onClick: () => {
           if (!disabled) props.onPress?.();
@@ -56,7 +70,7 @@ vi.mock("react-native", async () => {
   return {
     Alert: { alert },
     Pressable: MockPressable,
-    StyleSheet: { create: <T,>(styles: T) => styles },
+    StyleSheet: { create: <T,>(styles: T) => styles, hairlineWidth: 1 },
     Text: MockText,
     View: MockView,
     useWindowDimensions: () => ({ width: 393, height: 852, scale: 1, fontScale: 1 }),
@@ -72,7 +86,10 @@ vi.mock("./native", () => ({
     border: "border",
     card: "card",
     foreground: "foreground",
+    muted: "muted-surface",
     mutedForeground: "muted",
+    primary: "primary",
+    primaryForeground: "primary-foreground",
   }),
 }));
 
@@ -80,6 +97,7 @@ vi.mock("../components/native-symbol", () => ({
   NativeSymbol: () => null,
 }));
 
+import { AskQuestionCard } from "../components/AskQuestionCard";
 import { ChoiceCard } from "../components/ChoiceCard";
 
 type ChoiceBlock = Extract<MessageBlock, { kind: "choice" }>;
@@ -130,7 +148,7 @@ describe("ChoiceCard", () => {
     return container;
   }
 
-  it("sets the question as a card title and the subtitle as card text", () => {
+  it("sets the question as a semibold header and the subtitle as secondary text", () => {
     const view = render({ ...choice, subtitle: "Pick one to start." });
     const style = (selector: string) =>
       JSON.parse(view.querySelector<HTMLElement>(selector)?.dataset.style ?? "{}");
@@ -138,8 +156,13 @@ describe("ChoiceCard", () => {
     expect(style('[role="header"]')).toMatchObject({
       fontSize: 17,
       lineHeight: 22,
-      fontWeight: "500",
+      fontWeight: "600",
+      color: "foreground",
     });
+    expect(style("[data-testid='choice-card']")).toMatchObject({
+      backgroundColor: "muted-surface",
+    });
+    expect(button(view, "Day-to-day work").textContent).toBe("ADay-to-day work");
     const subtitle = [...view.querySelectorAll<HTMLElement>("span")].find(
       (span) => span.textContent === "Pick one to start.",
     );
@@ -162,9 +185,10 @@ describe("ChoiceCard", () => {
     expect(rpc).toHaveBeenCalledWith("onboarding/choose", { botId: "bot-1", optionId: "inbox" });
     expect(view.textContent).toContain("Inbox & email");
     expect(view.textContent).not.toContain("Day-to-day work");
-    expect(button(view, "Inbox & email").disabled).toBe(true);
-    expect(button(view, "Inbox & email").getAttribute("aria-selected")).toBe("true");
-    expect(view.querySelector("[data-testid='choice-card-dismiss']")).toBeNull();
+    expect(view.querySelector("button")).toBeNull();
+    expect(view.querySelector("[data-testid='question-answer']")?.getAttribute("aria-label")).toBe(
+      "Answered: Inbox & email",
+    );
   });
 
   it("dismisses through onboarding/dismissFocus and hides the card", async () => {
@@ -261,5 +285,153 @@ describe("ChoiceCard", () => {
     expect(view.textContent).toContain("Inbox & email");
     expect(view.textContent).not.toContain("Day-to-day work");
     expect(rpc).toHaveBeenCalledTimes(1);
+  });
+});
+
+const accent = {
+  id: "ember",
+  name: "Ember",
+  light: "#c2410c",
+  dark: "#9a3412",
+  eyeColor: "#ffffff",
+  hex: "#c2410c",
+};
+
+type AskBlock = Extract<MessageBlock, { kind: "ask" }>;
+
+const question: AskBlock = {
+  kind: "ask",
+  text: "Which should I put at the top of tomorrow's read out?",
+  status: "pending",
+  actions: [
+    { id: "choice-1", label: "Client and billing issues" },
+    { id: "choice-2", label: "Releases and production deploys" },
+    { id: "choice-3", label: "Onboarding bugs" },
+    { id: "choice-4", label: "Hiring" },
+  ],
+};
+
+describe("AskQuestionCard", () => {
+  let root: Root | undefined;
+  let container: HTMLDivElement | undefined;
+
+  beforeEach(() => {
+    alert.mockReset();
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  });
+
+  afterEach(() => {
+    act(() => {
+      root?.unmount();
+    });
+    container?.remove();
+    root = undefined;
+    container = undefined;
+  });
+
+  function render(
+    block: AskBlock = question,
+    onAnswer: (answer: string) => Promise<void> = async () => undefined,
+    canAnswer = true,
+  ) {
+    if (!container) {
+      container = document.createElement("div");
+      document.body.append(container);
+      root = createRoot(container);
+    }
+    act(() => {
+      root?.render(
+        <AskQuestionCard block={block} accent={accent} canAnswer={canAnswer} onAnswer={onAnswer} />,
+      );
+    });
+    return container;
+  }
+
+  const letterStyle = (view: HTMLElement) =>
+    JSON.parse(
+      view.querySelector<HTMLElement>("[data-testid='question-answer-letter']")?.dataset.style ??
+        "{}",
+    );
+
+  it("letters each option and sends one pick while the rest wait", async () => {
+    let release: () => void = () => undefined;
+    const onAnswer = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        }),
+    );
+    const view = render(question, onAnswer);
+
+    expect([...view.querySelectorAll("button")].map((item) => item.textContent)).toEqual([
+      "AClient and billing issues",
+      "BReleases and production deploys",
+      "COnboarding bugs",
+      "DHiring",
+    ]);
+
+    await act(async () => {
+      button(view, "Onboarding bugs").click();
+      button(view, "Hiring").click();
+    });
+
+    expect(onAnswer).toHaveBeenCalledTimes(1);
+    expect(onAnswer).toHaveBeenCalledWith("choice-3");
+    expect(button(view, "Onboarding bugs").getAttribute("aria-busy")).toBe("true");
+    expect(button(view, "Hiring").disabled).toBe(true);
+
+    await act(async () => {
+      release();
+      await Promise.resolve();
+    });
+
+    expect(view.querySelector("button")).toBeNull();
+    expect(view.textContent).toContain("Onboarding bugs");
+    expect(view.textContent).not.toContain("Hiring");
+    expect(letterStyle(view)).toMatchObject({ backgroundColor: "#c2410c" });
+  });
+
+  it("collapses an answered question to its pick, the question muted", () => {
+    const view = render({ ...question, status: "answered", answer: "choice-2" });
+    const style = (selector: string) =>
+      JSON.parse(view.querySelector<HTMLElement>(selector)?.dataset.style ?? "{}");
+
+    expect(view.querySelector("button")).toBeNull();
+    expect(view.querySelector("[data-testid='question-answer']")?.getAttribute("aria-label")).toBe(
+      "Answered: Releases and production deploys",
+    );
+    expect(view.querySelector("[data-testid='question-answer-letter']")?.textContent).toBe("B");
+    expect(letterStyle(view)).toMatchObject({ backgroundColor: "#c2410c" });
+    expect(style('[role="header"]')).toMatchObject({ color: "muted" });
+    expect(view.textContent).not.toContain("Client and billing issues");
+  });
+
+  it("shows a typed answer without a letter", () => {
+    const view = render({ ...question, status: "answered", answer: "Something else" });
+
+    expect(view.querySelector("[data-testid='question-answer-letter']")).toBeNull();
+    expect(view.textContent).toContain("Something else");
+  });
+
+  it("reports a failed pick and keeps every option open", async () => {
+    const view = render(question, async () => {
+      throw new Error("Network down");
+    });
+
+    await act(async () => {
+      button(view, "Hiring").click();
+      await Promise.resolve();
+    });
+
+    expect(alert).toHaveBeenCalledWith("Could not submit answer", "Network down");
+    expect(button(view, "Hiring").disabled).toBe(false);
+    expect(view.querySelector("[data-testid='question-answer']")).toBeNull();
+  });
+
+  it("shows an inactive question without options", () => {
+    const view = render(question, undefined, false);
+
+    expect(view.querySelector("button")).toBeNull();
+    expect(view.textContent).toContain("No longer active");
   });
 });

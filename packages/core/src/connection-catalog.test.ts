@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   catalogItemAccounts,
   connectCatalogItem,
+  connectionCatalogRows,
   isCatalogItemConnected,
   nextCatalogAccountLabel,
   waitForConnection,
@@ -32,6 +33,37 @@ describe("connection catalog", () => {
     expect(catalogItemAccounts(rows, item).map((row) => row.id)).toEqual(["a", "b"]);
     expect(isCatalogItemConnected(rows, item)).toBe(true);
     expect(isCatalogItemConnected([account("b", "pending")], item)).toBe(false);
+  });
+
+  it("lists integrations once with connected apps first, then alphabetically", () => {
+    const alpha = { ...item, slug: "alpha", name: "Alpha" };
+    const beta = { ...item, slug: "beta", name: "Beta" };
+    expect(
+      connectionCatalogRows([item, beta, alpha, item], [account("Personal", "connected")], ""),
+    ).toEqual([item, alpha, beta]);
+  });
+
+  it("searches active profile labels without exposing revoked profiles", () => {
+    const rows = [
+      account("Personal", "connected"),
+      account("Work", "pending"),
+      account("Old", "revoked" as Connection["status"]),
+    ];
+    expect(connectionCatalogRows([item], rows, " WORK ")).toEqual([item]);
+    expect(connectionCatalogRows([item], rows, "personal")).toEqual([item]);
+    expect(connectionCatalogRows([item], rows, "old")).toEqual([]);
+    expect(connectionCatalogRows([item], rows, "GMAIL")).toEqual([item]);
+  });
+
+  it("separates available and connected integrations before searching profiles", () => {
+    const available = { ...item, slug: "slack", name: "Slack" };
+    const rows = [account("Work", "connected")];
+    expect(connectionCatalogRows([item, available], rows, "", "available")).toEqual([available]);
+    expect(connectionCatalogRows([item, available], rows, "Work", "connected")).toEqual([item]);
+    expect(connectionCatalogRows([item, available], rows, "Work", "available")).toEqual([]);
+    expect(connectionCatalogRows([{ ...item, connected: true }], [], "", "connected")).toHaveLength(
+      1,
+    );
   });
 
   it("numbers additional accounts", () => {

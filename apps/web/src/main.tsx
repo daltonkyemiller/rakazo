@@ -8,18 +8,22 @@ import { DesktopUpdatesProvider } from "./components/DesktopUpdates";
 import { I18nBootstrap } from "./components/I18nBootstrap";
 import { applyUiDirection } from "./lib/apply-ui-direction";
 import { clientUpdates } from "./lib/client-update";
+import { desktopBridge } from "./lib/desktop";
 import { reportCaughtReactError } from "./lib/monitoring";
 import { markAfterPaint, markOnce } from "./lib/performance";
 import { installPreloadRecovery } from "./lib/preload-recovery";
 import { applyUiAppearance, watchSystemAppearance } from "./lib/ui-appearance";
 import { resolveUiLocale } from "./lib/ui-locale";
 import "./styles.css";
+import "./native-glass.css";
 
 markOnce("rk:renderer:module-evaluated");
 installPreloadRecovery();
 clientUpdates().install();
 applyUiDirection(resolveUiLocale());
 applyUiAppearance();
+// The macOS app uses the system font so its chrome matches native windows.
+if (desktopBridge()?.platform === "darwin") document.documentElement.dataset.platform = "darwin";
 
 function PerformanceProbe() {
   useLayoutEffect(() => {

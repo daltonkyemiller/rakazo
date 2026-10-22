@@ -394,7 +394,7 @@ export const Transcript = memo(function Transcript({
             following.current = false;
           }
         }}
-        className="rk-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-5 md:px-7 md:py-6"
+        className="rk-scroll flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto px-4 py-5 md:px-7 md:py-6"
       >
         {olderCursor != null ? (
           <button
@@ -445,7 +445,11 @@ export const Transcript = memo(function Transcript({
               ) : null}
               <div
                 data-message-id={message.id}
-                className={peerReceipt ? "relative py-0.5" : "group/message relative hover:z-20"}
+                className={
+                  peerReceipt
+                    ? "relative min-w-0 py-0.5"
+                    : "group/message relative min-w-0 hover:z-20"
+                }
               >
                 <div
                   className={
@@ -489,7 +493,9 @@ export const Transcript = memo(function Transcript({
                       speakerName={
                         peerReceipt
                           ? undefined
-                          : message.role === "bot"
+                          : message.role === "bot" &&
+                              ("groupId" in artifactTarget ||
+                                (message.botId && message.botId !== artifactTarget.botId))
                             ? memberName?.(message.botId)
                             : undefined
                       }

@@ -50,6 +50,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BotAvatar } from "../components/bot-avatar";
 import type { BotOrganizationUpdate } from "../components/bot-organize-modal";
 import { BotOrganizeModal } from "../components/bot-organize-modal";
+import { GlassIconButton } from "../components/glass-icon-button";
+import { GlassSurface } from "../components/glass-surface";
 import { GroupAvatar } from "../components/group-avatar";
 import { HomeErrorState } from "../components/home-error-state";
 import { InboxSwipeRow } from "../components/inbox-swipe-row";
@@ -776,10 +778,9 @@ function Home({ embedded, onSelectSpace }: InboxPaneProps & { embedded: boolean 
         },
         {
           type: "button" as const,
-          accessibilityLabel: t("Search"),
-          identifier: "home-search-button",
-          icon: { type: "sfSymbol" as const, name: "magnifyingglass" },
-          onPress: () => router.push("/search"),
+          accessibilityLabel: t("Artifacts"),
+          icon: { type: "sfSymbol" as const, name: "square.stack.3d.up" },
+          onPress: () => router.push("/artifacts"),
         },
         {
           type: "menu" as const,
@@ -1289,11 +1290,10 @@ function Home({ embedded, onSelectSpace }: InboxPaneProps & { embedded: boolean 
               />
             </HeaderButton>
             <HeaderButton
-              testID="home-search-button"
-              accessibilityLabel={t("Search")}
-              onPress={() => router.push("/search")}
+              accessibilityLabel={t("Artifacts")}
+              onPress={() => router.push("/artifacts")}
             >
-              <NativeSymbol ios="magnifyingglass" android="search" size={17} />
+              <NativeSymbol ios="square.stack.3d.up" android="layers-outline" size={17} />
             </HeaderButton>
             {Platform.OS === "android" ? (
               // A plain button: the native Android menu trigger collapses to zero width when the
@@ -1403,6 +1403,52 @@ function Home({ embedded, onSelectSpace }: InboxPaneProps & { embedded: boolean 
           />
         </CompactRowsContext.Provider>
       </SelectedChatContext.Provider>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 12,
+          paddingHorizontal: 16 + columnInset,
+          paddingTop: 8,
+          paddingBottom: Math.max(insets.bottom, 12),
+        }}
+      >
+        <GlassIconButton
+          testID="home-integrations-button"
+          accessibilityLabel={t("Integrations")}
+          ios="puzzlepiece.extension"
+          android="extension-puzzle-outline"
+          size={52}
+          onPress={() => router.push("/integrations")}
+          fallbackStyle={{ backgroundColor: tokens.card }}
+        />
+        <GlassSurface
+          style={{ flex: 1, height: 52 }}
+          fallbackStyle={{ backgroundColor: tokens.muted, borderRadius: 26 }}
+        >
+          <Pressable
+            testID="home-search-button"
+            accessibilityRole="button"
+            accessibilityLabel={t("Search")}
+            onPress={() => router.push("/search")}
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              gap: 10,
+              alignItems: "center",
+              paddingHorizontal: 18,
+            }}
+          >
+            <NativeSymbol
+              ios="magnifyingglass"
+              android="search"
+              size={19}
+              color={tokens.mutedForeground}
+            />
+            <Text style={{ color: tokens.mutedForeground, fontSize: 17 }}>{t("Search")}</Text>
+          </Pressable>
+        </GlassSurface>
+      </View>
       {organizeChat && organizeTarget ? (
         <BotOrganizeModal
           bot={organizeChat}

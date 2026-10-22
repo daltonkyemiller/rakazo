@@ -19,6 +19,7 @@ import {
 } from "@rakazo/ui-web";
 import { XIcon } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { settingsTargetClass, settingsTargetId } from "../components/SettingsLayout";
 import { importChunk } from "../lib/preload-recovery";
 import { useBoundSpaceId, useSpaceRpc } from "../lib/space-rpc";
 import { errorText } from "../lib/user-error";
@@ -233,7 +234,10 @@ export function VoiceSettingsOverlay({
       ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden px-6 py-6 sm:px-8 md:flex-row">
-        <div className="flex min-h-0 shrink-0 flex-col md:w-[280px]">
+        <div
+          id={settingsTargetId("voice-providers")}
+          className={`${settingsTargetClass} flex min-h-0 shrink-0 flex-col md:w-[280px]`}
+        >
           <div className="mb-3 text-[13.5px] text-muted-foreground">
             <Trans>Providers</Trans>
           </div>
@@ -439,7 +443,7 @@ export function VoiceSettingsOverlay({
                   <Button
                     type="button"
                     variant="secondary"
-                    className="mt-4 rounded-full"
+                    className="mt-4"
                     disabled={busy || !status?.ready}
                     onClick={() => void testVoice()}
                   >

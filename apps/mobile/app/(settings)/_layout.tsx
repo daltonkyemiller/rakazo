@@ -73,7 +73,8 @@ export default function SettingsLayout() {
       <Stack.Screen name="billing" options={glassHeaderOptions(t("Billing"))} />
       <Stack.Screen name="models" options={glassHeaderOptions(t("Models"))} />
       <Stack.Screen name="voice" options={glassHeaderOptions(t("Voice"))} />
-      <Stack.Screen name="integrations" options={glassHeaderOptions(t("Integrations"))} />
+      <Stack.Screen name="integrations" options={{ headerShown: false }} />
+      <Stack.Screen name="connected-integrations" options={{ headerShown: false }} />
       <Stack.Screen
         name="integration-setup"
         options={glassHeaderOptions(t("Server integrations"))}

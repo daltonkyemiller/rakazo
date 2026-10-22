@@ -10,6 +10,7 @@ import {
   initialStackState,
   LocalStackController,
   type LocalStackDeps,
+  readLocalStackImageTag,
   readStackToken,
   reduceStackState,
   renderStackEnv,
@@ -17,6 +18,7 @@ import {
   STACK_COMPOSE_FILE,
   STACK_ENV_FILE,
   STACK_ENV_TEMPLATE,
+  STACK_IMAGE_TAG_FILE,
   STACK_OUTPUT_LINES,
   STACK_PROJECT_NAME,
   STACK_TOKEN_FILE,
@@ -58,6 +60,36 @@ describe("resolveImageTag", () => {
       "v9.9.9",
     );
     expect(resolveImageTag({ version: "0.2.0", packaged: true, override: "" })).toBe("v0.2.0");
+  });
+});
+
+describe("adopted local backend version", () => {
+  let dir: string;
+  beforeEach(async () => {
+    dir = await mkdtemp(path.join(tmpdir(), "rakazo-image-pin-"));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+  it("keeps an adopted backend independent of a newer client version", async () => {
+    expect(await readLocalStackImageTag(dir)).toBeNull();
+    await writeFile(path.join(dir, STACK_IMAGE_TAG_FILE), "v0.2.0\n");
+    expect(
+      resolveImageTag({
+        version: "0.3.0",
+        packaged: true,
+        override: (await readLocalStackImageTag(dir))!,
+      }),
+    ).toBe("v0.2.0");
+  });
+  it("refuses invalid or symlinked pins instead of silently upgrading the backend", async () => {
+    const file = path.join(dir, STACK_IMAGE_TAG_FILE);
+    await writeFile(file, "edge\n");
+    await expect(readLocalStackImageTag(dir)).rejects.toThrow("Invalid local backend version pin");
+    await rm(file);
+    await writeFile(path.join(dir, "target"), "v0.2.0");
+    await symlink(path.join(dir, "target"), file);
+    await expect(readLocalStackImageTag(dir)).rejects.toThrow("Invalid local backend version pin");
   });
 });
 

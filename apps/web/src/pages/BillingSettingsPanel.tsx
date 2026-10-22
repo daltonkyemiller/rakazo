@@ -3,6 +3,7 @@ import type { BillingStatus } from "@rakazo/contracts";
 import { Button, Skeleton } from "@rakazo/ui-web";
 import { useEffect, useState } from "react";
 import { ModelCreditsSettings } from "../components/ModelCredits";
+import { SettingsRow, SettingsSection, SettingsStack } from "../components/SettingsLayout";
 import { formatBillingDate, formatBillingPrice } from "../lib/billing";
 import { rpc } from "../lib/rpc";
 
@@ -77,46 +78,47 @@ export function BillingSettingsPanel() {
     );
 
   return (
-    <div data-testid="billing-settings" className="rounded-xl border border-border px-4 py-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          {status ? (
-            <h3 className="text-[15px] font-medium text-foreground">{stateLabel}</h3>
-          ) : error ? null : (
-            <Skeleton className="h-5 w-24" />
-          )}
-          {price ? (
-            <p className="mt-3 text-[14px] text-foreground/75">
-              {price}
-              {seats > 1 ? (
-                <>
-                  {" · "}
-                  <Plural value={seats} one="# seat" other="# seats" />
-                </>
-              ) : null}
-            </p>
+    <SettingsStack>
+      <SettingsSection title={<Trans>Plan</Trans>} testId="billing-settings" target="plan">
+        <SettingsRow
+          label={status ? stateLabel : error ? null : <Skeleton className="h-5 w-24" />}
+          description={
+            price || dateLabel ? (
+              <>
+                {price ? (
+                  <span className="block">
+                    {price}
+                    {seats > 1 ? (
+                      <>
+                        {" · "}
+                        <Plural value={seats} one="# seat" other="# seats" />
+                      </>
+                    ) : null}
+                  </span>
+                ) : null}
+                {dateLabel ? <span className="block">{dateLabel}</span> : null}
+              </>
+            ) : undefined
+          }
+        >
+          {status?.canManage && status.hasCustomer ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pending}
+              onClick={() => void openPortal()}
+            >
+              <Trans>Manage</Trans>
+            </Button>
           ) : null}
-          {dateLabel ? (
-            <p className="mt-2 text-[12.5px] text-muted-foreground/80">{dateLabel}</p>
-          ) : null}
-        </div>
-        {status?.canManage && status.hasCustomer ? (
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={pending}
-            onClick={() => void openPortal()}
-          >
-            <Trans>Manage</Trans>
-          </Button>
+        </SettingsRow>
+        {error ? (
+          <p role="alert" className="py-3 text-[13px] text-destructive">
+            {error}
+          </p>
         ) : null}
-      </div>
-      {error ? (
-        <p role="alert" className="mt-3 text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
-    </div>
+      </SettingsSection>
+    </SettingsStack>
   );
 }
 

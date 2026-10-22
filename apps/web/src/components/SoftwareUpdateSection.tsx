@@ -10,6 +10,7 @@ import {
 } from "../lib/updater-recreate";
 import { errorText } from "../lib/user-error";
 import { SuccessPop } from "./ai/primitives";
+import { SettingsSection } from "./SettingsLayout";
 
 const RECREATE_POLL_MS = 2_000;
 const RECREATE_POLL_ATTEMPTS = 90;
@@ -67,18 +68,13 @@ export function SoftwareUpdatePanel({
   const updateAvailable = check?.status === "available";
 
   return (
-    <div className="mt-3 space-y-3">
+    <div className="space-y-2 py-3">
       <div className="flex flex-wrap gap-2">
-        <Button
-          variant="secondary"
-          className="rounded-full"
-          disabled={busy !== null}
-          onClick={onCheck}
-        >
+        <Button variant="outline" size="sm" disabled={busy !== null} onClick={onCheck}>
           {busy === "check" ? <Trans>Checking…</Trans> : <Trans>Check for updates</Trans>}
         </Button>
         {updateAvailable ? (
-          <Button className="rounded-full" disabled={busy !== null} onClick={onApply}>
+          <Button size="sm" disabled={busy !== null} onClick={onApply}>
             {busy === "apply" ? <Trans>Updating…</Trans> : <Trans>Update</Trans>}
           </Button>
         ) : null}
@@ -149,17 +145,15 @@ export function SoftwareUpdateSection({ load }: { load: ServerUpdateLoad }) {
   if (!status) {
     if (!error) return null;
     return (
-      <section
-        data-testid="software-update-settings"
-        className="mt-5 rounded-xl border border-border bg-card px-4 py-4"
+      <SettingsSection
+        title={<Trans>Software update</Trans>}
+        target="server-update"
+        testId="software-update-settings"
       >
-        <h3 className="text-[15px] font-medium text-foreground">
-          <Trans>Software update</Trans>
-        </h3>
-        <p role="alert" className="mt-3 text-[12.5px] text-destructive">
+        <p role="alert" className="py-3 text-[12.5px] text-destructive">
           {error}
         </p>
-      </section>
+      </SettingsSection>
     );
   }
   if (status.installKind !== "sidecar") return null;
@@ -240,13 +234,11 @@ export function SoftwareUpdateSection({ load }: { load: ServerUpdateLoad }) {
   }
 
   return (
-    <section
-      data-testid="software-update-settings"
-      className="mt-5 rounded-xl border border-border bg-card px-4 py-4"
+    <SettingsSection
+      title={<Trans>Software update</Trans>}
+      target="server-update"
+      testId="software-update-settings"
     >
-      <h3 className="text-[15px] font-medium text-foreground">
-        <Trans>Software update</Trans>
-      </h3>
       <SoftwareUpdatePanel
         check={check}
         busy={busy}
@@ -255,7 +247,7 @@ export function SoftwareUpdateSection({ load }: { load: ServerUpdateLoad }) {
         onCheck={() => void runCheck()}
         onApply={() => void runApply()}
       />
-    </section>
+    </SettingsSection>
   );
 }
 

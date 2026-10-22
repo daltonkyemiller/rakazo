@@ -165,17 +165,18 @@ test("folds a peer run's reply under its marker and keeps its ask inline", async
   await expect(page.getByRole("button", { name: "Send" })).toBeVisible({ timeout: 60_000 });
   await collapse.click();
   await expect(reply).toHaveCount(0);
-  const search = page.getByTestId("sidebar-search").getByRole("textbox");
-  await search.fill(foldedReplyText);
+  await page.getByTestId("sidebar-search-trigger").click();
+  await page.getByTestId("command-palette-search").fill(foldedReplyText);
   await page
-    .getByRole("button")
-    .filter({ hasText: `Chief · ${foldedReplyText}` })
+    .getByTestId("command-palette-chats")
+    .getByRole("option")
+    .filter({ hasText: foldedReplyText })
+    .filter({ hasText: "Chief" })
     .first()
     .click();
   await expect(collapse).toHaveAttribute("aria-expanded", "true");
   await expect(reply).toBeInViewport();
   await captureScreenshot(page, testInfo, "peer-reply-search-jump");
-  await search.fill("");
   await collapse.click();
   await expect(reply).toHaveCount(0);
 

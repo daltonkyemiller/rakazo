@@ -8,6 +8,7 @@ import {
   replyAttachment,
   resolveMentionPickerKey,
   SLASH_ACTIONS,
+  searchComposerMentions,
   serializeComposerPrompt,
   truncateSlashDescription,
 } from "@rakazo/core";
@@ -241,10 +242,7 @@ export const Composer = memo(function Composer({
 
   const mentionOptions = useMemo(() => {
     if (mentionQuery === null || !mentionTargets?.length) return [];
-    const query = mentionQuery.trim().toLowerCase();
-    return mentionTargets
-      .filter((target) => !query || target.name.toLowerCase().startsWith(query))
-      .slice(0, 10);
+    return searchComposerMentions(mentionTargets, mentionQuery, 10);
   }, [mentionQuery, mentionTargets]);
 
   useEffect(() => {
@@ -432,7 +430,7 @@ export const Composer = memo(function Composer({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`relative z-30 m-0 min-w-0 border-0 px-3 pb-4 pt-3 md:px-6 md:pb-6 ${
+      className={`relative z-30 m-0 min-w-0 border-0 px-3 pb-3 pt-2 md:px-4 md:pb-4 ${
         draggingFiles ? "rounded-[14px] ring-2 ring-inset ring-ring" : ""
       }`}
     >
@@ -591,8 +589,8 @@ export const Composer = memo(function Composer({
         ref={composerBarRef}
         data-testid="composer-bar"
         data-expanded={expanded}
-        className={`grid grid-cols-[auto_minmax(0,1fr)_auto] content-end items-center rounded-[26px] border border-border bg-background pe-2.5 ps-3 transition-colors focus-within:border-ring ${
-          expanded ? "gap-x-2 gap-y-2 pb-[9px] pt-3" : "gap-x-3.5 py-[9px]"
+        className={`grid grid-cols-[auto_minmax(0,1fr)_auto] content-end items-center rounded-[22px] border border-border bg-card pe-1.5 ps-1.5 shadow-sm transition-colors focus-within:border-ring ${
+          expanded ? "gap-x-2 gap-y-2 pb-1.5 pt-2.5" : "gap-x-2.5 py-1.5"
         }`}
       >
         <input
@@ -610,7 +608,7 @@ export const Composer = memo(function Composer({
           aria-label={t`Attach file`}
           disabled={disabled}
           onClick={() => fileInputRef.current?.click()}
-          className={`col-start-1 size-8 shrink-0 rounded-full border border-border bg-muted text-muted-foreground transition-colors hover:bg-accent hover:text-foreground ${
+          className={`col-start-1 size-8 shrink-0 rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground ${
             expanded ? "row-start-2" : ""
           }`}
         >
@@ -762,7 +760,7 @@ export const Composer = memo(function Composer({
                 aria-label={t`Send`}
                 disabled={sending || !canSend || disabled}
                 onClick={send}
-                className="size-8 rounded-full bg-white text-black hover:bg-white/90 shadow-sm transition-transform active:scale-95"
+                className="size-8 rounded-full bg-primary text-primary-foreground shadow-sm transition-transform hover:bg-primary/90 active:scale-95 motion-reduce:transition-none"
               >
                 <ArrowUp size={16} strokeWidth={2.2} />
               </Button>
@@ -787,7 +785,7 @@ export const Composer = memo(function Composer({
                 aria-label={t`Send`}
                 disabled={sending || !canSend || disabled}
                 onClick={send}
-                className="size-8 shrink-0 rounded-full bg-white text-black hover:bg-white/90 shadow-sm transition-transform active:scale-95 disabled:bg-white/10 disabled:text-muted-foreground/30 disabled:shadow-none"
+                className="size-8 shrink-0 rounded-full bg-primary text-primary-foreground shadow-sm transition-transform hover:bg-primary/90 active:scale-95 disabled:bg-muted disabled:text-muted-foreground/50 disabled:shadow-none disabled:opacity-100 motion-reduce:transition-none"
               >
                 <ArrowUp size={16} strokeWidth={2.2} />
               </Button>

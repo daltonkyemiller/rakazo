@@ -12,7 +12,7 @@ export function useSearch(query: string) {
     if (!trimmed) return;
     const abort = new AbortController();
     const timer = setTimeout(() => {
-      void querySpaceSearch(trimmed)
+      void querySpaceSearch(trimmed, abort.signal)
         .then((hits) => {
           if (!abort.signal.aborted) setHits(hits);
         })

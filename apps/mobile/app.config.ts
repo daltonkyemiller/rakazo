@@ -23,7 +23,37 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   }
 
   let result = config as ExpoConfig;
-  const rpId = passkeyRpId(process.env.EXPO_PUBLIC_API_URL);
+  const localBuild = process.env.RAKAZO_LOCAL_BUILD === "1";
+  if (localBuild) {
+    const projectId = process.env.RAKAZO_EXPO_PROJECT_ID;
+    if (projectId && !/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(projectId)) {
+      throw new Error("RAKAZO_EXPO_PROJECT_ID must be your Expo project's UUID.");
+    }
+    if (projectId && projectId === config.extra?.eas?.projectId) {
+      throw new Error("Local builds must use your own Expo project, not the release project.");
+    }
+    const { eas: _eas, ...extra } = result.extra ?? {};
+    result = {
+      ...result,
+      name: "Rakazo Local",
+      slug: "rakazo-local",
+      owner: undefined,
+      scheme: "rakazo-local",
+      plugins: ["./plugins/with-local-signing", ...(result.plugins ?? [])],
+      updates: { enabled: false },
+      extra: { ...extra, ...(projectId ? { eas: { projectId } } : {}) },
+      ios: {
+        ...result.ios,
+        bundleIdentifier: process.env.RAKAZO_IOS_BUNDLE_IDENTIFIER ?? "dev.rakazo.local",
+        ...(process.env.RAKAZO_APPLE_TEAM_ID
+          ? { appleTeamId: process.env.RAKAZO_APPLE_TEAM_ID }
+          : {}),
+        associatedDomains: [],
+      },
+      android: { ...result.android, package: "dev.rakazo.local" },
+    };
+  }
+  const rpId = localBuild ? null : passkeyRpId(process.env.EXPO_PUBLIC_API_URL);
   if (rpId) {
     // Native passkeys only work for domains the binary is associated with, so the app reads the
     // same list at runtime to hide passkeys on other servers.

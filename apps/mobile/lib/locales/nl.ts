@@ -1,4 +1,9 @@
 export const NL_MESSAGES: Record<string, string> = {
+  "Close integrations": "Integraties sluiten",
+  "Connected integrations": "Verbonden integraties",
+  "No available integrations.": "Geen beschikbare integraties.",
+  "No connected integrations.": "Geen verbonden integraties.",
+  "{count} connected": "{count} verbonden",
   "Add an AI model to keep chatting": "Voeg een AI-model toe om verder te chatten",
   "Not Now": "Niet nu",
   "Add Model": "Model toevoegen",

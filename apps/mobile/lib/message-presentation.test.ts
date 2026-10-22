@@ -3,11 +3,11 @@ import { REPLY_QUOTE_MAX_LENGTH } from "@rakazo/contracts";
 import { describe, expect, it } from "vitest";
 import {
   applyLocalChoiceDismissals,
-  choiceCardOptions,
   DISMISSED_CHOICE_ANSWER_ID,
   hasVisibleMessagePresentation,
   isCenteredAgentEvent,
   messagePresentationSegments,
+  questionCardWidth,
   quotableMessageSegments,
   threadCardWidth,
   truncateQuoteExcerpt,
@@ -126,16 +126,8 @@ describe("mobile message presentation", () => {
     ]);
   });
 
-  it("lists every choice option until one is picked, then only that one", () => {
-    expect(choiceCardOptions(choice)).toEqual(choice.options);
-    expect(choiceCardOptions({ ...choice, answerId: "inbox" })).toEqual([
-      { id: "inbox", letter: "B", label: "Inbox & email" },
-    ]);
-  });
-
   it("hides a dismissed choice card", () => {
     const dismissed = { ...choice, answerId: DISMISSED_CHOICE_ANSWER_ID };
-    expect(choiceCardOptions(dismissed)).toEqual([]);
     expect(hasVisibleMessagePresentation([dismissed])).toBe(false);
   });
 
@@ -156,6 +148,11 @@ describe("mobile message presentation", () => {
   it("sizes thread cards to the bot row, capped on wide screens", () => {
     expect(threadCardWidth(393)).toBe(317);
     expect(threadCardWidth(1024)).toBe(340);
+  });
+
+  it("sizes question cards to the bot row, up to the desktop card width", () => {
+    expect(questionCardWidth(393)).toBe(317);
+    expect(questionCardWidth(1024)).toBe(535);
   });
 
   it("keeps the computer takeover card out of the text bubble", () => {

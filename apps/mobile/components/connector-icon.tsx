@@ -20,13 +20,18 @@ export function ConnectorIcon({
   const failed = logo && failure?.logo === logo ? failure : null;
   const svg = Boolean(logo && (/\.svg(?:[?#]|$)/i.test(logo) || failed));
   const uri = logo && !failed?.svgFailed ? logo : null;
-  const art = size - 8;
-  const initial = <Text style={styles.letter}>{(name.trim()[0] || "?").toUpperCase()}</Text>;
+  // Inline sizes (mention chips) keep the same proportions as the 36pt list icon.
+  const art = size - Math.min(8, Math.round(size / 4));
+  const initial = (
+    <Text style={[styles.letter, { fontSize: Math.min(16, Math.round(size * 0.45)) }]}>
+      {(name.trim()[0] || "?").toUpperCase()}
+    </Text>
+  );
   return (
     <View
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={[styles.frame, { width: size, height: size }]}
+      style={[styles.frame, { width: size, height: size, borderRadius: Math.min(10, size * 0.28) }]}
     >
       {uri ? (
         svg ? (
@@ -56,12 +61,11 @@ export function ConnectorIcon({
 function createStyles() {
   return StyleSheet.create({
     frame: {
-      borderRadius: 10,
       backgroundColor: native.fillPressed,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",
     },
-    letter: { color: native.label, fontSize: 16, fontWeight: "600" },
+    letter: { color: native.label, fontWeight: "600" },
   });
 }

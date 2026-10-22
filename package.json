@@ -33,7 +33,14 @@
     "perf:desktop": "tsx packages/testkit/src/cli/desktop-performance.ts",
     "perf:compare": "tsx packages/testkit/src/cli/compare-performance.ts",
     "compose:up": "docker compose --env-file .env -f infra/compose/docker-compose.yml up --build",
-    "compose:down": "docker compose --env-file .env -f infra/compose/docker-compose.yml down -v"
+    "compose:down": "docker compose --env-file .env -f infra/compose/docker-compose.yml down -v",
+    "local:mac": "node scripts/local-app.mjs mac run",
+    "build:mac": "node scripts/local-app.mjs mac build",
+    "local:ios": "node scripts/local-app.mjs ios run",
+    "build:ios": "node scripts/local-app.mjs ios build",
+    "archive:ios": "node scripts/local-app.mjs ios archive",
+    "upload:ios": "node scripts/local-app.mjs ios upload",
+    "setup:ios:push": "node scripts/local-app.mjs ios push"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

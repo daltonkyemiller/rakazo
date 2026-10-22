@@ -1,3 +1,4 @@
+import Constants from "expo-constants";
 import { authHeaders, clearSpace, currentApiBase, fetchMobileJson } from "./api";
 import { t } from "./i18n";
 import {
@@ -22,7 +23,9 @@ export async function continueWithSso(
       if (apiBase !== currentApiBase() || generation !== currentSessionGeneration())
         throw new Error(t("Could not continue"));
     };
-    const callbackURL = action === "sign-in" ? "rakazo://sign-in" : "rakazo://account";
+    const configuredScheme = Constants.expoConfig?.scheme;
+    const scheme = typeof configuredScheme === "string" ? configuredScheme : "rakazo";
+    const callbackURL = `${scheme}://${action === "sign-in" ? "sign-in" : "account"}`;
     const headers = action === "sign-in" ? {} : await authHeaders();
     requireCurrentSession();
     const previous = action === "reauthenticate" ? await sessionUser(apiBase, headers) : undefined;
@@ -68,7 +71,7 @@ export async function continueWithSso(
     if (result.type !== "success") return false;
     const callback = new URL(result.url);
     if (
-      callback.protocol !== "rakazo:" ||
+      callback.protocol !== new URL(callbackURL).protocol ||
       callback.host !== new URL(callbackURL).host ||
       (callback.pathname && callback.pathname !== "/")
     )

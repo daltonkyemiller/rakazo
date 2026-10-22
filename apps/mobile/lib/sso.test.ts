@@ -1,8 +1,11 @@
+import Constants from "expo-constants";
 import { openAuthSessionAsync, WebBrowserResultType } from "expo-web-browser";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { authHeaders, clearSpace, currentApiBase, fetchMobileJson } from "./api";
 import { currentSessionGeneration, replaceSessionTokenIfCurrent } from "./session";
 import { continueWithSso } from "./sso";
+
+vi.mock("expo-constants", () => ({ default: { expoConfig: { scheme: "rakazo" } } }));
 
 vi.mock("expo-web-browser", () => ({
   openAuthSessionAsync: vi.fn(),
@@ -22,6 +25,7 @@ vi.mock("./session", () => ({
 }));
 
 beforeEach(() => {
+  Constants.expoConfig!.scheme = "rakazo";
   vi.clearAllMocks();
   vi.mocked(fetchMobileJson).mockReset();
   vi.mocked(replaceSessionTokenIfCurrent).mockReset().mockResolvedValue(true);
@@ -42,6 +46,22 @@ beforeEach(() => {
     type: "success",
     url: `rakazo://sign-in?cookie=${encodeURIComponent("better-auth.session_token=new-session; Path=/; HttpOnly")}`,
   });
+});
+
+it("keeps local-build sign-in callbacks separate from the release app", async () => {
+  Constants.expoConfig!.scheme = "rakazo-local";
+  vi.mocked(openAuthSessionAsync).mockResolvedValue({
+    type: "success",
+    url: `rakazo-local://sign-in?cookie=${encodeURIComponent("better-auth.session_token=new-session; Path=/; HttpOnly")}`,
+  });
+  await expect(continueWithSso()).resolves.toBe(true);
+  expect(vi.mocked(openAuthSessionAsync).mock.calls[0]?.[1]).toBe("rakazo-local://sign-in");
+});
+
+it("rejects a callback intended for the release app in a local build", async () => {
+  Constants.expoConfig!.scheme = "rakazo-local";
+  await expect(continueWithSso()).rejects.toThrow();
+  expect(replaceSessionTokenIfCurrent).not.toHaveBeenCalled();
 });
 afterEach(() => vi.restoreAllMocks());
 it("uses the Expo proxy, validates the session, and saves the existing session store", async () => {

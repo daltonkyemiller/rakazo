@@ -7,6 +7,44 @@ export function catalogItemKey(item: CatalogRef) {
   return `${item.connectorId}:${item.slug}`;
 }
 
+export function connectionCatalogRows(
+  catalog: readonly ConnectionCatalogItem[],
+  connections: readonly Connection[],
+  query: string,
+  view: "all" | "available" | "connected" = "all",
+) {
+  const needle = query.trim().toLowerCase();
+  const profiles = new Map<string, string[]>();
+  const connected = new Set<string>();
+  for (const account of connections) {
+    if (account.status !== "connected" && account.status !== "pending") continue;
+    const key = catalogItemKey({ connectorId: account.connectorId, slug: account.provider });
+    profiles.set(key, [...(profiles.get(key) ?? []), account.displayName.toLowerCase()]);
+    if (account.status === "connected") connected.add(key);
+  }
+  const items = new Map(catalog.map((item) => [catalogItemKey(item), item]));
+  return [...items.values()]
+    .filter(
+      (item) =>
+        view === "all" || isCatalogItemConnected(connections, item) === (view === "connected"),
+    )
+    .filter(
+      (item) =>
+        !needle ||
+        [
+          item.name,
+          item.slug,
+          item.connectorId,
+          ...(profiles.get(catalogItemKey(item)) ?? []),
+        ].some((value) => value.toLowerCase().includes(needle)),
+    )
+    .sort(
+      (a, b) =>
+        Number(b.connected || connected.has(catalogItemKey(b))) -
+          Number(a.connected || connected.has(catalogItemKey(a))) || a.name.localeCompare(b.name),
+    );
+}
+
 /** Connected or still-authorizing accounts for one catalog app. */
 export function catalogItemAccounts(connections: readonly Connection[], item: CatalogRef) {
   return connections.filter(

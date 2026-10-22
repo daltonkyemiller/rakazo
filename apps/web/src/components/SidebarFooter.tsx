@@ -9,6 +9,7 @@ import {
   PopoverTrigger,
 } from "@rakazo/ui-web";
 import {
+  Blocks,
   BookOpen,
   Download,
   FolderOpen,
@@ -20,7 +21,7 @@ import {
   SquareKanban,
   UserRound,
 } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useSidebarUpdate } from "./DesktopUpdates";
 import { IconTooltip } from "./IconTooltip";
 
@@ -43,11 +44,6 @@ type Props = {
   logOutError: string | null;
 };
 
-// Marks are 24px wide, overlap by 2px, and need 2px for the outer ring.
-export function sidebarMarkCount(availableWidth: number) {
-  return Math.max(0, Math.min(3, Math.floor((availableWidth - 26) / 22) + 1));
-}
-
 export function SidebarFooter({
   mini = false,
   name,
@@ -69,51 +65,40 @@ export function SidebarFooter({
   const { t } = useLingui();
   const update = useSidebarUpdate();
   const [failedImage, setFailedImage] = useState<string | null>(null);
-  const pillRef = useRef<HTMLButtonElement>(null);
-  const labelRef = useRef<HTMLSpanElement>(null);
-  const [markCount, setMarkCount] = useState(3);
-  useLayoutEffect(() => {
-    const pill = pillRef.current;
-    const label = labelRef.current;
-    if (!pill || !label || typeof ResizeObserver === "undefined") return;
-    const measure = () => {
-      const style = getComputedStyle(pill);
-      const available =
-        pill.clientWidth -
-        Number.parseFloat(style.paddingLeft) -
-        Number.parseFloat(style.paddingRight) -
-        label.scrollWidth -
-        Number.parseFloat(style.columnGap);
-      setMarkCount(sidebarMarkCount(available));
-    };
-    const observer = new ResizeObserver(measure);
-    observer.observe(pill);
-    observer.observe(label);
-    measure();
-    return () => observer.disconnect();
-  }, [mini]);
   return (
     <div
       data-testid="sidebar-footer"
-      className={`flex shrink-0 items-center gap-2 bg-transparent ${mini ? "flex-col px-1 py-2" : "px-2.5 py-3"}`}
+      className={`flex shrink-0 items-center gap-2 bg-transparent ${mini ? "flex-col px-1 py-2" : "px-3 py-3"}`}
     >
       <Popover open={open} onOpenChange={onOpenChange}>
         <PopoverTrigger
           data-testid="user-menu-trigger"
           aria-label={t`Account menu for ${name}`}
-          className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-sidebar-accent text-sm font-medium text-foreground outline-none hover:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring"
+          className={`flex h-9 items-center rounded-full border border-sidebar-border bg-sidebar-accent text-start text-[13px] font-medium text-foreground outline-none hover:border-foreground/20 focus-visible:ring-2 focus-visible:ring-ring data-popup-open:border-foreground/20 ${
+            mini ? "w-9 shrink-0 justify-center" : "min-w-0 flex-1 gap-2 ps-1 pe-3"
+          }`}
         >
-          {image && failedImage !== image ? (
-            <img
-              src={image}
-              alt=""
-              className="size-full object-cover"
-              onError={() => setFailedImage(image)}
-            />
-          ) : initials ? (
-            initials
-          ) : (
-            <UserRound size={18} aria-hidden="true" />
+          <span
+            data-testid="user-menu-avatar"
+            className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-full bg-muted text-[11px] font-medium text-muted-foreground"
+          >
+            {image && failedImage !== image ? (
+              <img
+                src={image}
+                alt=""
+                className="size-full object-cover"
+                onError={() => setFailedImage(image)}
+              />
+            ) : initials ? (
+              initials
+            ) : (
+              <UserRound size={16} aria-hidden="true" />
+            )}
+          </span>
+          {mini ? null : (
+            <span className="min-w-0 truncate" dir="auto">
+              {name}
+            </span>
           )}
         </PopoverTrigger>
         {open ? (
@@ -121,7 +106,7 @@ export function SidebarFooter({
             side="top"
             sideOffset={8}
             align="start"
-            className="max-h-(--available-height) w-[295px] max-w-[calc(100vw-69px)] gap-0 overflow-y-auto p-1 *:shrink-0 data-closed:animate-none"
+            className="max-h-(--available-height) w-[276px] max-w-[calc(100vw-72px)] gap-0 overflow-y-auto p-1 *:shrink-0 data-closed:animate-none"
           >
             <div
               data-testid="account-menu-header"
@@ -214,17 +199,21 @@ export function SidebarFooter({
         ) : null}
       </Popover>
       {!mini ? (
-        <Button
-          variant="outline"
-          ref={pillRef}
-          onClick={onIntegrations}
-          className="h-9 min-w-0 flex-1 justify-between rounded-full bg-sidebar-accent hover:border-foreground/30 hover:bg-sidebar-accent dark:hover:bg-sidebar-accent"
-        >
-          <span ref={labelRef} className="min-w-0 truncate">
-            <Trans>Connect apps</Trans>
-          </span>
-          <AppMarkStack marks={logos.slice(0, markCount)} ringClassName="ring-sidebar-accent" />
-        </Button>
+        <IconTooltip label={t`Connect apps`}>
+          <Button
+            variant="outline"
+            aria-label={t`Connect apps`}
+            data-testid="connect-apps-trigger"
+            onClick={onIntegrations}
+            className="h-9 shrink-0 gap-0 rounded-full border-sidebar-border bg-sidebar-accent px-2 hover:border-foreground/20 hover:bg-sidebar-accent dark:hover:bg-sidebar-accent"
+          >
+            {logos.length > 0 ? (
+              <AppMarkStack marks={logos.slice(0, 3)} ringClassName="ring-sidebar-accent" />
+            ) : (
+              <Blocks size={17} strokeWidth={1.75} className="mx-0.5" aria-hidden="true" />
+            )}
+          </Button>
+        </IconTooltip>
       ) : null}
       {update.available ? (
         <IconTooltip label={t`Install update`}>

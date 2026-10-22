@@ -182,6 +182,51 @@ describe("Composer", () => {
     },
   );
 
+  it("shows each integration profile with its app logo and own name", () => {
+    const logo = "https://logos.example.test/gmail.svg";
+    const personal: ComposerMention = {
+      kind: "connector",
+      id: "conn-1",
+      name: "Gmail",
+      connectionId: "conn-1",
+      authStatus: "connected",
+      logo,
+    };
+    const work: ComposerMention = {
+      ...personal,
+      id: "conn-2",
+      name: "Work",
+      connectionId: "conn-2",
+    };
+    const linear: ComposerMention = {
+      kind: "connector",
+      id: "catalog:managed:linear",
+      name: "Linear",
+      authStatus: "needs_auth",
+      logo: null,
+    };
+    const textarea = renderComposer(vi.fn(), { mentionTargets: [personal, work, linear] });
+    type(textarea, "@");
+
+    const options = [...(container?.querySelectorAll('[role="option"]') ?? [])];
+    expect(options.map((option) => option.textContent)).toEqual(["@Gmail", "@Work", "@Linear"]);
+    expect(options.map((option) => option.querySelector("img")?.getAttribute("src"))).toEqual([
+      logo,
+      logo,
+      undefined,
+    ]);
+    // A missing logo keeps the generic integration glyph.
+    expect(options[2]?.querySelector("svg")).not.toBeNull();
+
+    act(() => {
+      textarea.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    });
+    pressEnter(textarea);
+    const chip = container?.querySelector('[data-testid="mention-chip"]');
+    expect(chip?.textContent).toBe("Work");
+    expect(chip?.querySelector("img")?.getAttribute("src")).toBe(logo);
+  });
+
   it("falls back to the first mention when the highlighted target disappears", () => {
     const alice: ComposerMention = { kind: "bot", id: "bot-3", name: "Alice" };
     const textarea = renderComposer(vi.fn(), { mentionTargets: [alice, bob] });

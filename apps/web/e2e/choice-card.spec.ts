@@ -1,34 +1,46 @@
+import type { Locator, Page, TestInfo } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 import { activeBotId, captureScreenshot, completeOnboarding, rpc, signup } from "./helpers";
 
-test("onboarding choices show borderless rows in both themes", async ({ page }, testInfo) => {
-  await signup(page, `onboarding-rows-${Date.now()}@rakazo.test`, "password12", "Sample");
-  await completeOnboarding(page);
-  const question = page.getByText("What do you want me on first?", { exact: true });
-  await expect(question).toBeVisible();
-  const card = question.locator("xpath=ancestor::div[contains(@class,'bg-card')][1]");
-  const option = card.getByRole("button", { name: /Inbox & email/ });
+async function captureInBothThemes(page: Page, testInfo: TestInfo, name: string) {
   for (const theme of ["light", "dark"]) {
     await page.evaluate(
       (value) => document.documentElement.setAttribute("data-theme", value),
       theme,
     );
-    await expect(option).toHaveCSS("border-top-width", "0px");
-    const rowColor = await option.evaluate((element) => getComputedStyle(element).backgroundColor);
-    const cardColor = await card.evaluate((element) => getComputedStyle(element).backgroundColor);
-    expect(rowColor).not.toBe(cardColor);
-    await captureScreenshot(page, testInfo, `onboarding-choice-rows-${theme}`);
+    await captureScreenshot(page, testInfo, `${name}-${theme}`);
   }
+}
+
+// Rows sit directly on the card: no fill or border of their own until hovered or pressed.
+async function expectFlatRow(row: Locator) {
+  await expect(row).toHaveCSS("border-top-width", "0px");
+  await expect(row).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(row).toHaveCSS("box-shadow", "none");
+}
+
+test("onboarding choices collapse to the pick on one surface", async ({ page }, testInfo) => {
+  await signup(page, `onboarding-rows-${Date.now()}@rakazo.test`, "password12", "Sample");
+  await completeOnboarding(page);
+  const card = page.getByTestId("choice-card");
+  await expect(card.getByText("What do you want me on first?", { exact: true })).toBeVisible();
+  const option = card.getByRole("button", { name: "Inbox & email", exact: true });
+  await expect(option).toContainText("B");
+  await expectFlatRow(option);
+  await captureInBothThemes(page, testInfo, "onboarding-choice-unanswered");
+
   await option.focus();
   await expect(option).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(card.getByRole("button")).toHaveCount(1);
-  await expect(option).toBeDisabled();
-  await expect(option).toContainText("✓");
-  await captureScreenshot(page, testInfo, "onboarding-choice-rows-answered");
+  const answer = card.getByTestId("choice-answer");
+  await expect(answer).toContainText("Inbox & email");
+  await expect(answer.getByTestId("choice-letter")).toHaveText("B");
+  await expect(card.getByRole("button")).toHaveCount(0);
+  await expect(card).not.toContainText("Day-to-day work");
+  await captureInBothThemes(page, testInfo, "onboarding-choice-answered");
 });
 
-test("renders tappable choice buttons and submits the offered action id", async ({
+test("a bot question lists lettered choices, then collapses to the pick", async ({
   page,
 }, testInfo) => {
   const stamp = Date.now();
@@ -53,57 +65,53 @@ test("renders tappable choice buttons and submits the offered action id", async 
     .toBe("waiting_input");
 
   // threads/get can observe waiting_input before the shell realtime feed paints the ask card.
-  const prompt = page.locator("p").filter({ hasText: /^Which city should I use\?$/ });
-  if ((await prompt.count()) === 0) {
+  const card = page.getByTestId("question-card");
+  if ((await card.count()) === 0) {
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.getByPlaceholder(/Message/)).toBeVisible({ timeout: 15_000 });
   }
-  await expect(prompt).toBeVisible({ timeout: 15_000 });
+  await expect(card.getByText("Which city should I use?", { exact: true })).toBeVisible({
+    timeout: 15_000,
+  });
 
-  const berlin = page.getByRole("button", { name: "Berlin", exact: true });
-  const seoul = page.getByRole("button", { name: "Seoul", exact: true });
-  const toronto = page.getByRole("button", { name: "Toronto", exact: true });
-  const lisbon = page.getByRole("button", { name: "Lisbon", exact: true });
-  await expect(berlin).toBeVisible();
-  await expect(seoul).toBeVisible();
-  await expect(toronto).toBeVisible();
-  await expect(lisbon).toBeVisible();
+  const options = card.getByRole("group").getByRole("button");
+  await expect(options).toHaveText(["ABerlin", "BSeoul", "CToronto", "DLisbon"]);
+  const berlin = card.getByRole("button", { name: "Berlin", exact: true });
+  const seoul = card.getByRole("button", { name: "Seoul", exact: true });
+  await expectFlatRow(berlin);
+  await expect(berlin.getByTestId("choice-letter")).toHaveCSS("width", "24px");
 
-  // Options render as a vertical full-width list, not wrapping chips.
-  const berlinBox = await berlin.boundingBox();
-  const seoulBox = await seoul.boundingBox();
-  const torontoBox = await toronto.boundingBox();
-  expect(berlinBox).toBeTruthy();
-  expect(seoulBox).toBeTruthy();
-  expect(torontoBox).toBeTruthy();
-  expect(seoulBox!.y).toBeGreaterThan(berlinBox!.y + berlinBox!.height - 2);
-  expect(torontoBox!.y).toBeGreaterThan(seoulBox!.y + seoulBox!.height - 2);
-  expect(Math.abs(berlinBox!.x - seoulBox!.x)).toBeLessThan(2);
-  expect(Math.abs(berlinBox!.width - seoulBox!.width)).toBeLessThan(2);
-  const optionList = berlin.locator("xpath=ancestor::div[contains(@class,'space-y-1.5')][1]");
-  const listBox = await optionList.boundingBox();
-  expect(listBox).toBeTruthy();
-  expect(Math.abs(berlinBox!.width - listBox!.width)).toBeLessThan(2);
-  await captureScreenshot(page, testInfo, "choice-card");
+  // One vertical list of full-width rows inside a single card.
+  const cardBox = (await card.boundingBox())!;
+  const berlinBox = (await berlin.boundingBox())!;
+  const seoulBox = (await seoul.boundingBox())!;
+  expect(cardBox.width).toBeLessThanOrEqual(535);
+  expect(seoulBox.y).toBeGreaterThan(berlinBox.y + berlinBox.height - 2);
+  expect(Math.abs(berlinBox.x - seoulBox.x)).toBeLessThan(2);
+  expect(Math.abs(berlinBox.width - seoulBox.width)).toBeLessThan(2);
+  expect(berlinBox.width).toBeGreaterThan(cardBox.width - 40);
+  await captureInBothThemes(page, testInfo, "question-card-unanswered");
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect(berlin).toBeVisible();
+  const lisbon = card.getByRole("button", { name: "Lisbon", exact: true });
   await expect(lisbon).toBeVisible();
-  const narrowBerlin = await berlin.boundingBox();
-  const narrowLisbon = await lisbon.boundingBox();
-  expect(narrowBerlin).toBeTruthy();
-  expect(narrowLisbon).toBeTruthy();
-  expect(narrowLisbon!.y).toBeGreaterThan(narrowBerlin!.y);
   await expect(lisbon).toBeEnabled();
-  await captureScreenshot(page, testInfo, "choice-card-narrow");
+  await captureScreenshot(page, testInfo, "question-card-narrow");
 
   await page.setViewportSize({ width: 1280, height: 720 });
   await seoul.click();
 
-  await expect(page.getByText("Answered: Seoul", { exact: true })).toBeVisible({
-    timeout: 30_000,
-  });
-  await expect(page.getByRole("button", { name: "Seoul", exact: true })).toHaveCount(0);
+  const answer = card.getByTestId("choice-answer");
+  await expect(answer).toContainText("Seoul", { timeout: 30_000 });
+  await expect(answer.getByTestId("choice-letter")).toHaveText("B");
+  await expect(answer.getByTestId("choice-letter")).not.toHaveCSS(
+    "background-color",
+    "rgba(0, 0, 0, 0)",
+  );
+  await expect(card.getByRole("button")).toHaveCount(0);
+  await expect(card).not.toContainText("Berlin");
+  // The outcome is announced, not shown as status text.
+  await expect(card.getByText("Answered: Seoul", { exact: true })).toHaveClass(/sr-only/);
 
   await expect
     .poll(
@@ -133,7 +141,7 @@ test("renders tappable choice buttons and submits the offered action id", async 
     )
     .toBe("choice-2");
 
-  await captureScreenshot(page, testInfo, "choice-card-answered");
+  await captureInBothThemes(page, testInfo, "question-card-answered");
 });
 
 test("a typed reply answers the latest question and resumes its run", async ({
@@ -166,7 +174,9 @@ test("a typed reply answers the latest question and resumes its run", async ({
   await composer.fill("Paris");
   await page.keyboard.press("Enter");
 
-  await expect(page.getByText("Answered: Paris", { exact: true })).toBeVisible({ timeout: 30_000 });
+  const answer = page.getByTestId("question-card").getByTestId("choice-answer");
+  await expect(answer).toContainText("Paris", { timeout: 30_000 });
+  await expect(answer.getByTestId("choice-letter")).toHaveCount(0);
   await expect(seoul).toHaveCount(0);
   await expect
     .poll(async () => {

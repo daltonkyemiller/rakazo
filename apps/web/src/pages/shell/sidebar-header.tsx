@@ -1,7 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import type { Bot } from "@rakazo/contracts";
-import { Button, Popover, PopoverContent, PopoverTrigger } from "@rakazo/ui-web";
-import { Bell, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@rakazo/ui-web";
+import { Bell, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { IconTooltip } from "../../components/IconTooltip";
 import { desktopBridge } from "../../lib/desktop";
@@ -9,11 +9,15 @@ import type { Panel } from "../../lib/right-panel-state";
 import { WindowChrome } from "../WindowChrome";
 import { BotCreatePicker } from "./bot-picker";
 
+/** Selected state keeps the sidebar material and foreground so it reads in both themes. */
+const SIDEBAR_TOOL_BUTTON =
+  "app-no-drag grid size-8 place-items-center rounded-full border border-sidebar-border bg-sidebar-accent text-foreground/70 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring aria-pressed:border-foreground/25 aria-pressed:bg-sidebar-accent aria-pressed:text-sidebar-accent-foreground";
+
 export function SidebarHeader({
   mini = false,
   activityMode,
   toggleActivityMode,
-  setBotsSidebarCollapsedPref,
+  onSearch,
   bots,
   setMobileSidebarOpen,
   setPanel,
@@ -24,7 +28,7 @@ export function SidebarHeader({
   mini?: boolean;
   activityMode: boolean;
   toggleActivityMode: () => void;
-  setBotsSidebarCollapsedPref: (collapsed: boolean) => void;
+  onSearch: () => void;
   bots: Bot[];
   setMobileSidebarOpen: (open: boolean) => void;
   setPanel: (panel: Panel) => void;
@@ -35,26 +39,20 @@ export function SidebarHeader({
   const { t } = useLingui();
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const hasWindowChrome = Boolean(desktopBridge());
-  const toggleLabel = mini ? t`Show bots` : t`Minimize bots`;
   return (
     <div
-      className={`app-drag flex items-center ${mini ? `flex-col gap-2 px-0 pb-2 ${hasWindowChrome ? "pt-4" : "pt-2"}` : "justify-between px-[18px] pb-3 pt-4"}`}
+      className={`app-drag flex items-center ${mini ? `flex-col gap-2 px-0 pb-2 ${hasWindowChrome ? "pt-4" : "pt-2"}` : "justify-between px-3 pb-2.5 pt-3"}`}
     >
       {!mini || hasWindowChrome ? <WindowChrome /> : null}
-      <div className={`relative flex items-center ${mini ? "flex-col gap-0.5" : "gap-2.5"}`}>
+      <div className={`relative flex items-center ${mini ? "flex-col gap-1.5" : "gap-2"}`}>
         <IconTooltip label={t`Activity`}>
-          <Button
-            variant="ghost"
-            size="icon-sm"
+          <button
+            type="button"
             aria-label={t`Activity`}
             aria-pressed={activityMode}
             data-activity-mode={activityMode ? "on" : "off"}
             onClick={toggleActivityMode}
-            className={`app-no-drag flex h-7 w-7 items-center justify-center rounded-full ${
-              activityMode
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground/70 hover:text-foreground/75"
-            }`}
+            className={SIDEBAR_TOOL_BUTTON}
           >
             <Bell
               size={15}
@@ -62,32 +60,28 @@ export function SidebarHeader({
               fill={activityMode ? "currentColor" : "none"}
               aria-hidden="true"
             />
-          </Button>
+          </button>
         </IconTooltip>
-        <IconTooltip label={toggleLabel}>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="app-no-drag hidden h-7 w-7 items-center justify-center rounded-full text-muted-foreground/70 hover:text-foreground/75 md:inline-flex"
-            aria-label={toggleLabel}
-            data-testid={mini ? "restore-bots-sidebar" : "minimize-bots-sidebar"}
-            onClick={() => setBotsSidebarCollapsedPref(!mini)}
+        <IconTooltip label={t`Search`}>
+          <button
+            type="button"
+            aria-label={t`Search`}
+            aria-haspopup="dialog"
+            data-testid="sidebar-search-trigger"
+            onClick={onSearch}
+            className={SIDEBAR_TOOL_BUTTON}
           >
-            {mini ? (
-              <PanelLeftOpen size={15} strokeWidth={1.8} aria-hidden="true" />
-            ) : (
-              <PanelLeftClose size={15} strokeWidth={1.8} aria-hidden="true" />
-            )}
-          </Button>
+            <Search size={15} strokeWidth={1.9} aria-hidden="true" />
+          </button>
         </IconTooltip>
         <Popover open={createMenuOpen} onOpenChange={setCreateMenuOpen}>
           <IconTooltip label={t`Create`}>
             <PopoverTrigger
-              className="app-no-drag flex size-7 items-center justify-center rounded-full text-[21px] text-muted-foreground/70 outline-none hover:text-foreground/75 focus-visible:ring-2 focus-visible:ring-ring"
+              className={`${SIDEBAR_TOOL_BUTTON} data-popup-open:text-foreground`}
               aria-label={t`Create`}
               data-testid="create-menu-trigger"
             >
-              +
+              <Plus size={16} strokeWidth={1.9} aria-hidden="true" />
             </PopoverTrigger>
           </IconTooltip>
           {/* Unmount with the state change so the panel it opens never coexists with the menu. */}

@@ -4,6 +4,13 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "local": {
+      "distribution": "internal",
+      "environment": "development",
+      "env": {
+        "RAKAZO_LOCAL_BUILD": "1"
+      }
+    },
     "preview": {
       "distribution": "internal",
       "environment": "preview",

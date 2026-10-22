@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import appConfig from "../app.config";
 
 beforeEach(() => {
+  vi.stubEnv("RAKAZO_LOCAL_BUILD", undefined);
+  vi.stubEnv("RAKAZO_EXPO_PROJECT_ID", undefined);
   vi.stubEnv("EAS_BUILD_PROFILE", "production");
   vi.stubEnv("EXPO_PUBLIC_API_URL", "https://app.example.com");
 });
@@ -29,6 +31,43 @@ const passkeys = {
 };
 
 describe("mobile app config", () => {
+  it("attributes local push tokens to the local Expo project without enabling OTA updates", () => {
+    vi.stubEnv("RAKAZO_LOCAL_BUILD", "1");
+    vi.stubEnv("RAKAZO_EXPO_PROJECT_ID", "00000000-0000-4000-8000-000000000001");
+    const result = appConfig(context(config));
+    expect(result.extra?.eas).toEqual({ projectId: "00000000-0000-4000-8000-000000000001" });
+    expect(result.updates).toEqual({ enabled: false });
+  });
+
+  it("refuses to register local push tokens against the release's Expo project", () => {
+    const projectId = "00000000-0000-4000-8000-000000000001";
+    vi.stubEnv("RAKAZO_LOCAL_BUILD", "1");
+    vi.stubEnv("RAKAZO_EXPO_PROJECT_ID", projectId);
+    expect(() => appConfig(context({ ...config, extra: { eas: { projectId } } }))).toThrow(
+      "Local builds must use your own Expo project",
+    );
+  });
+
+  it("isolates local builds from release identities, passkeys and OTA updates", () => {
+    vi.stubEnv("RAKAZO_LOCAL_BUILD", "1");
+    const result = appConfig(
+      context({
+        ...config,
+        owner: "example-owner",
+        scheme: "rakazo",
+        extra: { ...config.extra, eas: { projectId: "example-project" } },
+        updates: { url: "https://updates.example.com" },
+      }),
+    );
+    expect(result.name).toBe("Rakazo Local");
+    expect(result.scheme).toBe("rakazo-local");
+    expect(result.ios?.bundleIdentifier).toBe("dev.rakazo.local");
+    expect(result.ios?.associatedDomains).toEqual([]);
+    expect(result.updates).toEqual({ enabled: false });
+    expect(result.extra).toEqual({ example: true });
+    expect(result.owner).toBeUndefined();
+  });
+
   it("loads the Firebase file path while preserving the existing config", () => {
     vi.stubEnv("GOOGLE_SERVICES_JSON", "/build/google-services.json");
 

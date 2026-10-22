@@ -52,40 +52,45 @@ export function AccountAccess({
     }
   }
   return (
-    <div className="space-y-3">
-      {security?.sso && !security.ssoLinked ? (
+    <div className="space-y-3 py-3">
+      <div className="flex flex-wrap gap-2">
+        {security?.sso && !security.ssoLinked ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={pending}
+            onClick={() =>
+              void action(async () => {
+                const result = await runSsoFlow(
+                  (disableRedirect, callbackURL) =>
+                    authClient.linkSocial({
+                      disableRedirect,
+                      provider: "oidc",
+                      callbackURL: callbackURL(window.location.href),
+                      errorCallbackURL: callbackURL(window.location.href),
+                    }),
+                  [window.location.href],
+                );
+                if (result.error)
+                  throw new Error(authErrorText(result.error, t`Could not continue`));
+              }, true)
+            }
+          >
+            <Trans>Link SSO</Trans>
+          </Button>
+        ) : null}
         <Button
           variant="outline"
-          disabled={pending}
-          onClick={() =>
-            void action(async () => {
-              const result = await runSsoFlow(
-                (disableRedirect, callbackURL) =>
-                  authClient.linkSocial({
-                    disableRedirect,
-                    provider: "oidc",
-                    callbackURL: callbackURL(window.location.href),
-                    errorCallbackURL: callbackURL(window.location.href),
-                  }),
-                [window.location.href],
-              );
-              if (result.error) throw new Error(authErrorText(result.error, t`Could not continue`));
-            }, true)
-          }
+          size="sm"
+          className="text-destructive hover:text-destructive"
+          onClick={() => setOpen((value) => !value)}
         >
-          <Trans>Link SSO</Trans>
+          <Trans>Delete account</Trans>
         </Button>
-      ) : null}
-      <Button
-        variant="outline"
-        className="text-destructive hover:text-destructive"
-        onClick={() => setOpen((value) => !value)}
-      >
-        <Trans>Delete account</Trans>
-      </Button>
+      </div>
       {open ? (
-        <div className="space-y-3">
-          <p className="text-sm">
+        <div className="max-w-sm space-y-3">
+          <p className="text-[13px] text-muted-foreground">
             <Trans>This permanently deletes your account and data.</Trans>
           </p>
           {!security ? (

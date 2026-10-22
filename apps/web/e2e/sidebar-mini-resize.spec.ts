@@ -34,23 +34,15 @@ test("sidebar rail keeps chats interactive and remembers a dragged width", async
   await expect(handle).toHaveAttribute("aria-valuenow", String(preferredWidth));
   await captureScreenshot(page, testInfo, "sidebar-resized-expanded");
 
-  await sidebar.getByRole("textbox", { name: "Search", exact: true }).fill("no roster matches");
-  await expect(row).toHaveCount(0);
-  await page.getByTestId("minimize-bots-sidebar").click();
+  await handle.click();
   await expect(sidebar).toHaveCSS("width", "72px");
   await expect(row).toHaveAccessibleName("Research");
   await expect(row).toHaveAccessibleDescription(/unread/);
-  await page.getByTestId("restore-bots-sidebar").click();
-  await expect(sidebar.getByRole("textbox", { name: "Search", exact: true })).toHaveValue(
-    "no roster matches",
-  );
-  await sidebar.getByRole("textbox", { name: "Search", exact: true }).fill("");
-  await page.getByTestId("minimize-bots-sidebar").click();
-  await expect(sidebar).toHaveCSS("width", "72px");
   await row.click();
   await expect(page).toHaveURL(new RegExp(`/app/${bot.id}$`));
   await expect(row).toHaveAttribute("aria-current", "page");
   await expect(sidebar.locator("[data-roster-preview]")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Show bots", exact: true })).toHaveCount(0);
   await captureScreenshot(page, testInfo, "sidebar-mini-avatar-rail");
   await page.getByTestId("user-menu-trigger").click();
   await page.getByRole("button", { name: "Connect apps", exact: true }).click();
@@ -58,7 +50,7 @@ test("sidebar rail keeps chats interactive and remembers a dragged width", async
   await page.getByRole("button", { name: "Close integrations", exact: true }).click();
   await page.reload();
   await expect(sidebar).toHaveCSS("width", "72px");
-  await page.getByTestId("restore-bots-sidebar").click();
+  await page.getByTestId("bots-sidebar-edge").click();
   await expect(sidebar).toHaveCSS("width", `${preferredWidth}px`);
 
   await handle.focus();
@@ -74,11 +66,12 @@ test("sidebar rail keeps chats interactive and remembers a dragged width", async
     .poll(async () => Math.round((await sidebar.boundingBox())!.width))
     .toBeGreaterThan(300);
 
-  await page.getByTestId("minimize-bots-sidebar").click();
+  await handle.click();
+  await expect(sidebar).toHaveCSS("width", "72px");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Open navigation" }).click();
   await expect(sidebar).toHaveCSS("width", "316px");
-  await expect(sidebar.getByRole("textbox", { name: "Search", exact: true })).toBeVisible();
+  await expect(sidebar.getByTestId("sidebar-search-trigger")).toBeVisible();
   await expect(row.locator("[data-roster-bot-name]")).toBeVisible();
 });
 
@@ -154,8 +147,8 @@ test("sidebar snaps its layout during a held drag in both directions", async ({
     await testInfo.attach(name, { contentType: "image/png", path });
   };
   const handle = page.getByRole("separator", { name: "Resize bots sidebar" });
-  const search = sidebar.getByRole("textbox", { name: "Search", exact: true });
-  await page.getByTestId("minimize-bots-sidebar").click();
+  const names = sidebar.locator("[data-roster-bot-name]");
+  await handle.click();
   await expect(sidebar).toHaveCSS("width", "72px");
   await captureFrame("sidebar-mini-tight-spacing");
   await handle.hover({ position: { x: 4, y: 300 } });
@@ -171,14 +164,14 @@ test("sidebar snaps its layout during a held drag in both directions", async ({
     await page.mouse.move(origin + distance, edge.y + 300);
     await expect(sidebar).toHaveCSS("width", `${width}px`);
     await expect(sidebar).toHaveAttribute("data-collapsed", String(mini));
-    if (mini) await expect(search).toHaveCount(0);
-    else await expect(search).toBeVisible();
+    if (mini) await expect(names).toHaveCount(0);
+    else await expect(names.first()).toBeVisible();
     await captureFrame(`sidebar-drag-${frame}`);
   }
   await page.mouse.up();
   await expect(sidebar).toHaveCSS("width", "72px");
   await page.reload();
   await expect(sidebar).toHaveCSS("width", "72px");
-  await page.getByTestId("restore-bots-sidebar").click();
+  await page.getByTestId("bots-sidebar-edge").click();
   await expect(sidebar).toHaveCSS("width", "316px");
 });

@@ -22,6 +22,7 @@ export const STACK_ENV_FILE = ".env";
 export const STACK_WEB_URL_FILE = ".desktop-web-url";
 export const STACK_HOST_CONFIG_FILE = ".desktop-host-config";
 export const STACK_TOKEN_FILE = ".desktop-stack-token";
+export const STACK_IMAGE_TAG_FILE = ".desktop-image-tag";
 export const STACK_OUTPUT_LINES = 20;
 export const STACK_HEALTH_TIMEOUT_MS = 120_000;
 export const COMPOSE_WAIT_TIMEOUT_S = 300;
@@ -33,6 +34,24 @@ export async function readStackWebUrl(dir: string, fallback: string): Promise<st
   return match && port >= 1024 && port <= 65535 && raw === `http://127.0.0.1:${port}`
     ? raw
     : fallback;
+}
+
+/** Local clients can keep an adopted backend version while their UI changes independently. */
+export async function readLocalStackImageTag(dir: string): Promise<string | null> {
+  const file = path.join(dir, STACK_IMAGE_TAG_FILE);
+  const info = await lstat(file).catch((error: unknown) => {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT")
+      return null;
+    throw error;
+  });
+  if (info === null) return null;
+  const raw = await readPrivateFile(file, 128);
+  const tag = raw?.trim();
+  if (!tag || !/^v\d+\.\d+\.\d+$/.test(tag))
+    throw new Error(
+      "Invalid local backend version pin. Restore a stable release tag before starting the stack.",
+    );
+  return tag;
 }
 
 /** Docker owns the final bind; a racing listener is handled by bounded up retries. */

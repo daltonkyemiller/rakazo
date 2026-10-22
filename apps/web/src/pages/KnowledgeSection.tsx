@@ -14,6 +14,7 @@ import {
 } from "@rakazo/ui-web";
 import { Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { SettingsSection } from "../components/SettingsLayout";
 import { downloadArtifactBytes } from "../lib/artifact-open";
 import { useSpaceRpc } from "../lib/space-rpc";
 
@@ -67,21 +68,19 @@ export function KnowledgeSection({
 export function SpaceMemorySection() {
   const rpc = useSpaceRpc();
   return (
-    <section
-      className="rounded-xl border border-border px-4 py-4"
-      data-testid="space-memory-documents"
+    <SettingsSection
+      title={<Trans>Shared documents</Trans>}
+      target="shared-documents"
+      testId="space-memory-documents"
     >
-      <h3 className="text-[15px] font-medium text-foreground">
-        <Trans>Shared documents</Trans>
-      </h3>
-      <div className="mt-3">
+      <div className="pt-2">
         <MemoryDocumentList
           load={() => rpc.memory.list({ scope: "user" })}
           exportFilename="space-memory.md"
           testId="space-memory-list"
         />
       </div>
-    </section>
+    </SettingsSection>
   );
 }
 
@@ -264,7 +263,6 @@ function MemoryDocumentList({
                     type="button"
                     disabled={busy || conflicted || draft === doc.content}
                     onClick={() => void save(doc)}
-                    className="rounded-full"
                   >
                     <Trans>Save</Trans>
                   </Button>
@@ -301,7 +299,7 @@ function MemoryDocumentList({
           type="button"
           disabled={busy}
           onClick={() => void exportMarkdown()}
-          className="mt-3 rounded-full"
+          className="mt-3"
         >
           <Download data-icon="inline-start" />
           <Trans>Download as markdown</Trans>

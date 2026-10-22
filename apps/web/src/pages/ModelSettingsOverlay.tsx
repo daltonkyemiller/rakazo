@@ -18,8 +18,8 @@ import {
   Disclosure,
 } from "@rakazo/ui-web";
 import { X } from "lucide-react";
+import { settingsTargetClass, settingsTargetId } from "../components/SettingsLayout";
 import { ModelBackupsSettings } from "./ModelBackupsSettings";
-
 import { CatalogModelFields } from "./model-settings/catalog-model-fields";
 import { CompatibleModelFields } from "./model-settings/compatible-model-fields";
 import {
@@ -106,7 +106,10 @@ export function ModelSettingsOverlay({
       ) : null}
 
       {me?.needsModel ? null : (
-        <div className={`mx-6 sm:mx-8 ${embedded ? "mt-4" : "mt-5"}`}>
+        <div
+          id={settingsTargetId("active-model")}
+          className={`${settingsTargetClass} mx-6 sm:mx-8 ${embedded ? "mt-4" : "mt-5"}`}
+        >
           <div className="flex flex-col gap-1 md:flex-row md:items-baseline md:gap-6">
             <span className="shrink-0 text-[13.5px] text-muted-foreground md:w-[310px]">
               <Trans>Active model</Trans>

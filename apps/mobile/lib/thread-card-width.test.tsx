@@ -2,7 +2,8 @@
 
 import { readFileSync } from "node:fs";
 import type { MessageBlock } from "@rakazo/contracts";
-import { fontWeight, typeScale } from "@rakazo/ui-tokens";
+import { isChoiceAskBlock } from "@rakazo/core";
+import { botChatColors, fontWeight, typeScale } from "@rakazo/ui-tokens";
 import type { ReactNode } from "react";
 import React, { act, useState } from "react";
 import type { Root } from "react-dom/client";
@@ -20,14 +21,24 @@ vi.mock("react-native", async () => {
       : ((style as Record<string, unknown>) ?? {});
   const element =
     (tag: string) =>
-    ({ children, style }: { children?: ReactNode; style?: unknown }) =>
-      createElement(tag, { "data-style": JSON.stringify(flatten(style)) }, children);
+    ({ children, style, testID }: { children?: ReactNode; style?: unknown; testID?: string }) =>
+      createElement(
+        tag,
+        {
+          "data-style": JSON.stringify(
+            flatten(typeof style === "function" ? style({ pressed: false }) : style),
+          ),
+          "data-testid": testID,
+        },
+        children,
+      );
   return {
     Alert: { alert: vi.fn() },
     Pressable: element("button"),
-    StyleSheet: { create: <T,>(styles: T) => styles },
+    StyleSheet: { create: <T,>(styles: T) => styles, hairlineWidth: 1 },
     Text: element("span"),
     View: element("div"),
+    useWindowDimensions: () => ({ width: 393, height: 852, scale: 1, fontScale: 1 }),
   };
 });
 
@@ -42,6 +53,7 @@ vi.mock("../components/native-action-button", () => ({
   NativeActionButton: ({ label }: { label: string }) => <button type="button">{label}</button>,
 }));
 
+import { AskQuestionCard } from "../components/AskQuestionCard";
 import { McpApprovalCard } from "../components/McpApprovalCard";
 
 // Render the screen's actual message bubble without importing its native dependencies.
@@ -59,6 +71,10 @@ const scope = {
   useState,
   useResolvedAppearance: () => "light",
   mobileTokens: () => ({}),
+  botChatColors,
+  isChoiceAskBlock,
+  speakerColorDefFor: () => undefined,
+  AskQuestionCard,
   useI18n: () => ({ t: (text: string) => text }),
   isApprovalAskBlock: (block: { actions?: { id: string }[] }) =>
     Boolean(block.actions?.some((action) => action.id === "allow")),
@@ -142,19 +158,27 @@ describe("thread cards", () => {
     ["expired", {}, false],
     ["answered", { status: "answered" as const, answer: "yes" }, false],
     ["active", {}, true],
-    [
-      "approval",
+  ])("sizes a long %s choice question to the bot row in points", (_, ask, canAnswer) => {
+    renderAsk(ask, canAnswer);
+    const card = container.querySelector("[data-testid='question-card']");
+    expect(card?.textContent).toContain(longQuestion);
+    expect(styleOf(card)).toMatchObject({ width: 317 });
+    expect(styleOf(card).maxWidth).toBeUndefined();
+  });
+
+  it("bounds a long approval card by its cap, not a percentage width", () => {
+    const card = renderAsk(
       {
+        approvalEffectId: "effect-1",
         actions: [
           { id: "allow", label: "Allow once" },
           { id: "deny", label: "Deny" },
         ],
       },
       true,
-    ],
-  ])("bounds a long %s question card by its cap, not a percentage width", (_, ask, canAnswer) => {
-    const card = renderAsk(ask, canAnswer);
+    );
     expect(card?.textContent).toContain(longQuestion);
+    expect(container.querySelector("[data-testid='question-card']")).toBeNull();
     expect(styleOf(card)).toMatchObject({ maxWidth: 576 });
     expect(styleOf(card).width).toBeUndefined();
   });

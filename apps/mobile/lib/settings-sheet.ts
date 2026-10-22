@@ -13,6 +13,7 @@ const settingsScreens = new Set([
   "change-password",
   "integration-setup",
   "integrations",
+  "connected-integrations",
   "language",
   "models",
   "voice",

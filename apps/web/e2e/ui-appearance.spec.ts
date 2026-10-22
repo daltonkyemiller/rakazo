@@ -8,21 +8,18 @@ async function captureSidebarSearchSelected(
   name: string,
 ) {
   const aside = page.locator("aside").first();
-  const search = aside.getByTestId("sidebar-search");
+  const search = aside.getByTestId("sidebar-search-trigger");
   const selected = aside.getByRole("button", { name: /^Chief/ }).first();
   await expect(search).toBeVisible();
   await expect(selected).toBeVisible();
-  await search.scrollIntoViewIfNeeded();
 
   const searchBox = await search.boundingBox();
   const selectedBox = await selected.boundingBox();
   expect(searchBox).toBeTruthy();
   expect(selectedBox).toBeTruthy();
   if (searchBox && selectedBox) {
-    expect(Math.abs(searchBox.x - selectedBox.x)).toBeLessThanOrEqual(1);
-    expect(
-      Math.abs(searchBox.x + searchBox.width - (selectedBox.x + selectedBox.width)),
-    ).toBeLessThanOrEqual(1);
+    // Search lives in the top toolbar, above the roster.
+    expect(searchBox.y + searchBox.height).toBeLessThanOrEqual(selectedBox.y);
   }
 
   const box = await aside.boundingBox();
@@ -105,19 +102,19 @@ test("sidebar footer opens integrations and the account menu", async ({ page }, 
   await completeOnboarding(page);
   const footer = page.getByTestId("sidebar-footer");
   await expect(footer).toBeVisible();
-  const searchBox = await page.getByTestId("sidebar-search").boundingBox();
+  await expect(page.getByTestId("sidebar-search")).toHaveCount(0);
+  await expect(footer.locator('span[aria-hidden="true"] > span')).toHaveCount(3);
   const avatarBox = await page.getByTestId("user-menu-trigger").boundingBox();
   const pillBox = await footer
     .getByRole("button", { name: "Connect apps", exact: true })
     .boundingBox();
-  expect(searchBox).toBeTruthy();
   expect(avatarBox).toBeTruthy();
   expect(pillBox).toBeTruthy();
-  if (searchBox && avatarBox && pillBox) {
-    expect(avatarBox.x).toBe(searchBox.x);
-    expect(pillBox.x + pillBox.width).toBe(searchBox.x + searchBox.width);
+  if (avatarBox && pillBox) {
+    expect(avatarBox.x + avatarBox.width).toBeLessThan(pillBox.x);
     expect(pillBox.height).toBe(avatarBox.height);
   }
+  await expect(page.getByTestId("user-menu-trigger")).toContainText("Footer Demo");
   await expect(footer.getByRole("button", { name: "Install update", exact: true })).toHaveCount(0);
   await footer.getByRole("button", { name: "Connect apps", exact: true }).click();
   await expect(page.getByRole("button", { name: "Close integrations", exact: true })).toBeVisible();
@@ -138,15 +135,15 @@ test("sidebar footer opens integrations and the account menu", async ({ page }, 
           }
         );
       })
-      .toEqual({ x: avatarBox.x, width: pillBox.x + pillBox.width - avatarBox.x, gap: 8 });
+      .toEqual({ x: avatarBox.x, width: 276, gap: 8 });
   }
   await captureScreenshot(page, testInfo, "sidebar-footer-menu");
   await page.keyboard.press("Escape");
-  await page.getByTestId("minimize-bots-sidebar").click();
+  await page.getByTestId("bots-sidebar-edge").click();
   await expect(footer).toBeInViewport();
   await expect(page.getByTestId("bots-sidebar")).toHaveCSS("width", "72px");
   await expect(page.getByTestId("user-menu-trigger")).toBeVisible();
-  await page.getByTestId("restore-bots-sidebar").click();
+  await page.getByTestId("bots-sidebar-edge").click();
   await expect(footer).toBeInViewport();
 });
 
@@ -215,11 +212,8 @@ test("sidebar footer keeps the account identity readable and installs a ready de
   await page.setViewportSize({ width: 320, height: 900 });
   await page.getByRole("button", { name: "Open navigation", exact: true }).click();
   await expect(avatar).toBeInViewport();
-  // Font metrics can change the count at this viewport; exact bands are covered below.
   await expect(footer.locator('span[aria-hidden="true"] > span:visible').first()).toBeVisible();
   const pill = footer.getByRole("button", { name: "Connect apps", exact: true });
-  const label = pill.locator("span").first();
-  expect(await label.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
   const controls = [
     avatar,
     pill,
@@ -241,58 +235,14 @@ test("sidebar footer keeps the account identity readable and installs a ready de
   expect(await updateButton.evaluate((el) => el.matches(":focus-visible"))).toBe(true);
   await updateButton.evaluate((el) => el.blur());
 
-  // Width changes must drop marks before taking space from the label or padding.
-  // Measure the fixed controls and label, then target the middle of each band.
-  // Marks need 26px initially and 22px per additional mark, leaving 11px margin.
-  const fixedWidth = await pill.evaluate((el) => {
-    const style = getComputedStyle(el);
-    return (
-      el.parentElement!.getBoundingClientRect().width -
-      el.clientWidth +
-      Number.parseFloat(style.paddingLeft) +
-      Number.parseFloat(style.paddingRight) +
-      el.querySelector("span")!.scrollWidth +
-      Number.parseFloat(style.columnGap)
-    );
-  });
-  for (const [availableWidth, count] of [
-    [17, 0],
-    [37, 1],
-    [59, 2],
-    [81, 3],
-  ]) {
-    const width = fixedWidth + availableWidth!;
-    await footer.evaluate((el, width) => {
-      el.style.width = `${width}px`;
-    }, width);
-    const marks = footer.locator('span[aria-hidden="true"] > span');
-    await expect(marks).toHaveCount(count!);
-    expect(await label.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
-    if (count) {
-      const rightInset = await pill.evaluate((el) => {
-        const marks = el.querySelector('span[aria-hidden="true"]')!;
-        return el.getBoundingClientRect().right - marks.getBoundingClientRect().right;
-      });
-      expect(rightInset).toBeGreaterThanOrEqual(11);
-    }
-  }
-  await footer.evaluate((el) => el.style.removeProperty("width"));
-  // A translation wider than the pill must still leave room for the update control.
+  // Compact apps stays fixed while the profile name yields space to update controls.
+  const label = avatar.locator('span[dir="auto"]');
   await label.evaluate((el) => {
-    el.textContent = "Connecter des applications";
+    el.textContent = "A deliberately long account display name";
   });
-  await expect(footer.locator('span[aria-hidden="true"] > span')).toHaveCount(0);
-  const translatedPill = footer.getByRole("button", {
-    name: "Connecter des applications",
-    exact: true,
-  });
-  const translatedLabel = translatedPill.locator("span").first();
-  expect(await translatedLabel.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
-  await expect(translatedLabel).toHaveCSS("text-overflow", "ellipsis");
-  const labelBox = await translatedLabel.boundingBox();
-  const pillBox = await translatedPill.boundingBox();
-  expect(labelBox!.x + labelBox!.width).toBeLessThanOrEqual(pillBox!.x + pillBox!.width - 11);
+  await expect(label).toHaveCSS("text-overflow", "ellipsis");
   expect(await footer.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await expect(pill).toHaveAccessibleName("Connect apps");
 
   await page.setViewportSize({ width: 740, height: 320 });
   await avatar.click();
@@ -443,6 +393,7 @@ test("sidebar list fades above the transparent footer and keeps the last row rea
       )
       .toBeGreaterThan(20);
     const listBox = await list.boundingBox();
+    await expect(footer.locator('span[aria-hidden="true"] > span')).toHaveCount(3);
     const avatarBox = await page.getByTestId("user-menu-trigger").boundingBox();
     expect(listBox!.y + listBox!.height).toBeLessThan(avatarBox!.y);
     // Disabling animations fast-forwards the scroll timeline and removes its fade.

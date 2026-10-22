@@ -34,8 +34,6 @@ export function hasVisibleMessagePresentation(blocks: readonly MessageBlock[]): 
   return blocks.some((block) => !isToolActivityBlock(block) && !isDismissedChoice(block));
 }
 
-type ChoiceBlock = Extract<MessageBlock, { kind: "choice" }>;
-
 /** The answer id the server stores when the focus card is dismissed without a choice. */
 export const DISMISSED_CHOICE_ANSWER_ID = "_dismissed";
 
@@ -63,21 +61,21 @@ export function applyLocalChoiceDismissals(
   return changed ? next : blocks;
 }
 
-/** Options a choice card lists: all of them until answered, then only the picked one. */
-export function choiceCardOptions(block: ChoiceBlock): ChoiceBlock["options"] {
-  return block.answerId
-    ? block.options.filter((option) => option.id === block.answerId)
-    : block.options;
-}
-
 const THREAD_HORIZONTAL_PADDING = 20;
 const MESSAGE_COLUMN_RATIO = 0.9;
 const CARD_MAX_WIDTH = 340;
+const QUESTION_CARD_MAX_WIDTH = 535;
 
 /** Width of a card in a normal bot row: thread padding, then the 90% column cap. */
 export function threadCardWidth(windowWidth: number): number {
   const contentWidth = Math.max(0, windowWidth - THREAD_HORIZONTAL_PADDING * 2);
   return Math.min(CARD_MAX_WIDTH, Math.floor(contentWidth * MESSAGE_COLUMN_RATIO));
+}
+
+/** Width of a question card: the 90% column, up to the desktop card width. */
+export function questionCardWidth(windowWidth: number): number {
+  const contentWidth = Math.max(0, windowWidth - THREAD_HORIZONTAL_PADDING * 2);
+  return Math.min(QUESTION_CARD_MAX_WIDTH, Math.floor(contentWidth * MESSAGE_COLUMN_RATIO));
 }
 
 // Row chrome calls this per render; the same blocks array then hits the cache.

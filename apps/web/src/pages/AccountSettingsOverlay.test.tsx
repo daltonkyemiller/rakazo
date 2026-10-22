@@ -312,3 +312,70 @@ it("renders the server integrations entry as a plain link", async () => {
     vi.unstubAllGlobals();
   }
 });
+
+it("opens Advanced when search reveals one of its settings", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  const advancedTrigger = () =>
+    container.querySelector('[data-testid="advanced-settings"] [aria-expanded]');
+  const renderPanels = (revealTarget: string | null) =>
+    act(async () =>
+      root.render(
+        <GeneralSettingsPanels
+          name="Test"
+          avatarStyle="robot"
+          onAvatarStyleChange={async () => undefined}
+          revealTarget={revealTarget}
+        />,
+      ),
+    );
+  try {
+    await renderPanels("theme");
+    expect(advancedTrigger()?.getAttribute("aria-expanded")).toBe("false");
+    await renderPanels("tool-activity");
+    expect(advancedTrigger()?.getAttribute("aria-expanded")).toBe("true");
+    expect(container.querySelector("#settings-target-tool-activity")).not.toBeNull();
+  } finally {
+    await act(async () => root.unmount());
+    vi.unstubAllGlobals();
+  }
+});
+
+it("offers server settings only when the desktop app provides them", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  const onOpenServerSettings = vi.fn();
+  const serverButton = () =>
+    container.querySelector<HTMLButtonElement>(
+      '#settings-target-server-settings button[aria-label="Server settings"]',
+    );
+  try {
+    await act(async () =>
+      root.render(
+        <GeneralSettingsPanels
+          name="Test"
+          avatarStyle="robot"
+          onAvatarStyleChange={async () => undefined}
+        />,
+      ),
+    );
+    expect(serverButton()).toBeNull();
+    await act(async () =>
+      root.render(
+        <GeneralSettingsPanels
+          name="Test"
+          avatarStyle="robot"
+          onAvatarStyleChange={async () => undefined}
+          onOpenServerSettings={onOpenServerSettings}
+        />,
+      ),
+    );
+    await act(async () => serverButton()?.click());
+    expect(onOpenServerSettings).toHaveBeenCalledOnce();
+  } finally {
+    await act(async () => root.unmount());
+    vi.unstubAllGlobals();
+  }
+});

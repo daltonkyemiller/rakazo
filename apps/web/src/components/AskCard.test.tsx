@@ -211,7 +211,7 @@ it("keeps an accepted question choice answered until the block updates", async (
   const onAnswer = vi.fn(async () => undefined);
   await render(block, undefined, onAnswer);
 
-  await act(async () => button("Paris")!.click());
+  await act(async () => option("Paris")!.click());
 
   expect(onAnswer).toHaveBeenCalledWith("paris", undefined);
   expect(container.textContent).toContain("Answered: Paris");
@@ -224,44 +224,187 @@ it("keeps an accepted question choice answered until the block updates", async (
   expect(container.textContent).not.toContain("Answered: Paris");
 });
 
-it("gives question options a fill and border", async () => {
-  await render({
-    kind: "ask",
-    text: "Which city?",
-    status: "pending",
-    actions: [{ id: "paris", label: "Paris" }],
-  });
-  const option = button("Paris")!;
-  expect(option.disabled).toBe(false);
-  expect(option.classList.contains("bg-secondary")).toBe(true);
-  expect(option.classList.contains("border-input")).toBe(true);
-});
+const question: AskBlock = {
+  kind: "ask",
+  text: "Which should I put at the top of tomorrow's read out?",
+  status: "pending",
+  actions: [
+    { id: "choice-1", label: "Client and billing issues" },
+    { id: "choice-2", label: "Releases and production deploys" },
+    { id: "choice-3", label: "Onboarding bugs" },
+    { id: "choice-4", label: "Hiring" },
+  ],
+};
+const accent = {
+  id: "ember",
+  name: "Ember",
+  light: "#c2410c",
+  dark: "#9a3412",
+  eyeColor: "#ffffff",
+  hex: "#c2410c",
+};
 
-it("gives onboarding choices borderless rows and distinct interaction states", async () => {
+async function renderQuestion(
+  block: AskBlock,
+  onAnswer: (text: string) => Promise<void> = async () => undefined,
+  canAnswer = true,
+) {
   await act(async () =>
     root.render(
-      <ChoiceCard
-        botId="bot"
-        block={{
-          kind: "choice",
-          question: "Which city?",
-          options: [{ id: "paris", letter: "A", label: "Paris" }],
-        }}
-        onBotChanged={async () => {}}
+      <AskCard
+        block={block}
+        accent={accent}
+        canAnswer={canAnswer}
+        canDismiss={false}
+        onAnswer={onAnswer}
+        onDismiss={async () => {}}
       />,
     ),
   );
-  const option = [...container.querySelectorAll("button")].find((item) =>
-    item.textContent?.includes("Paris"),
+}
+
+function option(label: string) {
+  return [...container.querySelectorAll("button")].find((item) =>
+    item.textContent?.endsWith(label),
+  );
+}
+
+it("lists a question's choices as lettered rows on one surface", async () => {
+  await renderQuestion(question);
+
+  const group = container.querySelector("fieldset")!;
+  const title = document.getElementById(group.getAttribute("aria-labelledby")!)!;
+  expect(title.textContent).toBe(question.text);
+  expect([...group.querySelectorAll("button")].map((item) => item.textContent)).toEqual([
+    "AClient and billing issues",
+    "BReleases and production deploys",
+    "COnboarding bugs",
+    "DHiring",
+  ]);
+  for (const row of group.querySelectorAll("button")) {
+    expect(row.className).not.toMatch(/(^|\s)border(\s|$)/);
+    expect(row.querySelector('[data-testid="choice-letter"]')?.getAttribute("aria-hidden")).toBe(
+      "true",
+    );
+  }
+  expect(container.querySelectorAll('[data-testid="question-card"]')).toHaveLength(1);
+  expect(container.textContent).not.toContain("Answered");
+});
+
+it("sends one choice at a time and keeps the rest disabled while it is pending", async () => {
+  let release: () => void = () => undefined;
+  const onAnswer = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        release = resolve;
+      }),
+  );
+  await renderQuestion(question, onAnswer);
+
+  await act(async () => option("Onboarding bugs")!.click());
+  await act(async () => option("Hiring")!.click());
+
+  expect(onAnswer).toHaveBeenCalledTimes(1);
+  expect(onAnswer).toHaveBeenCalledWith("choice-3", undefined);
+  expect(option("Onboarding bugs")!.getAttribute("aria-busy")).toBe("true");
+  expect(option("Hiring")!.disabled).toBe(true);
+
+  await act(async () => release());
+  expect(container.querySelector("button")).toBeNull();
+});
+
+it("collapses an answered question to the picked row in the bot's color", async () => {
+  await renderQuestion({ ...question, status: "answered", answer: "choice-3" });
+
+  const answer = container.querySelector('[data-testid="choice-answer"]')!;
+  const letter = answer.querySelector<HTMLElement>('[data-testid="choice-letter"]')!;
+  expect(letter.textContent).toBe("C");
+  expect(letter.style.backgroundColor).toBe("rgb(194, 65, 12)");
+  expect(letter.style.color).toBe("rgb(255, 255, 255)");
+  expect(answer.querySelector(".sr-only")?.textContent).toBe("Answered: Onboarding bugs");
+  expect(container.textContent).not.toContain("Hiring");
+  expect(container.querySelector("button")).toBeNull();
+  const title = container.querySelector('[data-testid="question-card"] > div')!;
+  expect(title.classList.contains("text-muted-foreground")).toBe(true);
+});
+
+it("shows a typed answer to a question without a letter", async () => {
+  await renderQuestion({ ...question, status: "answered", answer: "Something else entirely" });
+
+  const answer = container.querySelector('[data-testid="choice-answer"]')!;
+  expect(answer.querySelector('[data-testid="choice-letter"]')).toBeNull();
+  expect(answer.textContent).toContain("Something else entirely");
+});
+
+it("keeps a question open with an error when sending fails", async () => {
+  await renderQuestion(question, async () => {
+    throw new Error("Network down");
+  });
+
+  await act(async () => option("Hiring")!.click());
+
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe("Network down");
+  expect(option("Hiring")!.disabled).toBe(false);
+  expect(container.querySelector('[data-testid="choice-answer"]')).toBeNull();
+});
+
+it("shows an inactive question without choices", async () => {
+  await renderQuestion(question, undefined, false);
+  expect(container.textContent).toContain("No longer active");
+  expect(container.querySelector("button")).toBeNull();
+});
+
+it("keeps approval asks on their own buttons", async () => {
+  await render({
+    kind: "ask",
+    text: "Run this command?",
+    approvalEffectId: "effect-1",
+    status: "pending",
+    actions: [
+      { id: "allow", label: "Allow" },
+      { id: "deny", label: "Deny" },
+    ],
+  });
+  expect(container.querySelector('[data-testid="question-card"]')).toBeNull();
+  expect(button("Allow once")).toBeDefined();
+});
+
+it("matches onboarding choices to the question card and collapses to the pick", async () => {
+  const block = {
+    kind: "choice" as const,
+    question: "Which city?",
+    options: [
+      { id: "paris", letter: "A", label: "Paris" },
+      { id: "london", letter: "B", label: "London" },
+    ],
+  };
+  const renderChoice = (answerId?: string) =>
+    act(async () =>
+      root.render(
+        <ChoiceCard
+          botId="bot"
+          block={{ ...block, answerId }}
+          accent={accent}
+          onBotChanged={async () => {}}
+        />,
+      ),
+    );
+
+  await renderChoice();
+  const paris = option("Paris")!;
+  expect(paris.disabled).toBe(false);
+  expect(paris.textContent).toBe("AParis");
+  expect(paris.classList.contains("focus-visible:ring-2")).toBe(true);
+  expect(button("")?.getAttribute("aria-label")).toBe("Dismiss");
+
+  await renderChoice("london");
+  const letter = container.querySelector<HTMLElement>(
+    '[data-testid="choice-answer"] [data-testid="choice-letter"]',
   )!;
-  expect(option.disabled).toBe(false);
-  expect(option.classList.contains("bg-background")).toBe(true);
-  expect(option.classList.contains("border")).toBe(false);
-  expect(option.classList.contains("border-input")).toBe(false);
-  expect(option.classList.contains("enabled:hover:bg-foreground/5")).toBe(true);
-  expect(option.classList.contains("enabled:active:bg-foreground/15")).toBe(true);
-  expect(option.classList.contains("focus-visible:ring-2")).toBe(true);
-  expect(option.querySelector("span")?.classList.contains("bg-card")).toBe(true);
+  expect(letter.textContent).toBe("B");
+  expect(letter.style.backgroundColor).toBe("rgb(194, 65, 12)");
+  expect(container.textContent).not.toContain("Paris");
+  expect(container.querySelector("button")).toBeNull();
 });
 
 it.each([

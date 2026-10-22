@@ -35,6 +35,7 @@ import {
 } from "@rakazo/ui-web";
 import { Disclosure } from "@rakazo/ui-web/components/ui/disclosure";
 import { X } from "lucide-react";
+import type { ReactNode } from "react";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { ErrorBoundary, SectionLoadFailed } from "../../components/ErrorBoundary";
 import { InfoTooltip } from "../../components/InfoTooltip";
@@ -206,6 +207,34 @@ export function CreateBotForm({
   );
 }
 
+/** Identity hero atop a bot's side panel: avatar, name, optional title, then the tab row. */
+export function BotPanelHero({
+  avatar,
+  name,
+  title,
+  nav,
+}: {
+  avatar: ReactNode;
+  name: string;
+  title?: string | null;
+  nav?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center pt-3 pb-1 text-center">
+      {avatar}
+      <h2 className="mt-3 max-w-full truncate text-[17px] font-medium text-foreground" dir="auto">
+        {name}
+      </h2>
+      {title ? (
+        <p className="mt-0.5 max-w-full truncate text-[12.5px] text-muted-foreground" dir="auto">
+          {title}
+        </p>
+      ) : null}
+      {nav ? <div className="mt-4">{nav}</div> : null}
+    </div>
+  );
+}
+
 export function BotSettings({
   bot,
   memoryProviderConfigured,
@@ -213,8 +242,11 @@ export function BotSettings({
   onSave,
   onExport,
   onClear,
+  nav,
 }: {
   bot: Bot;
+  /** Panel tab row rendered under the identity hero. */
+  nav?: ReactNode;
   onSkillsChange: (skills: AgentSkillCatalogEntry[]) => void;
   memoryProviderConfigured: boolean;
   onSave: (patch: {
@@ -506,18 +538,23 @@ export function BotSettings({
 
   return (
     <div data-testid="bot-settings">
-      <div className="flex justify-center py-4">
-        <AvatarStudioPopover
-          value={color}
-          identity={bot.id}
-          status={bot.status}
-          size={76}
-          onChange={(newColor) => {
-            setColor(newColor);
-            void enqueueSave({ color: newColor });
-          }}
-        />
-      </div>
+      <BotPanelHero
+        avatar={
+          <AvatarStudioPopover
+            value={color}
+            identity={bot.id}
+            status={bot.status}
+            size={64}
+            onChange={(newColor) => {
+              setColor(newColor);
+              void enqueueSave({ color: newColor });
+            }}
+          />
+        }
+        name={name.trim() || bot.name}
+        title={title.trim()}
+        nav={nav}
+      />
       <label htmlFor={`${ids}-name`} className={fieldLabelClass}>
         <Trans>Name</Trans>
         <Input

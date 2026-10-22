@@ -41,6 +41,13 @@ export interface RakazoDesktop {
   badge?: {
     set: (count: number) => Promise<boolean>;
   };
+  appearance?: {
+    set: (preference: "system" | "light" | "dark") => Promise<void>;
+  };
+  settings?: {
+    onOpen: (listener: () => void) => () => void;
+    openServer: () => Promise<void>;
+  };
   computer?: {
     requestAccess: () => Promise<boolean>;
     revokeAccess: () => Promise<void>;

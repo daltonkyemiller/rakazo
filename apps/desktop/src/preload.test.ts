@@ -32,11 +32,13 @@ describe("desktop preload bridge", () => {
     expect(globalName).toBe("rakazoDesktop");
     expect(bridge.platform).toBe("linux");
     expect(Object.keys(bridge).sort()).toEqual([
+      "appearance",
       "badge",
       "computer",
       "localSettings",
       "oauth",
       "platform",
+      "settings",
       "update",
       "window",
     ]);
@@ -75,6 +77,31 @@ describe("desktop preload bridge", () => {
       "desktop.update.download",
       "desktop.update.install",
     ]);
+  });
+
+  it("passes an appearance preference through the isolated bridge", async () => {
+    const { invoke, exposeInMainWorld } = runPreload("preload.cjs");
+    const [, bridge] = exposeInMainWorld.mock.calls[0] as [string, RakazoDesktop];
+    await bridge.appearance!.set("dark");
+    expect(invoke).toHaveBeenCalledWith("desktop.appearance.set", "dark");
+  });
+
+  it("opens server settings and subscribes to the app settings menu without exposing events", async () => {
+    let handler: (() => void) | undefined;
+    const on = vi.fn((_channel: string, listener: () => void) => {
+      handler = listener;
+    });
+    const off = vi.fn();
+    const { invoke, exposeInMainWorld } = runPreload("preload.cjs", { on, off });
+    const [, bridge] = exposeInMainWorld.mock.calls[0] as [string, RakazoDesktop];
+    const listener = vi.fn();
+    const unsubscribe = bridge.settings!.onOpen(listener);
+    handler!();
+    expect(listener).toHaveBeenCalledWith();
+    unsubscribe();
+    expect(off).toHaveBeenCalledWith("desktop.settings.open", handler);
+    await bridge.settings!.openServer();
+    expect(invoke).toHaveBeenCalledWith("desktop.settings.openServer");
   });
 
   it("forwards captured codes without leaking the IPC event to the renderer", () => {

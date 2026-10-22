@@ -144,8 +144,13 @@ export function probeFailureMessage(error: unknown): string {
   return "Could not reach that address.";
 }
 
-/** Packaged shell overlays its web bundle only on the managed loopback stack. */
-export function servesBundledRenderer(targetUrl: string, managedLocalStack: boolean): boolean {
+/** Production overlays the managed loopback stack; local builds overlay their selected server. */
+export function servesBundledRenderer(
+  targetUrl: string,
+  managedLocalStack: boolean,
+  localBuild = false,
+): boolean {
+  if (localBuild) return normalizeServerUrl(targetUrl) !== null;
   try {
     if (!managedLocalStack) return false;
     const url = new URL(targetUrl);
@@ -294,7 +299,8 @@ function isLocalNetworkHost(hostname: string) {
     return (
       first === 10 ||
       (first === 172 && second !== undefined && second >= 16 && second <= 31) ||
-      (first === 192 && second === 168)
+      (first === 192 && second === 168) ||
+      (first === 100 && second !== undefined && second >= 64 && second <= 127)
     );
   }
 

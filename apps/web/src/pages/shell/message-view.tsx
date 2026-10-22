@@ -401,7 +401,15 @@ export const MessageView = memo(function MessageView({
           if (block.kind === "choice") {
             const botId = "botId" in artifactTarget ? artifactTarget.botId : message.botId;
             if (!botId) return null;
-            return <ChoiceCard key={i} botId={botId} block={block} onBotChanged={onBotChanged} />;
+            return (
+              <ChoiceCard
+                key={i}
+                botId={botId}
+                block={block}
+                accent={speakerColorDef}
+                onBotChanged={onBotChanged}
+              />
+            );
           }
           if (block.kind === "app_connect") {
             const botId = "botId" in artifactTarget ? artifactTarget.botId : message.botId;
@@ -534,6 +542,7 @@ export const MessageView = memo(function MessageView({
               <AskCard
                 key={i}
                 block={block}
+                accent={speakerColorDef}
                 canAnswer={canAnswer}
                 canDismiss={canDismiss}
                 onAnswer={(text, username) => onAnswer(message, text, username)}

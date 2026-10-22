@@ -123,6 +123,10 @@ msgstr "{botName}’s computer"
 msgid "{commandVariable} is reserved and cannot be used as a command variable. Choose another name."
 msgstr "{commandVariable} is reserved and cannot be used as a command variable. Choose another name."
 
+#: src/pages/PluginsOverlay.tsx
+msgid "{connectedCount} connected"
+msgstr "{connectedCount} connected"
+
 #: src/lib/billing.ts
 msgid "{count} days"
 msgstr "{count} days"
@@ -350,6 +354,7 @@ msgid "Access token (optional)"
 msgstr "Access token (optional)"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Account"
 msgstr "Account"
 
@@ -388,6 +393,7 @@ msgid "Active"
 msgstr "Active"
 
 #: src/pages/ModelSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Active model"
 msgstr "Active model"
 
@@ -512,10 +518,6 @@ msgstr "Add Treg"
 #: src/pages/RoutineEditor.tsx
 msgid "Add trigger"
 msgstr "Add trigger"
-
-#: src/pages/PluginsOverlay.tsx
-msgid "Added"
-msgstr "Added"
 
 #: src/pages/McpServersOverlay.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -693,6 +695,10 @@ msgstr "Apply"
 msgid "Approval boundaries"
 msgstr "Approval boundaries"
 
+#: src/pages/SettingsOverlay.tsx
+msgid "Approval rules"
+msgstr "Approval rules"
+
 #: src/pages/MessagingSettingsOverlay.tsx
 #: src/pages/shell/message-cards.tsx
 msgid "Approve"
@@ -834,21 +840,30 @@ msgid "Avatar Studio"
 msgstr "Avatar Studio"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Avatars"
 msgstr "Avatars"
 
 #: src/pages/Auth.tsx
 #: src/pages/Board.tsx
-#: src/pages/PluginsOverlay.tsx
 #: src/pages/RoutineEditor.tsx
 msgid "Back"
 msgstr "Back"
+
+#: src/pages/PluginsOverlay.tsx
+msgid "Back to connected integrations"
+msgstr "Back to connected integrations"
+
+#: src/pages/PluginsOverlay.tsx
+msgid "Back to integrations"
+msgstr "Back to integrations"
 
 #: src/pages/Auth.tsx
 msgid "Back to sign in"
 msgstr "Back to sign in"
 
 #: src/pages/ModelBackupsSettings.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Backup models"
 msgstr "Backup models"
 
@@ -986,6 +1001,7 @@ msgstr "Can't read images"
 #: src/components/markdown-link-prompt.tsx
 #: src/components/PasskeySettings.tsx
 #: src/components/teach/TeachComputerOverlay.tsx
+#: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/Artifacts.tsx
 #: src/pages/KnowledgeSection.tsx
 #: src/pages/model-settings/connection-controls.tsx
@@ -1051,6 +1067,7 @@ msgid "Chat Settings"
 msgstr "Chat Settings"
 
 #: src/lib/identity-display.ts
+#: src/pages/shell/command-palette.tsx
 msgid "Chats"
 msgstr "Chats"
 
@@ -1294,6 +1311,7 @@ msgid "Complete"
 msgstr "Complete"
 
 #: src/pages/SettingsOverlay.tsx
+#: src/pages/Shell.tsx
 #: src/pages/shell/bot-panel.tsx
 #: src/pages/shell/message-view.tsx
 msgid "Computer"
@@ -1327,10 +1345,6 @@ msgstr "Computers are available. Reload or open a bot to continue."
 #: src/components/ComputersUnavailableHint.tsx
 msgid "Computers are off. Set SANDBOX_PROVIDER=docker with SANDBOX_SUPERVISOR_TOKEN, or set SANDBOX_PROVIDER to e2b, daytona, or boat with its API key. Recreate the stack after changing .env."
 msgstr "Computers are off. Set SANDBOX_PROVIDER=docker with SANDBOX_SUPERVISOR_TOKEN, or set SANDBOX_PROVIDER to e2b, daytona, or boat with its API key. Recreate the stack after changing .env."
-
-#: src/pages/PluginsOverlay.tsx
-msgid "Configure a plugin catalog on the server to connect apps."
-msgstr "Configure a plugin catalog on the server to connect apps."
 
 #: src/pages/ModelSettingsOverlay.tsx
 msgid "Configured by deployment"
@@ -1375,6 +1389,7 @@ msgid "Connect API key"
 msgstr "Connect API key"
 
 #: src/components/SidebarFooter.tsx
+#: src/pages/PluginsOverlay.tsx
 msgid "Connect apps"
 msgstr "Connect apps"
 
@@ -1398,6 +1413,7 @@ msgstr "Connect Treg"
 #: src/pages/McpOAuthCallback.tsx
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/model-settings/provider-list.tsx
+#: src/pages/PluginsOverlay.tsx
 #: src/pages/shell/message-cards.tsx
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Connected"
@@ -1407,6 +1423,10 @@ msgstr "Connected"
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Connected {0}."
 msgstr "Connected {0}."
+
+#: src/pages/PluginsOverlay.tsx
+msgid "Connected integrations"
+msgstr "Connected integrations"
 
 #: src/pages/shell/message-cards.tsx
 msgid "Connected. Its tools are available from your next message."
@@ -2020,6 +2040,10 @@ msgstr "Credentials are encrypted and never sent to the model."
 msgid "Credit amount"
 msgstr "Credit amount"
 
+#: src/components/ModelCredits.tsx
+msgid "Credits"
+msgstr "Credits"
+
 #: src/pages/RoutineSchedule.tsx
 msgid "Cron"
 msgstr "Cron"
@@ -2088,6 +2112,7 @@ msgid "Default ({0})"
 msgstr "Default ({0})"
 
 #: src/pages/MemorySettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Default scope"
 msgstr "Default scope"
 
@@ -2124,6 +2149,7 @@ msgid "Delete {0}?"
 msgstr "Delete {0}?"
 
 #: src/components/AccountAccess.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Delete account"
 msgstr "Delete account"
 
@@ -2179,6 +2205,7 @@ msgid "Description"
 msgstr "Description"
 
 #: src/components/DesktopUpdates.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Desktop app"
 msgstr "Desktop app"
 
@@ -2578,6 +2605,7 @@ msgid "Finishing MCP connection…"
 msgstr "Finishing MCP connection…"
 
 #: src/components/ApprovalRulesSettings.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Flag unexpected actions"
 msgstr "Flag unexpected actions"
 
@@ -2880,8 +2908,13 @@ msgid "Knowledge"
 msgstr "Knowledge"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Language"
 msgstr "Language"
+
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Language and region"
+msgstr "Language and region"
 
 #. placeholder {0}: new Date(state.checkedAt).toLocaleString()
 #: src/pages/RoutineEditor.tsx
@@ -2947,6 +2980,7 @@ msgid "Load older runs"
 msgstr "Load older runs"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Load web images automatically"
 msgstr "Load web images automatically"
 
@@ -3126,6 +3160,10 @@ msgstr "Members ({0})"
 msgid "Memory"
 msgstr "Memory"
 
+#: src/pages/SettingsOverlay.tsx
+msgid "Memory provider"
+msgstr "Memory provider"
+
 #: src/pages/shell/bot-panel.tsx
 msgid "Memory scope"
 msgstr "Memory scope"
@@ -3178,6 +3216,7 @@ msgstr "Messaged {peer}"
 
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/MessagingSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Messaging"
 msgstr "Messaging"
 
@@ -3198,10 +3237,6 @@ msgstr "Minimal"
 #: src/pages/WindowChrome.tsx
 msgid "Minimize"
 msgstr "Minimize"
-
-#: src/pages/shell/sidebar-header.tsx
-msgid "Minimize bots"
-msgstr "Minimize bots"
 
 #: src/components/call/CallCard.tsx
 msgid "Minimize call"
@@ -3241,6 +3276,10 @@ msgstr "Model id"
 #: src/pages/model-settings/model-picker.tsx
 msgid "Model options"
 msgstr "Model options"
+
+#: src/pages/SettingsOverlay.tsx
+msgid "Model providers"
+msgstr "Model providers"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Model spend uses your provider keys."
@@ -3427,9 +3466,9 @@ msgstr "No auth"
 msgid "No authentication"
 msgstr "No authentication"
 
-#: src/pages/shell/command-palette.tsx
-msgid "No bots"
-msgstr "No bots"
+#: src/pages/PluginsOverlay.tsx
+msgid "No available integrations."
+msgstr "No available integrations."
 
 #: src/pages/GroupPanel.tsx
 #: src/pages/shell/bot-picker.tsx
@@ -3439,6 +3478,10 @@ msgstr "No bots match"
 #: src/pages/MessagingSettingsOverlay.tsx
 msgid "No chat apps linked yet."
 msgstr "No chat apps linked yet."
+
+#: src/pages/PluginsOverlay.tsx
+msgid "No connected integrations."
+msgstr "No connected integrations."
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "No credentials saved for this bot."
@@ -3498,6 +3541,8 @@ msgid "No remote MCP servers found"
 msgstr "No remote MCP servers found"
 
 #: src/pages/PluginsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
+#: src/pages/shell/command-palette.tsx
 #: src/pages/SpaceSearch.tsx
 msgid "No results"
 msgstr "No results"
@@ -3537,10 +3582,6 @@ msgstr "Not checked yet"
 #: src/pages/ModelBackupsSettings.tsx
 msgid "Not connected"
 msgstr "Not connected"
-
-#: src/pages/PluginsOverlay.tsx
-msgid "Not in the plugin catalog"
-msgstr "Not in the plugin catalog"
 
 #: src/pages/shell/message-cards.tsx
 msgid "Not now"
@@ -3615,6 +3656,7 @@ msgid "Only empty spaces can be deleted. Delete its bots and groups first."
 msgstr "Only empty spaces can be deleted. Delete its bots and groups first."
 
 #: src/components/markdown-link-prompt.tsx
+#: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/ScratchpadSection.tsx
 #: src/pages/shell/computer-panel.tsx
 #: src/pages/shell/message-view.tsx
@@ -3741,6 +3783,7 @@ msgid "Passkey"
 msgstr "Passkey"
 
 #: src/components/PasskeySettings.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Passkeys"
 msgstr "Passkeys"
 
@@ -3830,6 +3873,10 @@ msgstr "Pin"
 #: src/pages/Shell.tsx
 msgid "Pinned"
 msgstr "Pinned"
+
+#: src/pages/BillingSettingsPanel.tsx
+msgid "Plan"
+msgstr "Plan"
 
 #: src/components/ArtifactFileCard.tsx
 msgid "Play {name}"
@@ -4018,7 +4065,6 @@ msgstr "Redirect URI"
 
 #: src/App.tsx
 #: src/components/ErrorBoundary.tsx
-#: src/components/ModelCredits.tsx
 #: src/pages/RoutineRunHistory.tsx
 msgid "Refresh"
 msgstr "Refresh"
@@ -4307,6 +4353,10 @@ msgstr "Routines"
 msgid "Routines that run while you're away"
 msgstr "Routines that run while you're away"
 
+#: src/components/ApprovalRulesSettings.tsx
+msgid "Rules"
+msgstr "Rules"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Run at"
 msgstr "Run at"
@@ -4416,10 +4466,11 @@ msgstr "Scopes (optional)"
 
 #: src/pages/model-settings/model-picker.tsx
 #: src/pages/PluginsOverlay.tsx
-#: src/pages/Shell.tsx
+#: src/pages/SettingsOverlay.tsx
 #: src/pages/shell/bot-picker.tsx
 #: src/pages/shell/chat-model-picker.tsx
 #: src/pages/shell/command-palette.tsx
+#: src/pages/shell/sidebar-header.tsx
 msgid "Search"
 msgstr "Search"
 
@@ -4433,8 +4484,8 @@ msgid "Search artifacts…"
 msgstr "Search artifacts…"
 
 #: src/pages/shell/command-palette.tsx
-msgid "Search bots and switch conversations"
-msgstr "Search bots and switch conversations"
+msgid "Search bots and chats"
+msgstr "Search bots and chats"
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Search by domain"
@@ -4457,12 +4508,17 @@ msgstr "Search providers"
 msgid "Search runs"
 msgstr "Search runs"
 
+#: src/pages/SettingsOverlay.tsx
+msgid "Search settings"
+msgstr "Search settings"
+
 #. placeholder {0}: filters.query.trim()
 #: src/pages/ActivityList.tsx
 msgid "Search: {0}"
 msgstr "Search: {0}"
 
 #: src/pages/PluginsOverlay.tsx
+#: src/pages/shell/command-palette.tsx
 #: src/pages/SpaceSearch.tsx
 msgid "Searching…"
 msgstr "Searching…"
@@ -4500,6 +4556,7 @@ msgid "Send reset link"
 msgstr "Send reset link"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Send with Enter"
 msgstr "Send with Enter"
 
@@ -4515,15 +4572,25 @@ msgstr "Sentry alert"
 msgid "Serenity endpoint is required."
 msgstr "Serenity endpoint is required."
 
+#: src/pages/AccountSettingsOverlay.tsx
+msgid "Server"
+msgstr "Server"
+
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/LocalSettings.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Server integrations"
 msgstr "Server integrations"
 
 #: src/pages/McpServersOverlay.tsx
 msgid "Server name"
 msgstr "Server name"
+
+#: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
+msgid "Server settings"
+msgstr "Server settings"
 
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/McpServersOverlay.tsx
@@ -4540,6 +4607,10 @@ msgstr "Server URL"
 #: src/pages/Shell.tsx
 msgid "Settings"
 msgstr "Settings"
+
+#: src/pages/SettingsOverlay.tsx
+msgid "Settings results"
+msgstr "Settings results"
 
 #: src/pages/shell/composer-mentions.tsx
 msgid "Settings: General"
@@ -4568,6 +4639,7 @@ msgid "Shared chat with {GROUP_MEMBER_MIN}-{GROUP_MEMBER_MAX} bots. They all rep
 msgstr "Shared chat with {GROUP_MEMBER_MIN}-{GROUP_MEMBER_MAX} bots. They all reply in the same thread."
 
 #: src/pages/KnowledgeSection.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Shared documents"
 msgstr "Shared documents"
 
@@ -4608,6 +4680,7 @@ msgid "Show settings"
 msgstr "Show settings"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Show tool activity"
 msgstr "Show tool activity"
 
@@ -4616,6 +4689,7 @@ msgid "Show transcript"
 msgstr "Show transcript"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Sidebar density"
 msgstr "Sidebar density"
 
@@ -4691,6 +4765,7 @@ msgid "Slide up to lock"
 msgstr "Slide up to lock"
 
 #: src/components/SoftwareUpdateSection.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Software update"
 msgstr "Software update"
 
@@ -4800,6 +4875,7 @@ msgid "Stored encrypted"
 msgstr "Stored encrypted"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Stream replies"
 msgstr "Stream replies"
 
@@ -4831,10 +4907,6 @@ msgstr "Supports images"
 #: src/pages/Onboarding.tsx
 msgid "Supports thinking"
 msgstr "Supports thinking"
-
-#: src/pages/shell/command-palette.tsx
-msgid "Switch bot"
-msgstr "Switch bot"
 
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Switching…"
@@ -4921,6 +4993,11 @@ msgstr "The provider is rate-limiting requests."
 #: src/pages/MemorySettingsOverlay.tsx
 msgid "The selected memory provider is not available in this build."
 msgstr "The selected memory provider is not available in this build."
+
+#: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
+msgid "Theme"
+msgstr "Theme"
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "These saved settings can't be read. Remove it and add it again."
@@ -5029,6 +5106,7 @@ msgid "Time of day"
 msgstr "Time of day"
 
 #: src/pages/AccountSettingsOverlay.tsx
+#: src/pages/SettingsOverlay.tsx
 msgid "Timezone"
 msgstr "Timezone"
 
@@ -5372,6 +5450,10 @@ msgstr "View chat"
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Voice"
 msgstr "Voice"
+
+#: src/pages/SettingsOverlay.tsx
+msgid "Voice providers"
+msgstr "Voice providers"
 
 #: src/lib/model-connection-preflight.ts
 msgid "Wait a moment and test again."

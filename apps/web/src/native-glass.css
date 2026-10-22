@@ -1,0 +1,132 @@
+/* Electron owns the blur. CSS backdrop filters over its transparent renderer can
+   feed foreground text and avatar colors back into the native material. */
+html[data-native-glass],
+html[data-native-glass] body,
+html[data-native-glass] #root,
+html[data-native-glass] [data-testid="shell-root"] {
+  background: transparent;
+}
+
+html[data-platform="darwin"] #root {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  html[data-platform="darwin"] [data-space-switch="main"] {
+    margin: 8px;
+    border: 0;
+    border-radius: 12px;
+    box-shadow: none;
+  }
+
+  html[data-platform="darwin"] [data-testid="bots-sidebar"] {
+    border-inline-end: 0;
+  }
+}
+
+html[data-native-glass] [data-testid="shell-root"] {
+  backdrop-filter: none;
+}
+
+html[data-native-glass][data-theme="dark"] [data-testid="shell-root"] {
+  background: color-mix(in srgb, var(--background) 60%, transparent);
+}
+
+html[data-native-glass] [data-testid="bots-sidebar"] {
+  background: transparent;
+}
+
+html[data-native-glass] [data-testid="bots-sidebar"] > [data-slot="sidebar-inner"] {
+  background: transparent;
+}
+
+/* The native window is one continuous material beneath the transparent sidebar.
+   Only the reading plane adds a denser, softly tinted layer. */
+html[data-native-glass] [data-space-switch="main"] {
+  position: relative;
+  background: color-mix(in srgb, var(--card) 28%, transparent);
+  backdrop-filter: none;
+}
+
+html[data-native-glass][data-theme="dark"] [data-space-switch="main"] {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+
+html[data-native-glass] [data-space-switch="main"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    130deg,
+    color-mix(in srgb, var(--favicon-plate) 16%, transparent),
+    color-mix(in srgb, var(--favicon-plate) 9%, transparent) 24%,
+    color-mix(in srgb, var(--favicon-plate) 6%, transparent) 50%,
+    color-mix(in srgb, var(--favicon-plate) 10%, transparent) 76%,
+    color-mix(in srgb, var(--favicon-plate) 14%, transparent)
+  );
+  mask:
+    linear-gradient(var(--foreground) 0 0) content-box,
+    linear-gradient(var(--foreground) 0 0);
+  mask-composite: exclude;
+}
+
+html[data-native-glass][data-theme="light"] [data-space-switch="main"] {
+  background: color-mix(in srgb, var(--card) 46%, transparent);
+}
+
+html[data-native-glass] [data-testid="bots-sidebar"] button[aria-current="page"] {
+  background: color-mix(in srgb, var(--sidebar-accent) 64%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--foreground) 16%, transparent);
+  outline-offset: -1px;
+  box-shadow: none;
+}
+
+html[data-native-glass] [data-testid="bots-sidebar"] .app-no-drag,
+html[data-native-glass] [data-testid="user-menu-trigger"],
+html[data-native-glass] [data-testid="connect-apps-trigger"],
+html[data-native-glass] [data-testid="bot-settings-trigger"],
+html[data-native-glass] [data-testid="composer-bar"],
+html[data-native-glass] [data-slot="input"],
+html[data-native-glass] [data-slot="input-group"] {
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 13%, transparent);
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+html[data-native-glass] [data-testid="bots-sidebar"] button[aria-pressed="true"] {
+  color: var(--sidebar-accent-foreground);
+  background: color-mix(in srgb, var(--sidebar-accent) 90%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 28%, transparent);
+}
+
+html[data-native-glass] [data-slot="input"]:focus-visible,
+html[data-native-glass] [data-testid="composer-bar"]:focus-within,
+html[data-native-glass] [data-slot="input-group"]:focus-within {
+  border-color: var(--ring);
+}
+
+html[data-native-glass] [data-slot="card"],
+html[data-native-glass] [data-slot="sheet-content"],
+html[data-native-glass] [data-slot="dialog-content"],
+html[data-native-glass] [data-slot="popover-content"],
+html[data-native-glass] [data-slot="dropdown-menu-content"],
+html[data-native-glass] [data-slot="context-menu-content"] {
+  border-color: color-mix(in srgb, var(--foreground) 20%, transparent);
+  box-shadow: none;
+}
+
+html[data-native-glass] [data-testid="composer-bar"] button,
+html[data-native-glass] [data-testid="transcript"] > button {
+  box-shadow: none;
+}
+
+html[data-native-glass] [data-testid="message-user-bubble"] {
+  box-shadow: none;
+  filter: none;
+}

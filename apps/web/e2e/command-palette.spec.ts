@@ -30,7 +30,7 @@ test("command palette opens with keyboard, filters, and switches bots", async ({
 
   await page.keyboard.press("ControlOrMeta+K");
   const palette = page.getByTestId("command-palette");
-  const dialog = page.getByRole("dialog", { name: "Switch bot" });
+  const dialog = page.getByRole("dialog", { name: "Search" });
   await expect(dialog).toBeVisible();
   await expect(palette).toBeVisible();
   await expect(page.getByRole("tab")).toHaveCount(0);
@@ -40,19 +40,48 @@ test("command palette opens with keyboard, filters, and switches bots", async ({
 
   const search = page.getByTestId("command-palette-search");
   await search.fill("Research");
-  await expect(page.getByRole("option", { name: /Researcher/ })).toBeVisible();
-  await expect(page.getByRole("option", { name: /Chief/ })).toHaveCount(0);
+  // Chat matches may also appear, so check the bot rows by id.
+  await expect(page.getByTestId(`command-palette-bot-${researcher.id}`)).toBeVisible();
+  await expect(page.getByTestId(`command-palette-bot-${chiefId}`)).toHaveCount(0);
   await captureScreenshot(page, testInfo, "command-palette-filtered");
 
-  await page.getByRole("option", { name: /Researcher/ }).click();
+  await page.getByTestId(`command-palette-bot-${researcher.id}`).click();
   await expect(dialog).toBeHidden();
   await page.waitForURL(new RegExp(`/app/${researcher.id}$`));
   expect(activeBotId(page)).toBe(researcher.id);
   await expect(page.getByRole("combobox", { name: "Message Researcher" })).toBeVisible();
 
-  await page.keyboard.press("ControlOrMeta+K");
+  await page.getByTestId("sidebar-search-trigger").click();
   await expect(dialog).toBeVisible();
   await page.getByTestId(`command-palette-bot-${chiefId}`).click();
   await page.waitForURL(new RegExp(`/app/${chiefId}$`));
   expect(activeBotId(page)).toBe(chiefId);
+});
+
+test("desktop toolbar has three controls and search opens matching chat history", async ({
+  page,
+}, testInfo) => {
+  await signup(page, `desktop-search-${Date.now()}@rakazo.test`, "password12", "Search Demo");
+  await completeOnboarding(page);
+  const search = page.getByTestId("sidebar-search-trigger");
+  const toolbar = search.locator("..");
+  await expect(toolbar.locator(":scope > button")).toHaveCount(3);
+  const footer = page.getByTestId("sidebar-footer");
+  await expect(footer.getByRole("button", { name: "Connect apps", exact: true })).toBeVisible();
+  await expect(footer.getByTestId("user-menu-trigger")).toContainText("Search Demo");
+  await expect(page.getByTestId("sidebar-search")).toHaveCount(0);
+  await captureScreenshot(page, testInfo, "desktop-three-control-toolbar");
+
+  const phrase = "Remember the amberlighthouse marker for our test.";
+  await page.getByPlaceholder(/Message/).fill(phrase);
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("message-user-bubble").filter({ hasText: phrase })).toBeVisible();
+  await search.click();
+  await page.getByTestId("command-palette-search").fill("amberlighthouse");
+  const chats = page.getByTestId("command-palette-chats");
+  await expect(chats).toContainText("amberlighthouse");
+  await captureScreenshot(page, testInfo, "desktop-chat-history-search");
+  await chats.getByRole("option").first().click();
+  await expect(page.getByRole("dialog", { name: "Search", exact: true })).toBeHidden();
+  await expect(page.getByTestId("message-user-bubble").filter({ hasText: phrase })).toBeVisible();
 });

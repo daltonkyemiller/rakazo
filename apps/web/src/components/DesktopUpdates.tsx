@@ -3,6 +3,7 @@ import type { DesktopUpdateState } from "@rakazo/contracts";
 import { Button, toast } from "@rakazo/ui-web";
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { desktopBridge } from "../lib/desktop";
+import { SettingsRow, SettingsSection } from "./SettingsLayout";
 
 function useDesktopUpdates() {
   const { t } = useLingui();
@@ -168,17 +169,25 @@ export function DesktopUpdateSection() {
   const ready = state.phase === "ready";
   const downloading = state.phase === "available" || state.phase === "downloading";
   return (
-    <section
-      data-testid="desktop-update-settings"
-      className="mt-5 rounded-xl border border-border px-4 py-4"
-    >
-      <h3 className="text-[15px] font-medium text-foreground">
-        <Trans>Desktop app</Trans>
-      </h3>
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <span className="text-sm text-muted-foreground">v{state.currentVersion}</span>
+    <SettingsSection title={<Trans>Desktop app</Trans>} target="desktop-update">
+      <SettingsRow
+        testId="desktop-update-settings"
+        label={`v${state.currentVersion}`}
+        description={
+          <span role="status">
+            {error ??
+              state.message ??
+              (downloading ? (
+                `${state.percent ?? 0}%`
+              ) : state.phase === "idle" && confirmedCheck && state.checkedAt === confirmedCheck ? (
+                <Trans>Up to date</Trans>
+              ) : null)}
+          </span>
+        }
+      >
         <Button
           variant="outline"
+          size="sm"
           disabled={busy || downloading || state.phase === "checking"}
           onClick={() => void act(ready ? "install" : "check")}
         >
@@ -192,16 +201,7 @@ export function DesktopUpdateSection() {
             <Trans>Check for updates</Trans>
           )}
         </Button>
-      </div>
-      <p role="status" className="mt-2 text-sm text-muted-foreground">
-        {error ??
-          state.message ??
-          (downloading ? (
-            `${state.percent ?? 0}%`
-          ) : state.phase === "idle" && confirmedCheck && state.checkedAt === confirmedCheck ? (
-            <Trans>Up to date</Trans>
-          ) : null)}
-      </p>
-    </section>
+      </SettingsRow>
+    </SettingsSection>
   );
 }

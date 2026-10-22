@@ -7,6 +7,8 @@ import {
   tokensForAppearance,
 } from "@rakazo/ui-tokens";
 
+import { desktopBridge } from "./desktop";
+
 export type { AppearancePreference, ResolvedAppearance };
 
 const THEME_COLOR_META = 'meta[name="theme-color"]';
@@ -39,6 +41,9 @@ export function applyUiAppearance(
 ): ResolvedAppearance {
   const resolved = resolveAppearance(preference, system);
   applyResolvedAppearance(resolved);
+  void desktopBridge()
+    ?.appearance?.set(preference)
+    .catch(() => undefined);
   return resolved;
 }
 

@@ -14,7 +14,13 @@ import {
   isAttachmentAudioMimeType,
   MESSAGE_REACTIONS,
 } from "@rakazo/contracts";
-import type { ReadBoundary, SlashActionId, ThreadItem } from "@rakazo/core";
+import type {
+  BotColorDef,
+  MentionPickerConnector,
+  ReadBoundary,
+  SlashActionId,
+  ThreadItem,
+} from "@rakazo/core";
 import {
   abortableDelay,
   answerableAskMessageIds,
@@ -30,6 +36,7 @@ import {
   forwardProbeAfterPage,
   groupVoiceChats,
   isApprovalAskBlock,
+  isChoiceAskBlock,
   isPeerReceiptBlocks,
   isRetryableError,
   isRunTerminalEvent,
@@ -37,6 +44,7 @@ import {
   isRunWorking,
   isSecretAskBlock,
   leaveThreadWindow,
+  mentionPickerConnectors,
   openThreadWindow,
   plainTextFromMarkdown,
   projectMessageReactions,
@@ -55,7 +63,7 @@ import {
   voiceChatHoldsMessage,
   withLiveStreamingProgress,
 } from "@rakazo/core";
-import { fontWeight, typeScale } from "@rakazo/ui-tokens";
+import { botChatColors, fontWeight, typeScale } from "@rakazo/ui-tokens";
 import * as Clipboard from "expo-clipboard";
 import {
   useFocusEffect,
@@ -113,6 +121,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppConnectCard } from "../components/AppConnectCard";
 import { AskActions } from "../components/AskActions";
+import { AskQuestionCard } from "../components/AskQuestionCard";
 import { AudioAttachment } from "../components/audio-attachment";
 import { BotAvatar } from "../components/bot-avatar";
 import { ChoiceCard } from "../components/ChoiceCard";
@@ -632,14 +641,7 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
   mentionBotsRef.current = mentionBots;
   const [mentionGroups, setMentionGroups] = useState<MobileGroup[]>([]);
   const [mentionRoutines, setMentionRoutines] = useState<Array<Routine & { botName?: string }>>([]);
-  const [mentionConnectors, setMentionConnectors] = useState<
-    Array<{
-      id: string;
-      name: string;
-      authStatus: "connected" | "needs_auth";
-      connectionId?: string;
-    }>
-  >([]);
+  const [mentionConnectors, setMentionConnectors] = useState<MentionPickerConnector[]>([]);
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
   const [replyTarget, setReplyTarget] = useState<MobileMessage | null>(null);
   const [replyQuote, setReplyQuote] = useState<string | null>(null);
@@ -885,36 +887,7 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
       ),
     ]).then(([connections, catalog]) => {
       if (cancelled) return;
-      const connected = connections.filter((row) => row.status === "connected");
-      const options: Array<{
-        id: string;
-        name: string;
-        authStatus: "connected" | "needs_auth";
-        connectionId?: string;
-      }> = connected.map((row) => ({
-        id: row.id,
-        name: row.displayName,
-        authStatus: "connected" as const,
-        connectionId: row.id,
-      }));
-      for (const item of catalog) {
-        if (item.connected || item.noAuth) continue;
-        if (
-          connected.some(
-            (row) =>
-              row.provider.toLowerCase() === item.slug.toLowerCase() ||
-              row.displayName.toLowerCase() === item.name.toLowerCase(),
-          )
-        ) {
-          continue;
-        }
-        options.push({
-          id: `catalog:${item.connectorId}:${item.slug}`,
-          name: item.name,
-          authStatus: "needs_auth",
-        });
-      }
-      setMentionConnectors(options);
+      setMentionConnectors(mentionPickerConnectors(connections, catalog));
     });
     return () => {
       cancelled = true;
@@ -933,14 +906,22 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
       headerTitle: () => (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={!inGroup && botId ? t("Chat settings") : displayName || t("Thread")}
+          accessibilityLabel={displayName || t("Thread")}
+          accessibilityHint={!inGroup && botId ? t("Chat settings") : undefined}
           disabled={readOnly || inGroup || !botId}
           onPress={() => {
             if (readOnly || !botId || inGroup) return;
             router.push({ pathname: "/bot-settings", params: { botId } });
           }}
         >
-          <GlassSurface style={styles.titleCapsule} fallbackStyle={styles.titleCapsuleFill}>
+          <GlassSurface
+            style={[
+              styles.titleCapsule,
+              // Reserve the back/menu controls and the spacing around them.
+              { width: Math.max(100, Math.min(260, windowWidth - 152)), justifyContent: "center" },
+            ]}
+            fallbackStyle={styles.titleCapsuleFill}
+          >
             {!inGroup && currentBot ? (
               <BotAvatar
                 color={currentBot.color}
@@ -1073,6 +1054,7 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
     tokens,
     colorScheme,
     styles,
+    windowWidth,
   ]);
 
   async function restoreConversation() {
@@ -3112,16 +3094,24 @@ function memberName(
 }
 
 /** Each bot keeps one identity color across web and mobile — same lookup as the avatar. */
+function speakerColorDefFor(
+  bots: MobileBot[],
+  members: MobileSnapshot["members"] | undefined,
+  botId: string | undefined,
+): BotColorDef | undefined {
+  if (!botId) return undefined;
+  const raw =
+    bots.find((bot) => bot.id === botId)?.color ??
+    members?.find((member) => member.botId === botId)?.color;
+  return resolvePersonaColorDef(botId, raw);
+}
+
 function speakerColorFor(
   bots: MobileBot[],
   members: MobileSnapshot["members"] | undefined,
   botId: string | undefined,
 ): string | undefined {
-  if (!botId) return undefined;
-  const raw =
-    bots.find((bot) => bot.id === botId)?.color ??
-    members?.find((member) => member.botId === botId)?.color;
-  return resolvePersonaColorDef(botId, raw).light;
+  return speakerColorDefFor(bots, members, botId)?.light;
 }
 
 type MessageActionProps = Pick<
@@ -3586,6 +3576,19 @@ const MessageBubble = memo(function MessageBubble({
   const colorScheme = useResolvedAppearance();
   const tokens = mobileTokens();
   const { t } = useI18n();
+  const userColors = botChatColors(
+    groupId ? undefined : bots.find((bot) => bot.id === botId)?.color,
+    colorScheme,
+  );
+  const captionTokens =
+    message.role === "user"
+      ? {
+          ...tokens,
+          secondaryForeground: userColors.foreground,
+          link: userColors.foreground,
+          mutedForeground: userColors.foreground,
+        }
+      : tokens;
   const [peerExpanded, setPeerExpanded] = useState(false);
   const artifactTarget: MobileArtifactTarget = groupId ? { groupId } : { botId };
   const cardBotId = message.botId ?? botId;
@@ -3939,86 +3942,102 @@ const MessageBubble = memo(function MessageBubble({
   if (askBlock?.kind === "ask" && askBlock.actions?.length) {
     return (
       <View style={{ gap: 8, width: "100%" }}>
-        <View
-          style={{
-            // No percentage width: the iOS menu host has no definite width to resolve it against.
-            maxWidth: 576,
-            borderRadius: 18,
-            backgroundColor: tokens.card,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-          }}
-        >
-          {askBlock.instructionUpdate?.undoVersionId ? (
-            <InstructionUndo
-              botId={askBlock.instructionUpdate.botId}
-              versionId={askBlock.instructionUpdate.undoVersionId}
-              instructions={askBlock.instructionUpdate.after}
-            />
-          ) : (
-            <>
-              {askBlock.text ? (
-                <Text {...actionProps} style={{ color: tokens.foreground, ...typeScale.cardTitle }}>
-                  {askBlock.instructionUpdate
-                    ? t("Update instructions?")
-                    : plainAskTitle(askBlock.text)}
-                </Text>
-              ) : null}
-              {askBlock.detail ? (
-                <Text
-                  {...(askBlock.text ? {} : actionProps)}
-                  style={{
-                    color:
-                      askBlock.detailFormat === "text" ? tokens.foreground : tokens.mutedForeground,
-                    marginTop: askBlock.text ? 8 : 0,
-                    // Commands and an approval's tool arguments read as code; a bot's own note
-                    // under its question is text.
-                    ...(askBlock.detailFormat === "code" ||
-                    (!askBlock.detailFormat && askBlock.approvalEffectId)
-                      ? { ...typeScale.caption, fontFamily: "Menlo" }
-                      : typeScale.secondary),
-                  }}
-                >
-                  {askBlock.detail}
-                </Text>
-              ) : null}
-              {askBlock.status === "answered" ? (
-                <Text
-                  {...actionProps}
-                  style={{
-                    color: askBlock.answer === "deny" ? tokens.mutedForeground : tokens.success,
-                    marginTop: 12,
-                    ...typeScale.secondary,
-                    fontWeight: fontWeight.medium,
-                  }}
-                >
-                  {askBlock.instructionUpdate
-                    ? t(askBlock.answer === "deny" ? "Dismissed" : "Allowed once")
-                    : formatApprovalAnswer(
-                        askBlock.answer,
-                        askBlock.actions,
-                        isApprovalAskBlock(askBlock),
-                      )}
-                </Text>
-              ) : canAnswer && onAnswer ? (
-                <AskActions
-                  actions={askBlock.actions}
-                  instructions={askBlock.instructionUpdate?.after}
-                  accessibilityActions={actionProps.accessibilityActions}
-                  onAccessibilityAction={actionProps.onAccessibilityAction}
-                  onAnswer={(answer) => onAnswer(message, answer)}
-                />
-              ) : (
-                <Text
-                  {...actionProps}
-                  style={{ color: tokens.mutedForeground, marginTop: 12, ...typeScale.caption }}
-                >
-                  {t("No longer active")}
-                </Text>
-              )}
-            </>
-          )}
-        </View>
+        {isChoiceAskBlock(askBlock) ? (
+          <AskQuestionCard
+            block={askBlock}
+            accent={speakerColorDefFor(bots, members, cardBotId)}
+            canAnswer={canAnswer}
+            onAnswer={(answer) => onAnswer(message, answer)}
+            accessibilityActions={actionProps.accessibilityActions}
+            onAccessibilityAction={actionProps.onAccessibilityAction}
+          />
+        ) : (
+          <View
+            style={{
+              // No percentage width: the iOS menu host has no definite width to resolve it against.
+              maxWidth: 576,
+              borderRadius: 18,
+              backgroundColor: tokens.card,
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+            }}
+          >
+            {askBlock.instructionUpdate?.undoVersionId ? (
+              <InstructionUndo
+                botId={askBlock.instructionUpdate.botId}
+                versionId={askBlock.instructionUpdate.undoVersionId}
+                instructions={askBlock.instructionUpdate.after}
+              />
+            ) : (
+              <>
+                {askBlock.text ? (
+                  <Text
+                    {...actionProps}
+                    style={{ color: tokens.foreground, ...typeScale.cardTitle }}
+                  >
+                    {askBlock.instructionUpdate
+                      ? t("Update instructions?")
+                      : plainAskTitle(askBlock.text)}
+                  </Text>
+                ) : null}
+                {askBlock.detail ? (
+                  <Text
+                    {...(askBlock.text ? {} : actionProps)}
+                    style={{
+                      color:
+                        askBlock.detailFormat === "text"
+                          ? tokens.foreground
+                          : tokens.mutedForeground,
+                      marginTop: askBlock.text ? 8 : 0,
+                      // Commands and an approval's tool arguments read as code; a bot's own note
+                      // under its question is text.
+                      ...(askBlock.detailFormat === "code" ||
+                      (!askBlock.detailFormat && askBlock.approvalEffectId)
+                        ? { ...typeScale.caption, fontFamily: "Menlo" }
+                        : typeScale.secondary),
+                    }}
+                  >
+                    {askBlock.detail}
+                  </Text>
+                ) : null}
+                {askBlock.status === "answered" ? (
+                  <Text
+                    {...actionProps}
+                    style={{
+                      color: askBlock.answer === "deny" ? tokens.mutedForeground : tokens.success,
+                      marginTop: 12,
+                      ...typeScale.secondary,
+                      fontWeight: fontWeight.medium,
+                    }}
+                  >
+                    {askBlock.instructionUpdate
+                      ? t(askBlock.answer === "deny" ? "Dismissed" : "Allowed once")
+                      : formatApprovalAnswer(
+                          askBlock.answer,
+                          askBlock.actions,
+                          isApprovalAskBlock(askBlock),
+                        )}
+                  </Text>
+                ) : canAnswer && onAnswer ? (
+                  <AskActions
+                    actions={askBlock.actions}
+                    instructions={askBlock.instructionUpdate?.after}
+                    accessibilityActions={actionProps.accessibilityActions}
+                    onAccessibilityAction={actionProps.onAccessibilityAction}
+                    onAnswer={(answer) => onAnswer(message, answer)}
+                  />
+                ) : (
+                  <Text
+                    {...actionProps}
+                    style={{ color: tokens.mutedForeground, marginTop: 12, ...typeScale.caption }}
+                  >
+                    {t("No longer active")}
+                  </Text>
+                )}
+              </>
+            )}
+          </View>
+        )}
         {appConnectBlocks.map((block, index) => (
           <AppConnectCard
             key={`${block.provider}-${index}`}
@@ -4058,7 +4077,9 @@ const MessageBubble = memo(function MessageBubble({
     .join("\n");
   if (attachments.length > 0) {
     const speaker =
-      message.role === "bot" ? (memberName(members, message.botId) ?? botName) : undefined;
+      message.role === "bot" && showBotSenderName
+        ? (memberName(members, message.botId) ?? botName)
+        : undefined;
     const speakerColor =
       message.role === "bot" ? speakerColorFor(bots, members, message.botId) : undefined;
     return (
@@ -4066,7 +4087,9 @@ const MessageBubble = memo(function MessageBubble({
         style={{
           maxWidth: "100%",
           borderRadius: 20,
-          backgroundColor: message.role === "user" ? tokens.chatUser : tokens.muted,
+          borderWidth: 1,
+          borderColor: tokens.border,
+          backgroundColor: message.role === "user" ? userColors.background : tokens.muted,
           paddingHorizontal: 14,
           paddingVertical: 12,
           gap: 8,
@@ -4081,7 +4104,7 @@ const MessageBubble = memo(function MessageBubble({
           <MessageCaption
             role={message.role}
             text={caption}
-            tokens={tokens}
+            tokens={captionTokens}
             colorScheme={colorScheme}
             streaming={message.id.startsWith("progress:")}
           />
@@ -4095,7 +4118,7 @@ const MessageBubble = memo(function MessageBubble({
                 artifactId={attachment.artifactId}
                 name={attachment.name ?? t("Image")}
                 mimeType={attachment.mimeType ?? "image/png"}
-                labelColor={message.role === "user" ? tokens.chatUserForeground : tokens.foreground}
+                labelColor={message.role === "user" ? userColors.foreground : tokens.foreground}
                 pressableProps={actionProps}
                 onOpen={() =>
                   onPreviewImage({
@@ -4124,7 +4147,7 @@ const MessageBubble = memo(function MessageBubble({
               >
                 <Text
                   style={{
-                    color: message.role === "user" ? tokens.chatUserForeground : tokens.foreground,
+                    color: message.role === "user" ? userColors.foreground : tokens.foreground,
                     fontSize: 15,
                   }}
                 >
@@ -4167,7 +4190,7 @@ const MessageBubble = memo(function MessageBubble({
             >
               <Text
                 style={{
-                  color: message.role === "user" ? tokens.chatUserForeground : tokens.foreground,
+                  color: message.role === "user" ? userColors.foreground : tokens.foreground,
                   fontSize: 15,
                 }}
               >
@@ -4214,7 +4237,9 @@ const MessageBubble = memo(function MessageBubble({
   }
   const segments = messagePresentationSegments(message.blocks);
   const speaker =
-    message.role === "bot" ? (memberName(members, message.botId) ?? botName) : undefined;
+    message.role === "bot" && showBotSenderName
+      ? (memberName(members, message.botId) ?? botName)
+      : undefined;
   const speakerColor =
     message.role === "bot" ? speakerColorFor(bots, members, message.botId) : undefined;
   const firstContent = segments.findIndex((segment) => segment.kind === "content");
@@ -4233,6 +4258,7 @@ const MessageBubble = memo(function MessageBubble({
           speaker={showBotSenderName && index === firstContent ? speaker : undefined}
           speakerColor={showBotSenderName && index === firstContent ? speakerColor : undefined}
           actionProps={actionProps}
+          userColors={userColors}
         />
       ))}
       {choiceBlocks.map((block, index) => (
@@ -4240,6 +4266,7 @@ const MessageBubble = memo(function MessageBubble({
           key={`choice-${index}`}
           botId={cardBotId}
           block={block}
+          accent={speakerColorDefFor(bots, members, cardBotId)}
           onDismissed={onChoiceDismissed ? () => onChoiceDismissed(block.question) : undefined}
           accessibilityActions={actionProps.accessibilityActions}
           onAccessibilityAction={actionProps.onAccessibilityAction}
@@ -4250,7 +4277,13 @@ const MessageBubble = memo(function MessageBubble({
           key={`computer-${index}`}
           block={block}
           onOpen={
-            computerBotId ? () => onOpenComputer(computerBotId, speaker ?? t("Bot")) : undefined
+            computerBotId
+              ? () =>
+                  onOpenComputer(
+                    computerBotId,
+                    memberName(members, computerBotId) ?? botName ?? t("Bot"),
+                  )
+              : undefined
           }
           accessibilityActions={actionProps.accessibilityActions}
           onAccessibilityAction={actionProps.onAccessibilityAction}
@@ -4276,7 +4309,9 @@ function MessageTextCard({
   speaker,
   speakerColor,
   actionProps,
+  userColors,
 }: {
+  userColors: ReturnType<typeof botChatColors>;
   message: MobileMessage;
   speaker?: string;
   speakerColor?: string;
@@ -4293,7 +4328,7 @@ function MessageTextCard({
         flexShrink: 1,
         minWidth: 0,
         maxWidth: "100%",
-        backgroundColor: message.role === "user" ? tokens.chatUser : tokens.muted,
+        backgroundColor: message.role === "user" ? userColors.background : tokens.muted,
         paddingHorizontal: 14,
         paddingVertical: 9,
         borderRadius: 20,
@@ -4313,7 +4348,11 @@ function MessageTextCard({
       <MessageCaption
         role={message.role}
         text={contentText}
-        tokens={tokens}
+        tokens={
+          message.role === "user"
+            ? { ...tokens, secondaryForeground: userColors.foreground, link: userColors.foreground }
+            : tokens
+        }
         colorScheme={colorScheme}
         streaming={message.id.startsWith("progress:")}
       />

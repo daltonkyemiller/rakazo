@@ -20,6 +20,7 @@ import {
   usePasskeysVersion,
 } from "../lib/passkeys";
 import { formatRelativeTime } from "../lib/relative-time";
+import { SettingsRow } from "./SettingsLayout";
 
 type PasskeyRow = { id: string; name?: string | null; createdAt: Date | string };
 
@@ -96,22 +97,38 @@ function PasskeyList({ onRetry }: { onRetry: () => void }) {
   }
 
   return (
-    <section className="rounded-xl border border-border px-4 py-4" data-testid="passkey-settings">
-      <h3 className="text-[15px] font-medium text-foreground">
-        <Trans>Passkeys</Trans>
-      </h3>
-      {loadFailed ? (
-        <div role="alert" className="mt-3 flex items-center gap-2 text-[13.5px] text-destructive">
-          <Trans>Could not load</Trans>
-          <Button variant="outline" size="xs" onClick={onRetry}>
-            <Trans>Retry</Trans>
-          </Button>
-        </div>
-      ) : null}
+    <div data-testid="passkey-settings" className="divide-y divide-border">
+      <SettingsRow
+        label={<Trans>Passkeys</Trans>}
+        target="passkeys"
+        description={
+          loadFailed ? (
+            <span role="alert" className="flex items-center gap-2 text-destructive">
+              <Trans>Could not load</Trans>
+              <Button variant="outline" size="xs" onClick={onRetry}>
+                <Trans>Retry</Trans>
+              </Button>
+            </span>
+          ) : error && !deleting ? (
+            <span role="alert" className="text-destructive">
+              {error}
+            </span>
+          ) : undefined
+        }
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={pending}
+          onClick={() => void run(() => authClient.passkey.addPasskey())}
+        >
+          <Trans>Add passkey</Trans>
+        </Button>
+      </SettingsRow>
       {passkeys.length > 0 ? (
-        <ul className="mt-3 divide-y divide-border">
+        <ul className="divide-y divide-border">
           {passkeys.map((passkey) => (
-            <li key={passkey.id} className="flex min-h-11 items-center gap-2 py-2">
+            <li key={passkey.id} className="flex min-h-11 items-center gap-2 py-2 ps-4">
               {renaming?.id === passkey.id ? (
                 <form
                   className="flex flex-1 items-center gap-2"
@@ -140,7 +157,7 @@ function PasskeyList({ onRetry }: { onRetry: () => void }) {
                 </form>
               ) : (
                 <>
-                  <span className="min-w-0 flex-1 truncate text-[14px] text-foreground/75">
+                  <span className="min-w-0 flex-1 truncate text-[13.5px] text-foreground">
                     {passkeyLabel(passkey, t`Passkey`)}
                   </span>
                   <span className="shrink-0 text-[12.5px] text-muted-foreground">
@@ -169,19 +186,6 @@ function PasskeyList({ onRetry }: { onRetry: () => void }) {
           ))}
         </ul>
       ) : null}
-      {error && !deleting ? (
-        <p role="alert" className="mt-3 text-[12.5px] text-destructive">
-          {error}
-        </p>
-      ) : null}
-      <Button
-        variant="secondary"
-        className="mt-3 rounded-full"
-        disabled={pending}
-        onClick={() => void run(() => authClient.passkey.addPasskey())}
-      >
-        <Trans>Add passkey</Trans>
-      </Button>
       {deleting ? (
         <AlertDialog
           open
@@ -215,7 +219,7 @@ function PasskeyList({ onRetry }: { onRetry: () => void }) {
           </AlertDialogContent>
         </AlertDialog>
       ) : null}
-    </section>
+    </div>
   );
 }
 

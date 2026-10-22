@@ -5,6 +5,17 @@ contextBridge.exposeInMainWorld("rakazoDesktop", {
   badge: {
     set: (count) => ipcRenderer.invoke("desktop.badge.set", count),
   },
+  appearance: {
+    set: (preference) => ipcRenderer.invoke("desktop.appearance.set", preference),
+  },
+  settings: {
+    onOpen: (listener) => {
+      const handler = () => listener();
+      ipcRenderer.on("desktop.settings.open", handler);
+      return () => ipcRenderer.off("desktop.settings.open", handler);
+    },
+    openServer: () => ipcRenderer.invoke("desktop.settings.openServer"),
+  },
   computer: {
     requestAccess: () => ipcRenderer.invoke("desktop.computer.requestAccess"),
     revokeAccess: () => ipcRenderer.invoke("desktop.computer.revokeAccess"),

@@ -7,6 +7,12 @@ html[data-native-glass] [data-testid="shell-root"] {
   background: transparent;
 }
 
+html[data-native-glass] *,
+html[data-native-glass] *::before,
+html[data-native-glass] *::after {
+  backdrop-filter: none;
+}
+
 html[data-platform="darwin"] #root {
   border-radius: 16px;
   overflow: hidden;
@@ -23,10 +29,6 @@ html[data-platform="darwin"] #root {
   html[data-platform="darwin"] [data-testid="bots-sidebar"] {
     border-inline-end: 0;
   }
-}
-
-html[data-native-glass] [data-testid="shell-root"] {
-  backdrop-filter: none;
 }
 
 html[data-native-glass][data-theme="dark"] [data-testid="shell-root"] {
@@ -46,7 +48,6 @@ html[data-native-glass] [data-testid="bots-sidebar"] > [data-slot="sidebar-inner
 html[data-native-glass] [data-space-switch="main"] {
   position: relative;
   background: color-mix(in srgb, var(--card) 28%, transparent);
-  backdrop-filter: none;
 }
 
 html[data-native-glass][data-theme="dark"] [data-space-switch="main"] {
@@ -95,7 +96,6 @@ html[data-native-glass] [data-slot="input"],
 html[data-native-glass] [data-slot="input-group"] {
   background: color-mix(in srgb, var(--card) 70%, transparent);
   border-color: color-mix(in srgb, var(--foreground) 13%, transparent);
-  backdrop-filter: none;
   box-shadow: none;
 }
 
@@ -135,5 +135,4 @@ html[data-native-glass] [data-slot="dialog-overlay"],
 html[data-native-glass] [data-slot="alert-dialog-overlay"],
 html[data-native-glass] [data-slot="sheet-overlay"] {
   background: var(--overlay);
-  backdrop-filter: none;
 }

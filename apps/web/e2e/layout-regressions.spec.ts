@@ -48,11 +48,34 @@ test("Mac glass keeps inset content and selected toolbar icons readable in both 
     document.documentElement.dataset.platform = "darwin";
     document.documentElement.setAttribute("data-native-glass", "");
   });
+  const history = Array.from(
+    { length: 40 },
+    (_, index) =>
+      `Scroll test paragraph ${index + 1}. Keep this conversation readable while scrolling.`,
+  ).join("\n\n");
+  await page.getByPlaceholder(/Message/).fill(history);
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("message-user-bubble").filter({ hasText: history })).toBeVisible();
+  const transcript = page.getByTestId("transcript");
+  const jump = page.getByRole("button", { name: "Jump to latest" });
   const activity = page.getByRole("button", { name: "Activity", exact: true });
   const main = page.locator('main[data-space-switch="main"]');
   for (const theme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: theme });
     await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+    await transcript.hover();
+    await page.mouse.wheel(0, -5000);
+    await expect(jump).toBeVisible();
+    await expect(jump).toHaveCSS("backdrop-filter", "none");
+    const filteredElements = await page.evaluate(() =>
+      [...document.querySelectorAll("*")]
+        .filter((element) => getComputedStyle(element).backdropFilter !== "none")
+        .map((element) => element.getAttribute("data-testid") ?? element.tagName),
+    );
+    expect(filteredElements).toEqual([]);
+    await captureScreenshot(page, testInfo, `mac-glass-scrolled-${theme}`);
+    await jump.click();
+    await expect(jump).toBeHidden();
     await activity.click();
     await expect(activity).toHaveAttribute("aria-pressed", "true");
     const colors = await activity.evaluate((element) => {

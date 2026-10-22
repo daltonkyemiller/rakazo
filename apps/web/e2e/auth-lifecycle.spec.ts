@@ -244,12 +244,12 @@ test("changes and recovers an email password", async ({ page }, testInfo) => {
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   const settings = page.getByTestId("user-settings");
   await expect(settings).toBeVisible();
+  await settings.getByRole("button", { name: "Change password", exact: true }).click();
   await expect(settings.locator('input[name="username"]')).toHaveAttribute(
     "autocomplete",
     "username",
   );
   await expect(settings.locator('input[name="username"]')).toHaveValue(email);
-  await settings.getByRole("button", { name: "Change password", exact: true }).click();
   await expect(settings.getByLabel("Current password")).toHaveAttribute(
     "autocomplete",
     "current-password",

@@ -6,6 +6,7 @@ import { Maximize2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { ComputerMaintenanceActions } from "../../components/ComputerMaintenanceActions";
 import { ComputersUnavailableHint } from "../../components/ComputersUnavailableHint";
+import { MacAccessRow } from "../../components/MacAccess";
 import { screenIframeSandbox } from "../../lib/computer-screen";
 import { computerPanelNeedsMaintenance } from "../../lib/thread-events";
 import { RoutineListHeader, RoutineListRow } from "../RoutineEditor";
@@ -141,6 +142,7 @@ export function ComputerPanel({
           />
         ) : null}
       </div>
+      <MacAccessRow botId={bot.id} className="mt-4 rounded-xl bg-muted/50 px-4 py-1" />
 
       <RoutineListHeader onCreate={onCreateRoutine} />
       {routines.map((routine) => (

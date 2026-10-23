@@ -20,7 +20,10 @@ import { fetch as undiciFetch } from "undici";
  * payload in the global `Response` after the package fetch returns. The
  * request still uses this package's fetch and `Agent`, so host pinning is
  * unchanged. */
-export const dispatcherFetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+export const dispatcherFetch = (async (
+  input: Parameters<typeof globalThis.fetch>[0],
+  init?: RequestInit,
+) => {
   const response = await undiciFetch(
     input as Parameters<typeof undiciFetch>[0],
     (await initForPackageFetch(init)) as Parameters<typeof undiciFetch>[1],

@@ -99,17 +99,20 @@ test("adds a stdio MCP server with encrypted environment variables", async ({ pa
 
   await page.getByRole("button", { name: "Connect apps", exact: true }).click();
   await expandAdvancedSection(page.getByTestId("integrations-advanced"));
-  await page.getByRole("button", { name: "Manage MCP servers", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "MCP servers" })).toBeVisible();
+  await page.getByRole("button", { name: "Add MCP server", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Add MCP server" })).toBeVisible();
 
-  await page.getByLabel("Server name").fill("Invoices");
-  await page.getByRole("tab", { name: "STDIO", exact: true }).click();
-  await page.getByLabel("Command").fill("npx");
-  await page.getByLabel("Arguments").fill("-y invoices-mcp@1.0.0");
-  await page.getByText("Advanced", { exact: true }).click();
+  // A pasted command line fills the form; without the desktop app it can only run on the server.
+  await page.getByLabel("URL, command, or config").fill("npx -y invoices-mcp@1.0.0");
+  await expect(page.getByLabel("Server name")).toHaveValue("Invoices");
+  await expect(page.getByText("Runs on Rakazo server", { exact: true })).toBeVisible();
+  await expect(page.getByRole("radio")).toHaveCount(0);
+  await captureScreenshot(page, testInfo, "mcp-add-command");
 
   const names = page.getByRole("textbox", { name: "Name", exact: true });
   const values = page.getByLabel("Value", { exact: true });
+  const addVariable = page.getByRole("button", { name: "Add variable", exact: true });
+  await addVariable.click();
   // Names are normalized to the environment-variable form the server accepts.
   await names.nth(0).fill("123-key");
   await expect(names.nth(0)).toHaveValue("_123_KEY");
@@ -118,7 +121,7 @@ test("adds a stdio MCP server with encrypted environment variables", async ({ pa
   await values.nth(0).fill("id-value");
   await expect(values.nth(0)).toHaveAttribute("type", "password");
   await expect(values.nth(0)).toHaveAttribute("autocomplete", "new-password");
-  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await addVariable.click();
   await names.nth(1).fill("invoices-api-id");
   await expect(page.getByText("Each name can be used once.", { exact: true })).toHaveCount(2);
   await expect(page.getByRole("button", { name: "Add server", exact: true })).toBeDisabled();
@@ -127,23 +130,26 @@ test("adds a stdio MCP server with encrypted environment variables", async ({ pa
   await names.nth(1).fill("INVOICES_API_SECRET");
   await expect(page.getByText("Each name can be used once.", { exact: true })).toHaveCount(0);
   await values.nth(1).fill("secret-value");
-  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await addVariable.click();
   await names.nth(2).fill("invoices-api-id");
   await expect(page.getByText("Each name can be used once.", { exact: true })).toHaveCount(2);
   await expect(page.getByRole("button", { name: "Add server", exact: true })).toBeDisabled();
   expect(servers).toHaveLength(0);
-  await page.getByRole("button", { name: "Remove", exact: true }).nth(2).click();
+  await page
+    .getByRole("button", { name: /^Remove / })
+    .nth(2)
+    .click();
   await expect(names).toHaveCount(2);
   await expect(page.getByText("Each name can be used once.", { exact: true })).toHaveCount(0);
 
   // The OAuth client is host-managed: the grant reaches the process through a visible reference.
-  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await addVariable.click();
   await names.nth(2).fill("GOOGLE_ACCESS_TOKEN");
   await values.nth(2).fill("{{oauth.access_token}}");
   await expect(values.nth(2)).toHaveAttribute("type", "text");
   await expect(values.nth(0)).toHaveAttribute("type", "password");
   // A file row hands the process a path to a file holding the template (visible, multi-line).
-  await page.getByRole("button", { name: "Add", exact: true }).click();
+  await addVariable.click();
   await names.nth(3).fill("GOOGLE_ACCESS_TOKEN");
   await page.getByRole("button", { name: "File", exact: true }).nth(3).click();
   await expect(page.getByText("Each name can be used once.", { exact: true })).toHaveCount(2);
@@ -163,6 +169,10 @@ test("adds a stdio MCP server with encrypted environment variables", async ({ pa
     "aria-pressed",
     "false",
   );
+  await page
+    .getByTestId("mcp-server-draft")
+    .getByRole("button", { name: "Advanced", exact: true })
+    .click();
   await expect(page.getByLabel("Redirect URI")).toHaveCount(0);
   await page.getByLabel("OAuth client ID (optional)").fill("google-client");
   await page.getByLabel("OAuth client secret (optional)").fill("google-secret");
@@ -176,15 +186,14 @@ test("adds a stdio MCP server with encrypted environment variables", async ({ pa
   await captureScreenshot(page, testInfo, "mcp-stdio-env-form");
 
   await page.getByRole("button", { name: "Add server", exact: true }).click();
-  await expect(page.getByText("Invoices", { exact: true })).toBeVisible();
+  // Adding opens the new server's page; Back goes to the list, not the finished form.
+  const detail = page.getByTestId("mcp-server-detail");
+  await expect(detail.getByRole("heading", { name: "Invoices" })).toBeVisible();
+  await expect(detail.getByText("Runs on Rakazo server", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Connect OAuth", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Disconnect", exact: true })).toHaveCount(0);
-  await expect(names).toHaveCount(1);
-  await expect(names.nth(0)).toHaveValue("");
-  await expect(values.nth(0)).toHaveValue("");
-  await expect(values.nth(0)).toHaveJSProperty("tagName", "INPUT");
-  await expect(page.getByLabel("OAuth client ID (optional)")).toHaveValue("");
-  await expect(page.getByLabel("Authorization server")).toHaveCount(0);
+  await expect(page.getByTestId("mcp-server-draft")).toHaveCount(0);
+  await captureScreenshot(page, testInfo, "mcp-server-detail");
 });
 
 test("shows MCP server health, error details, and tests the connection on demand", async ({
@@ -232,9 +241,13 @@ test("shows MCP server health, error details, and tests the connection on demand
   });
 
   await page.getByRole("button", { name: "Connect apps", exact: true }).click();
-  await expandAdvancedSection(page.getByTestId("integrations-advanced"));
   await page.getByRole("button", { name: "Manage MCP servers", exact: true }).click();
   await expect(page.getByRole("heading", { name: "MCP servers" })).toBeVisible();
+  const row = page.getByTestId("mcp-server-row");
+  await expect(row).toContainText("Rakazo server");
+  await expect(row).toContainText("Not working");
+  await captureScreenshot(page, testInfo, "mcp-server-list");
+  await row.click();
 
   // OAuth being connected must not read as "working": health is the primary status.
   const health = page.getByTestId("mcp-health");
@@ -296,8 +309,9 @@ test("polls the server list while a stdio package is installing", async ({ page 
   });
 
   await page.getByRole("button", { name: "Connect apps", exact: true }).click();
-  await expandAdvancedSection(page.getByTestId("integrations-advanced"));
   await page.getByRole("button", { name: "Manage MCP servers", exact: true }).click();
+  await expect(page.getByTestId("mcp-server-row")).toContainText("Installing…");
+  await page.getByTestId("mcp-server-row").click();
 
   const health = page.getByTestId("mcp-health");
   await expect(health).toHaveAttribute("data-status", "installing");

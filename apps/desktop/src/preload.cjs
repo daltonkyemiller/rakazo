@@ -2,6 +2,15 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("rakazoDesktop", {
   platform: process.platform,
+  mcp: {
+    state: () => ipcRenderer.invoke("desktop.mcp.state"),
+    add: (input) => ipcRenderer.invoke("desktop.mcp.add", input),
+    attach: (id, serverId, spaceId) =>
+      ipcRenderer.invoke("desktop.mcp.attach", id, serverId, spaceId),
+    remove: (id) => ipcRenderer.invoke("desktop.mcp.remove", id),
+    setEnabled: (id, enabled) => ipcRenderer.invoke("desktop.mcp.setEnabled", id, enabled),
+    test: (id) => ipcRenderer.invoke("desktop.mcp.test", id),
+  },
   badge: {
     set: (count) => ipcRenderer.invoke("desktop.badge.set", count),
   },

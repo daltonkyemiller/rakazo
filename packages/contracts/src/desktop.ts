@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * `unsupported` covers an unpackaged build and a repository with no published releases, which is
  * the normal state for a fork. It is not an error the user needs to act on. Automatic checks stay
@@ -36,7 +38,66 @@ export interface RakazoDesktopOAuthCallback {
   state?: string;
 }
 
+export interface DesktopHostMcpInput {
+  kind: "command" | "computer";
+  name: string;
+  command?: string;
+  args?: string[];
+  cwd?: string;
+  env?: Record<string, string>;
+}
+
+const hostMcpText = z
+  .string()
+  .max(32_768)
+  .refine((value) => !value.includes("\0"));
+export const DesktopHostMcpInputSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("computer"), name: z.string().trim().min(1).max(200) }).strict(),
+  z
+    .object({
+      kind: z.literal("command"),
+      name: z.string().trim().min(1).max(200),
+      command: hostMcpText.refine((value) => value.trim().length > 0),
+      args: z.array(hostMcpText).max(256).optional(),
+      cwd: hostMcpText.optional(),
+      env: z
+        .record(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/), hostMcpText)
+        .refine((value) => Object.keys(value).length <= 128)
+        .optional(),
+    })
+    .strict(),
+]);
+
+export interface DesktopHostMcpServer {
+  id: string;
+  name: string;
+  kind: "command" | "computer";
+  endpoint: string;
+  command?: string;
+  args?: string[];
+  cwd?: string;
+  envKeys: string[];
+  serverId?: string;
+  spaceId?: string;
+  enabled: boolean;
+  status: "stopped" | "ready" | "error";
+  error?: string;
+}
+
+export interface DesktopHostMcpRegistration {
+  server: DesktopHostMcpServer;
+  token: string;
+}
+
 export interface RakazoDesktop {
+  mcp?: {
+    state: () => Promise<{ available: boolean; servers: DesktopHostMcpServer[] }>;
+    add: (input: DesktopHostMcpInput) => Promise<DesktopHostMcpRegistration | null>;
+    attach: (id: string, serverId: string, spaceId: string) => Promise<void>;
+    remove: (id: string) => Promise<void>;
+    setEnabled: (id: string, enabled: boolean) => Promise<void>;
+    test: (id: string) => Promise<{ toolCount: number }>;
+  };
   /** Optional for compatibility with older desktop releases. */
   badge?: {
     set: (count: number) => Promise<boolean>;

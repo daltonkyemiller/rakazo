@@ -43,7 +43,7 @@ export function ComputerModePicker({
         onChange={onChange}
         options={BOT_COMPUTER_MODES.map((value) => ({
           value,
-          label: value === "team" ? t("Team") : t("Private"),
+          label: value === "team" ? t("Shared") : t("Own"),
         }))}
         value={value}
       />

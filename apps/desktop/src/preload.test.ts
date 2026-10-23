@@ -36,6 +36,7 @@ describe("desktop preload bridge", () => {
       "badge",
       "computer",
       "localSettings",
+      "mcp",
       "oauth",
       "platform",
       "settings",
@@ -76,6 +77,26 @@ describe("desktop preload bridge", () => {
       "desktop.update.check",
       "desktop.update.download",
       "desktop.update.install",
+    ]);
+  });
+
+  it("forwards only the explicit local MCP operations", async () => {
+    const { invoke, exposeInMainWorld } = runPreload("preload.cjs");
+    const [, bridge] = exposeInMainWorld.mock.calls[0] as [string, RakazoDesktop];
+    const input = { kind: "computer" as const, name: "Mac computer" };
+    await bridge.mcp!.state();
+    await bridge.mcp!.add(input);
+    await bridge.mcp!.attach("local-id", "server-id", "space-id");
+    await bridge.mcp!.setEnabled("local-id", false);
+    await bridge.mcp!.test("local-id");
+    await bridge.mcp!.remove("local-id");
+    expect(invoke.mock.calls).toEqual([
+      ["desktop.mcp.state"],
+      ["desktop.mcp.add", input],
+      ["desktop.mcp.attach", "local-id", "server-id", "space-id"],
+      ["desktop.mcp.setEnabled", "local-id", false],
+      ["desktop.mcp.test", "local-id"],
+      ["desktop.mcp.remove", "local-id"],
     ]);
   });
 

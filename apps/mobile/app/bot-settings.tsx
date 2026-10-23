@@ -34,6 +34,7 @@ import { BotAvatar } from "../components/bot-avatar";
 import { BotContextCards } from "../components/bot-context-cards";
 import { ComputerModePicker } from "../components/computer-mode-picker";
 import { glassHeaderOptions } from "../components/glass-title";
+import { MacAccessRow } from "../components/mac-access-row";
 import type { MenuPickerChoice } from "../components/menu-picker";
 import { MenuPicker, MenuPickerMenu } from "../components/menu-picker";
 import { NativeActionButton } from "../components/native-action-button";
@@ -682,6 +683,7 @@ export default function BotSettingsScreen() {
 
             <SettingsGroup label={t("Computer")}>
               <ComputerModePicker plain value={computerMode} onChange={setComputerMode} />
+              {botId ? <MacAccessRow botId={botId} /> : null}
             </SettingsGroup>
             <SettingsGroup label={t("Voice")}>
               <View style={styles.row}>

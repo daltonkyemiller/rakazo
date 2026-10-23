@@ -18,6 +18,11 @@ msgid " (unread)"
 msgstr "（未读）"
 
 #. placeholder {0}: health.toolCount
+#: src/components/mcp/mcp-labels.ts
+msgid "{0, plural, one {# tool} other {# tools}}"
+msgstr ""
+
+#. placeholder {0}: health.toolCount
 #: src/components/McpServerHealthLine.tsx
 msgid "{0, plural, one {Running · # tool} other {Running · # tools}}"
 msgstr "{0, plural, other {运行中 · #个工具}}"
@@ -50,6 +55,11 @@ msgstr "{0}（超过 {1}）"
 msgid "{0} {unitLabel}"
 msgstr "{0} {unitLabel}"
 
+#. placeholder {0}: server.name
+#: src/components/mcp/McpServersPanel.tsx
+msgid "{0} added"
+msgstr ""
+
 #. placeholder {0}: block.name
 #: src/pages/shell/message-cards.tsx
 msgid "{0} connection"
@@ -71,12 +81,12 @@ msgid "{0} is calling you"
 msgstr ""
 
 #. placeholder {0}: updated.name
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "{0} is not working"
 msgstr "{0} 无法正常工作"
 
 #. placeholder {0}: updated.name
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "{0} is running"
 msgstr "{0} 正在运行"
 
@@ -100,6 +110,11 @@ msgstr ""
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "{0} runs · {1} tokens"
 msgstr "{0} 次运行 · {1} tokens"
+
+#. placeholder {0}: server.name
+#: src/components/mcp/McpServersPanel.tsx
+msgid "{0} was removed, but its setup on this Mac could not be."
+msgstr ""
 
 #. placeholder {0}: bot.name
 #: src/pages/ExternalConversationSettings.tsx
@@ -322,6 +337,10 @@ msgstr "什么都做一点"
 msgid "A command's output"
 msgstr "命令的输出"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "A quote is not closed."
+msgstr ""
+
 #. placeholder {0}: oauth.verificationUri.replace(/^https:\/\//, "")
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
@@ -332,6 +351,10 @@ msgstr ""
 #: src/pages/Onboarding.tsx
 msgid "A subscription credential is stored securely."
 msgstr "订阅凭据已安全存储。"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "A working directory only works on this Mac."
+msgstr ""
 
 #: src/components/InfoTooltip.tsx
 msgid "About {label}"
@@ -346,10 +369,11 @@ msgid "About spaces"
 msgstr ""
 
 #: src/components/integrations/IntegrationSetup.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Access token"
 msgstr ""
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Access token (optional)"
 msgstr "访问令牌（可选）"
 
@@ -401,7 +425,6 @@ msgstr "当前模型"
 msgid "Activity"
 msgstr "动态"
 
-#: src/pages/McpServersOverlay.tsx
 #: src/pages/PluginsOverlay.tsx
 #: src/pages/ScratchpadSection.tsx
 msgid "Add"
@@ -436,22 +459,19 @@ msgstr "添加通行密钥以更快登录？"
 msgid "Add a run time for this one-shot."
 msgstr "为此一次性任务添加运行时间。"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Add a server name."
 msgstr "请填写服务器名称。"
-
-#: src/pages/McpServersOverlay.tsx
-msgid "Add a stdio command."
-msgstr "请填写 stdio 命令。"
 
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/use-routine-editor.ts
 msgid "Add a trigger to run this routine."
 msgstr "添加触发器以运行此例程。"
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Add an HTTPS server URL."
-msgstr "请填写 HTTPS 服务器 URL。"
+#. placeholder {0}: row.name
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Add a value for {0}."
+msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Add another"
@@ -481,11 +501,16 @@ msgstr "添加 GraphQL"
 msgid "Add GraphQL endpoint"
 msgstr "添加 GraphQL 端点"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Add header"
+msgstr ""
+
 #: src/pages/ScratchpadSection.tsx
 msgid "Add item"
 msgstr "添加项目"
 
 #: src/components/integrations/IntegrationSetup.tsx
+#: src/components/mcp/McpServersPanel.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "Add MCP server"
 msgstr "添加 MCP 服务器"
@@ -503,11 +528,8 @@ msgstr "添加 OpenAPI"
 msgid "Add passkey"
 msgstr "添加通行密钥"
 
-#: src/pages/PluginsOverlay.tsx
-msgid "Add remote MCP server"
-msgstr "添加远程 MCP 服务器"
-
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "Add server"
 msgstr "添加服务器"
 
@@ -527,13 +549,21 @@ msgstr "添加 Treg"
 msgid "Add trigger"
 msgstr "添加触发器"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Add variable"
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Added"
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "Adding…"
 msgstr "正在添加…"
 
+#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/AccountSettingsOverlay.tsx
-#: src/pages/McpServersOverlay.tsx
 #: src/pages/model-settings/catalog-model-fields.tsx
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
@@ -556,9 +586,10 @@ msgstr "Agent 电脑"
 msgid "Agent connections"
 msgstr "Agent 连接"
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Agents:"
-msgstr "Agent："
+#: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Agents"
+msgstr ""
 
 #: src/pages/Artifacts.tsx
 msgid "All bots"
@@ -594,6 +625,14 @@ msgstr "允许 {0}，无需询问"
 #: src/components/ApprovalRulesSettings.tsx
 msgid "Allow email actions without asking"
 msgstr "允许邮件操作，无需询问"
+
+#: src/components/MacAccess.tsx
+msgid "Allow it from Rakazo on your Mac."
+msgstr ""
+
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Allow on this Mac"
+msgstr ""
 
 #: src/components/AskCard.tsx
 msgid "Allow once"
@@ -732,10 +771,6 @@ msgstr "已归档"
 msgid "Archived. Chat, memory, and files kept."
 msgstr "已归档。对话、记忆和文件保留。"
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Arguments"
-msgstr "参数"
-
 #: src/components/SidebarFooter.tsx
 #: src/pages/Artifacts.tsx
 msgid "Artifacts"
@@ -803,11 +838,11 @@ msgstr "身份验证失败。"
 msgid "Authorization code or callback URL"
 msgstr "授权码或回调 URL"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Authorization parameters (optional)"
 msgstr "授权参数（可选）"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Authorization server"
 msgstr "授权服务器"
 
@@ -854,6 +889,7 @@ msgstr "头像"
 
 #: src/pages/Auth.tsx
 #: src/pages/Board.tsx
+#: src/pages/HostComputerPrompt.tsx
 #: src/pages/RoutineEditor.tsx
 msgid "Back"
 msgstr "返回"
@@ -864,6 +900,10 @@ msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Back to integrations"
+msgstr ""
+
+#: src/pages/PluginsOverlay.tsx
+msgid "Back to MCP servers"
 msgstr ""
 
 #: src/pages/Auth.tsx
@@ -948,6 +988,10 @@ msgstr "Bot 的模型"
 msgid "Bots"
 msgstr ""
 
+#: src/components/MacAccess.tsx
+msgid "Bots already run on your Mac."
+msgstr ""
+
 #: src/components/ModelCredits.tsx
 msgid "Bots and browser automation"
 msgstr ""
@@ -955,6 +999,14 @@ msgstr ""
 #: src/pages/shell/transcript.tsx
 msgid "Bots are working"
 msgstr "Bot 正在工作"
+
+#: src/pages/HostComputerPrompt.tsx
+msgid "Bots run directly on this Mac."
+msgstr ""
+
+#: src/pages/HostComputerPrompt.tsx
+msgid "Bots run on isolated computers."
+msgstr ""
 
 #: src/pages/Paywall.tsx
 msgid "Bots with their own computer and browser"
@@ -1052,6 +1104,10 @@ msgstr "已取消"
 
 #: src/pages/Artifacts.tsx
 msgid "Card view"
+msgstr ""
+
+#: src/components/MacAccess.tsx
+msgid "Change"
 msgstr ""
 
 #: src/pages/AccountSettingsOverlay.tsx
@@ -1157,12 +1213,20 @@ msgstr "选择 Bot…"
 msgid "Choose a new password"
 msgstr "设置新密码"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Choose a server"
+msgstr ""
+
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Choose file"
 msgstr "选择文件"
 
 #: src/components/ModelCredits.tsx
 msgid "Choose how to use Rakazo"
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Choose where it runs."
 msgstr ""
 
 #: src/pages/shell/dialogs.tsx
@@ -1220,10 +1284,6 @@ msgstr "关闭图片预览"
 #: src/pages/PluginsOverlay.tsx
 msgid "Close integrations"
 msgstr "关闭集成"
-
-#: src/pages/McpServersOverlay.tsx
-msgid "Close MCP servers"
-msgstr "关闭 MCP 服务器"
 
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/SettingsOverlay.tsx
@@ -1300,7 +1360,7 @@ msgstr ""
 msgid "Coming soon"
 msgstr "即将推出"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/RoutineEditor.tsx
 msgid "Command"
 msgstr "命令"
@@ -1312,6 +1372,11 @@ msgstr "命令变量"
 
 #: src/pages/shell/composer.tsx
 msgid "Commands"
+msgstr ""
+
+#: src/components/MacAccess.tsx
+#: src/pages/HostComputerPrompt.tsx
+msgid "Commands and files"
 msgstr ""
 
 #: src/pages/Board.tsx
@@ -1332,6 +1397,10 @@ msgstr "完成"
 #: src/pages/shell/message-view.tsx
 msgid "Computer"
 msgstr "电脑"
+
+#: src/pages/HostComputerPrompt.tsx
+msgid "Computer access"
+msgstr ""
 
 #: src/pages/Shell.tsx
 #: src/pages/shell/computer-view.tsx
@@ -1366,12 +1435,7 @@ msgstr "电脑未开启。请设置 SANDBOX_PROVIDER=docker 并提供 SANDBOX_SU
 msgid "Configured by deployment"
 msgstr "由部署配置"
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Configured servers"
-msgstr "已配置的服务器"
-
 #: src/pages/KnowledgeSection.tsx
-#: src/pages/McpServersOverlay.tsx
 msgid "Confirm delete"
 msgstr "确认删除"
 
@@ -1379,6 +1443,10 @@ msgstr "确认删除"
 #: src/pages/Auth.tsx
 msgid "Confirm password"
 msgstr "确认密码"
+
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Confirm remove"
+msgstr ""
 
 #: src/lib/model-connection-preflight.ts
 msgid "Confirm the URL is reachable from this browser session, then test again."
@@ -1417,7 +1485,7 @@ msgstr "连接 Executor"
 msgid "Connect MCP server “{name}”"
 msgstr "连接 MCP 服务器“{name}”"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 msgid "Connect OAuth"
 msgstr "连接 OAuth"
 
@@ -1449,7 +1517,7 @@ msgid "Connected. Its tools are available from your next message."
 msgstr "已连接，下一条消息起即可使用其工具。"
 
 #: src/components/integrations/IntegrationSetup.tsx
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/memory-providers/HonchoSettingsForm.tsx
 #: src/pages/memory-providers/SerenitySettingsForm.tsx
 #: src/pages/memory-providers/SupermemorySettingsForm.tsx
@@ -1478,6 +1546,7 @@ msgstr "上下文限制"
 
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/Auth.tsx
+#: src/pages/HostComputerPrompt.tsx
 #: src/pages/Onboarding.tsx
 msgid "Continue"
 msgstr "继续"
@@ -1523,7 +1592,11 @@ msgstr ""
 msgid "Could not add"
 msgstr "无法添加"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Could not add {serverName}, and its setup on this Mac could not be removed."
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Could not add MCP server"
 msgstr "无法添加 MCP 服务器"
 
@@ -1534,6 +1607,11 @@ msgstr "无法批准此服务器"
 #: src/pages/shell/message-cards.tsx
 msgid "Could not authorize this app"
 msgstr "无法授权此应用"
+
+#: src/components/MacAccess.tsx
+#: src/components/mcp/McpServersPanel.tsx
+msgid "Could not change Mac access"
+msgstr ""
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Could not change password"
@@ -1628,7 +1706,7 @@ msgstr "无法删除 Bot"
 msgid "Could not delete group"
 msgstr "无法删除群组"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "Could not delete MCP server"
 msgstr "无法删除 MCP 服务器"
 
@@ -1656,7 +1734,7 @@ msgstr ""
 msgid "Could not disconnect memory provider"
 msgstr "无法断开记忆提供方"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "Could not disconnect OAuth"
 msgstr "无法断开 OAuth"
 
@@ -1728,7 +1806,7 @@ msgstr ""
 msgid "Could not load integrations"
 msgstr "无法加载集成"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "Could not load MCP servers"
 msgstr "无法加载 MCP 服务器"
@@ -1915,7 +1993,7 @@ msgstr "无法发送重置邮件"
 msgid "Could not send that"
 msgstr "无法发送"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "Could not start OAuth"
 msgstr "无法开始 OAuth"
 
@@ -1931,7 +2009,7 @@ msgstr "无法提交此回答"
 msgid "Could not take control"
 msgstr "无法接管"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "Could not test MCP server"
 msgstr "无法测试 MCP 服务器"
 
@@ -1939,7 +2017,7 @@ msgstr "无法测试 MCP 服务器"
 msgid "Could not update"
 msgstr "无法更新"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "Could not update agent access"
 msgstr "无法更新 Agent 权限"
 
@@ -2039,7 +2117,15 @@ msgstr "正在创建…"
 msgid "Credential"
 msgstr "凭据"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Credential files"
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Credential files only work on the Rakazo server."
+msgstr ""
+
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "Credential saved"
 msgstr "凭据已保存"
@@ -2136,7 +2222,6 @@ msgstr "默认范围"
 #: src/pages/Artifacts.tsx
 #: src/pages/BotContextMenu.tsx
 #: src/pages/KnowledgeSection.tsx
-#: src/pages/McpServersOverlay.tsx
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/archived-chats.tsx
 #: src/pages/shell/dialogs.tsx
@@ -2229,6 +2314,7 @@ msgstr ""
 msgid "Desktop update"
 msgstr ""
 
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/RoutineRunHistory.tsx
 #: src/pages/shell/composer-error.tsx
 msgid "Details"
@@ -2242,7 +2328,7 @@ msgstr ""
 msgid "Disable a tool"
 msgstr "禁用工具"
 
-#: src/pages/PluginsOverlay.tsx
+#: src/components/mcp/mcp-labels.ts
 msgid "Disabled"
 msgstr "已禁用"
 
@@ -2250,7 +2336,7 @@ msgstr "已禁用"
 msgid "Discard recording"
 msgstr ""
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/ModelSettingsOverlay.tsx
 #: src/pages/VoiceSettingsOverlay.tsx
@@ -2364,7 +2450,7 @@ msgstr "拖放或粘贴图片"
 msgid "Duplicate"
 msgstr "复制"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Each name can be used once."
 msgstr "每个名称只能使用一次。"
 
@@ -2448,7 +2534,8 @@ msgstr "请输入 1 到 1000 之间的整数作为图像限制。"
 msgid "Enter an API key before testing."
 msgstr "测试前请输入 API 密钥。"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServerDetail.tsx
 msgid "Environment variables"
 msgstr "环境变量"
 
@@ -2572,7 +2659,7 @@ msgstr "标记变化的字段"
 msgid "Fields to compare, e.g. id, modifiedTime (optional)"
 msgstr "要比较的字段，例如 id, modifiedTime（可选）"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "File"
 msgstr "文件"
 
@@ -2720,15 +2807,15 @@ msgstr "请求头"
 msgid "Header \"{header}\""
 msgstr ""
 
-#: src/pages/McpServersOverlay.tsx
 #: src/pages/PluginsOverlay.tsx
 #: src/pages/shell/bot-credentials.tsx
 msgid "Header name"
 msgstr "请求头名称"
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Header value"
-msgstr "请求头值"
+#: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Headers"
+msgstr ""
 
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Hear a sample"
@@ -2838,6 +2925,7 @@ msgstr "输入"
 msgid "Install update"
 msgstr "安装更新"
 
+#: src/components/mcp/mcp-labels.ts
 #: src/components/McpServerHealthLine.tsx
 msgid "Installing…"
 msgstr "正在安装…"
@@ -3035,6 +3123,7 @@ msgid "Loading voice providers…"
 msgstr "正在加载语音提供方…"
 
 #: src/App.tsx
+#: src/components/mcp/McpServersPanel.tsx
 #: src/pages/Artifacts.tsx
 #: src/pages/Auth.tsx
 #: src/pages/IntegrationSetup.tsx
@@ -3080,6 +3169,20 @@ msgstr ""
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "Lowercase letters, numbers, hyphens and underscores, starting with a letter."
+msgstr ""
+
+#: src/components/MacAccess.tsx
+#: src/pages/HostComputerPrompt.tsx
+msgid "Mac access"
+msgstr ""
+
+#: src/pages/HostComputerPrompt.tsx
+msgid "Mac access for {botName}"
+msgstr ""
+
+#: src/components/MacAccess.tsx
+#: src/pages/HostComputerPrompt.tsx
+msgid "Mac setup did not finish. Revoke Mac access from the Rakazo menu, then try again."
 msgstr ""
 
 #: src/components/ComputerUpdateProgress.tsx
@@ -3152,7 +3255,7 @@ msgstr "最大输出 token 数"
 msgid "MCP endpoint"
 msgstr ""
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "MCP servers"
 msgstr "MCP 服务器"
@@ -3386,10 +3489,10 @@ msgstr "静音"
 msgid "Muted"
 msgstr ""
 
+#: src/components/mcp/McpServerAdd.tsx
 #: src/components/teach/SkillDraftCard.tsx
 #: src/pages/Auth.tsx
 #: src/pages/GroupPanel.tsx
-#: src/pages/McpServersOverlay.tsx
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/bot-credentials.tsx
 #: src/pages/shell/bot-panel.tsx
@@ -3534,7 +3637,11 @@ msgstr "没有匹配的模型"
 msgid "No MCP or API tool sources installed yet."
 msgstr "还没有安装 MCP 或 API 工具源。"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
+msgid "No MCP servers found."
+msgstr ""
+
+#: src/components/mcp/McpServersPanel.tsx
 msgid "No MCP servers yet."
 msgstr "还没有 MCP 服务器。"
 
@@ -3609,6 +3716,7 @@ msgstr "未连接"
 msgid "Not now"
 msgstr "暂不"
 
+#: src/components/mcp/mcp-labels.ts
 #: src/components/McpServerHealthLine.tsx
 msgid "Not working"
 msgstr "无法正常工作"
@@ -3638,16 +3746,15 @@ msgstr "正在使用 {0}。"
 msgid "OAuth authorization was cancelled."
 msgstr "OAuth 授权已取消。"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "OAuth client ID (optional)"
 msgstr "OAuth 客户端 ID（可选）"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "OAuth client secret (optional)"
 msgstr "OAuth 客户端密钥（可选）"
 
-#: src/pages/McpServersOverlay.tsx
-#: src/pages/PluginsOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 msgid "OAuth connected"
 msgstr "OAuth 已连接"
 
@@ -3655,10 +3762,14 @@ msgstr "OAuth 已连接"
 msgid "OAuth connection failed"
 msgstr "OAuth 连接失败"
 
-#: src/pages/McpServersOverlay.tsx
-#: src/pages/PluginsOverlay.tsx
+#: src/components/mcp/mcp-labels.ts
+#: src/components/mcp/McpServerDetail.tsx
 msgid "OAuth expired"
 msgstr "OAuth 已过期"
+
+#: src/components/MacAccess.tsx
+msgid "Off on this Mac."
+msgstr ""
 
 #: src/pages/RoutineEditor.tsx
 msgid "On a schedule"
@@ -3726,6 +3837,10 @@ msgstr "在完整窗口中打开"
 msgid "Open navigation"
 msgstr "打开导航"
 
+#: src/components/MacAccess.tsx
+msgid "Open Rakazo on your Mac to use it."
+msgstr ""
+
 #: src/pages/ScratchpadSection.tsx
 msgid "Open work"
 msgstr "待办"
@@ -3753,10 +3868,6 @@ msgstr "正在打开工作区…"
 msgid "Optional"
 msgstr "可选"
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Optional header value"
-msgstr "可选请求头值"
-
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Or connect an API key"
 msgstr "或连接 API 密钥"
@@ -3781,6 +3892,10 @@ msgstr "原消息不可用"
 #: src/pages/Onboarding.tsx
 msgid "Other model…"
 msgstr "其他模型…"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Own"
+msgstr ""
 
 #: src/lib/identity-display.ts
 #: src/pages/Board.tsx
@@ -3932,10 +4047,6 @@ msgstr ""
 msgid "Priority"
 msgstr ""
 
-#: src/pages/shell/bot-panel.tsx
-msgid "Private"
-msgstr "私有"
-
 #: src/pages/shell/dialogs.tsx
 msgid "Private workspace with its own bots and groups."
 msgstr ""
@@ -3972,6 +4083,11 @@ msgstr ""
 
 #: src/components/ModelCredits.tsx
 msgid "Rakazo credits"
+msgstr ""
+
+#: src/components/mcp/mcp-labels.ts
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Rakazo server"
 msgstr ""
 
 #: src/pages/memory-providers/HonchoSettingsForm.tsx
@@ -4011,7 +4127,7 @@ msgstr "最近"
 msgid "Reconnect"
 msgstr ""
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 msgid "Reconnect OAuth"
 msgstr "重新连接 OAuth"
 
@@ -4076,7 +4192,7 @@ msgstr "重建无法正常工作的电脑。"
 msgid "Recreating the computer"
 msgstr ""
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Redirect URI"
 msgstr "重定向 URI"
 
@@ -4119,7 +4235,8 @@ msgid "Reload"
 msgstr "重新加载"
 
 #: src/components/ApprovalRulesSettings.tsx
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/PluginsOverlay.tsx
 #: src/pages/ScratchpadSection.tsx
 #: src/pages/shell/bot-credentials.tsx
@@ -4127,6 +4244,8 @@ msgid "Remove"
 msgstr "移除"
 
 #. placeholder {0}: attachment.file.name
+#. placeholder {0}: row.name
+#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/shell/composer.tsx
 msgid "Remove {0}"
 msgstr "移除 {0}"
@@ -4182,6 +4301,7 @@ msgstr "已连同对话、电脑和记忆一起移除。"
 msgid "Removed, but list refresh failed"
 msgstr "已移除，但列表刷新失败"
 
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "Removing…"
 msgstr "正在移除…"
@@ -4237,6 +4357,10 @@ msgstr ""
 #: src/lib/user-error.ts
 msgid "Request a new code"
 msgstr "请重新获取验证码"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Required"
+msgstr ""
 
 #: src/pages/shell/message-cards.tsx
 msgid "Research & writing"
@@ -4385,6 +4509,7 @@ msgstr "运行时间必须是将来的时间。"
 msgid "running"
 msgstr "运行中"
 
+#: src/components/mcp/mcp-labels.ts
 #: src/components/McpServerHealthLine.tsx
 #: src/pages/ActivityList.tsx
 msgid "Running"
@@ -4398,8 +4523,38 @@ msgstr "运行中 · 停止"
 msgid "Running…"
 msgstr "正在运行…"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Runs as you, with your access to files and apps."
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Runs on"
+msgstr ""
+
+#. placeholder {0}: location.host
+#: src/components/mcp/mcp-labels.ts
+msgid "Runs on {0}"
+msgstr ""
+
+#: src/components/mcp/mcp-labels.ts
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Runs on Rakazo server"
+msgstr ""
+
+#: src/components/mcp/mcp-labels.ts
+msgid "Runs on this Mac"
+msgstr ""
+
+#: src/components/mcp/mcp-labels.ts
+msgid "Runs on your Mac"
+msgstr ""
+
 #: src/pages/RoutineEditor.tsx
 msgid "Runs when this bot receives a verified message from this provider."
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Runs where Rakazo is hosted, away from this Mac."
 msgstr ""
 
 #: src/components/AskCard.tsx
@@ -4472,7 +4627,7 @@ msgstr "回答是或否，或一句话说明。"
 msgid "Scheduled routines"
 msgstr ""
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Scopes (optional)"
 msgstr "范围（可选）"
 
@@ -4595,7 +4750,7 @@ msgstr ""
 msgid "Server integrations"
 msgstr ""
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Server name"
 msgstr "服务器名称"
 
@@ -4605,7 +4760,6 @@ msgid "Server settings"
 msgstr ""
 
 #: src/components/integrations/IntegrationSetup.tsx
-#: src/pages/McpServersOverlay.tsx
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 #: src/pages/VoiceSettingsOverlay.tsx
@@ -4654,6 +4808,10 @@ msgstr ""
 #: src/pages/SettingsOverlay.tsx
 msgid "Shared documents"
 msgstr "共享文档"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Shell variables, pipes, and substitutions are not run. Use plain values."
+msgstr ""
 
 #: src/pages/GroupPanel.tsx
 msgid "Show all"
@@ -4880,7 +5038,7 @@ msgstr "停止示范"
 msgid "Stopped."
 msgstr "已停止。"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Stored encrypted"
 msgstr "已加密存储"
 
@@ -4918,6 +5076,10 @@ msgstr "支持图片"
 msgid "Supports thinking"
 msgstr "支持思考"
 
+#: src/pages/HostComputerPrompt.tsx
+msgid "Switch"
+msgstr ""
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Switching…"
 msgstr "正在切换…"
@@ -4937,10 +5099,6 @@ msgstr "示范任务"
 #: src/pages/Shell.tsx
 msgid "Teaching in progress. Stop teaching before sending a new message."
 msgstr "正在示范，发送新消息前请先停止示范。"
-
-#: src/pages/shell/bot-panel.tsx
-msgid "Team"
-msgstr "团队"
 
 #: src/pages/shell/computer-view.tsx
 msgid "Team Computer"
@@ -4966,7 +5124,7 @@ msgstr "测试"
 msgid "Test API key"
 msgstr "测试 API 密钥"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 msgid "Test connection"
 msgstr "测试连接"
 
@@ -4978,8 +5136,8 @@ msgstr "测试运行"
 msgid "Test sign-in"
 msgstr "测试登录"
 
+#: src/components/mcp/McpServerDetail.tsx
 #: src/components/ModelConnectionPreflightNotice.tsx
-#: src/pages/McpServersOverlay.tsx
 msgid "Testing…"
 msgstr "正在测试…"
 
@@ -5025,6 +5183,10 @@ msgstr "思考"
 msgid "Thinking: {activeThinkingLabel}"
 msgstr ""
 
+#: src/pages/HostComputerPrompt.tsx
+msgid "This applies to every bot. Files on this Mac stay where they are, and bots with Mac access can still use them."
+msgstr ""
+
 #: src/pages/shell/computer-view.tsx
 msgid "This bot runs on this computer, not a Linux desktop. Shell and files use your home folder."
 msgstr "此 Bot 运行在这台电脑上，而不是 Linux 桌面。Shell 和文件使用你的主目录。"
@@ -5050,6 +5212,10 @@ msgstr "此对话为只读"
 msgid "this computer"
 msgstr "这台电脑"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "This config is not valid JSON."
+msgstr ""
+
 #. placeholder {0}: pendingDelete.versionCount
 #: src/pages/Artifacts.tsx
 msgid "This deletes all {0} versions of this artifact. This can't be undone."
@@ -5062,6 +5228,11 @@ msgstr ""
 #: src/pages/HostComputerPrompt.tsx
 msgid "this Mac"
 msgstr "这台 Mac"
+
+#: src/components/mcp/mcp-labels.ts
+#: src/components/mcp/McpServerAdd.tsx
+msgid "This Mac"
+msgstr ""
 
 #: src/pages/Artifacts.tsx
 msgid "This month"
@@ -5095,13 +5266,17 @@ msgstr "此重置链接无效或已过期"
 msgid "This server cannot be assigned without a bot."
 msgstr "没有 Bot 就无法分配此服务器。"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "This server did not request browser authorization."
 msgstr "此服务器未请求浏览器授权。"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "This server is already connected. Disconnect it first to authorize again."
 msgstr "此服务器已连接。请先断开再重新授权。"
+
+#: src/components/mcp/McpServersPanel.tsx
+msgid "This server is no longer available."
+msgstr ""
 
 #: src/pages/model-settings/connection-controls.tsx
 msgid "This subscription sign-in is not available in Rakazo yet. Use a deployment credential or choose another provider."
@@ -5186,6 +5361,10 @@ msgstr "文字记录"
 
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Transcription model"
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Transport"
 msgstr ""
 
 #: src/pages/ExternalConversationSettings.tsx
@@ -5306,6 +5485,10 @@ msgstr "更新指令？"
 msgid "Update progress"
 msgstr ""
 
+#: src/components/MacAccess.tsx
+msgid "Update Rakazo on this Mac to allow it."
+msgstr ""
+
 #: src/components/SoftwareUpdateSection.tsx
 msgid "Updated"
 msgstr "已更新"
@@ -5344,11 +5527,23 @@ msgstr "上传"
 msgid "Urgent"
 msgstr ""
 
+#: src/components/mcp/McpServerDetail.tsx
+msgid "URL"
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "URL, command, or config"
+msgstr ""
+
 #: src/components/SidebarFooter.tsx
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/SettingsOverlay.tsx
 msgid "Usage"
 msgstr "用量"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Use {{oauth.access_token}} for the access token."
+msgstr ""
 
 #. Switches the saved timezone to this device's, e.g. 'Use Pacific/Auckland'
 #. placeholder {0}: deviceTimezone.replaceAll("_", " ")
@@ -5360,14 +5555,14 @@ msgstr ""
 msgid "Use {hostLabel}"
 msgstr "使用 {hostLabel}"
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Use {oauthEnvReference} for the access token."
-msgstr "访问令牌请使用 {oauthEnvReference}。"
-
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "Use a found model"
 msgstr "使用找到的模型"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Use an http or https URL."
+msgstr ""
 
 #: src/lib/model-connection-preflight.ts
 msgid "Use Connect to verify the key."
@@ -5380,6 +5575,14 @@ msgstr ""
 #: src/pages/Auth.tsx
 msgid "Use email code"
 msgstr "使用邮箱验证码"
+
+#: src/pages/HostComputerPrompt.tsx
+msgid "Use isolated computers"
+msgstr ""
+
+#: src/pages/HostComputerPrompt.tsx
+msgid "Use isolated computers?"
+msgstr ""
 
 #: src/components/ModelCredits.tsx
 msgid "Use my API key"
@@ -5427,7 +5630,7 @@ msgstr "使用此服务器自己的 {hostCredentialSource} 凭据访问 {selecte
 msgid "Using your API key"
 msgstr ""
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/shell/bot-credentials.tsx
 msgid "Value"
 msgstr "值"
@@ -5555,6 +5758,11 @@ msgstr "Bot 应在哪里运行？"
 msgid "Won't do"
 msgstr ""
 
+#: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Working directory"
+msgstr ""
+
 #: src/lib/roster-status.ts
 #: src/pages/Auth.tsx
 msgid "Working…"
@@ -5607,6 +5815,10 @@ msgstr ""
 #: src/pages/Auth.tsx
 msgid "Your email address"
 msgstr "你的邮箱"
+
+#: src/components/mcp/mcp-labels.ts
+msgid "Your Mac"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: src/lib/run-error.ts

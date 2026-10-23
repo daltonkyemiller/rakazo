@@ -38,12 +38,19 @@ import { ArrowLeft, ChevronRight, Plus, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ConnectorIcon } from "../components/integrations/ConnectorIcon";
 import { IntegrationSetup } from "../components/integrations/IntegrationSetup";
+import type { McpRoute } from "../components/mcp/McpServersPanel";
+import { McpServersPanel } from "../components/mcp/McpServersPanel";
+import { mcpLocationLabel, mcpStatusLabel, mcpStatusTone } from "../components/mcp/mcp-labels";
 import { connectedAppMarks } from "../lib/connected-apps";
+import { useHostMcp } from "../lib/mcp-host";
 import { optionalCatalogFeedProbe } from "../lib/optional-catalog-feed";
 import { rpc } from "../lib/rpc";
 import { errorText } from "../lib/user-error";
 
-type SourceKind = "treg" | "executor" | "mcp" | "api" | "graphql";
+type SourceKind = "treg" | "executor" | "api" | "graphql";
+
+/** A page of the MCP section and the element that opened it, for focus on the way back. */
+type McpPage = { route: McpRoute; openerKey?: string; opener: HTMLElement | null };
 
 type ConnectionTool = { name: string; description: string };
 
@@ -70,12 +77,10 @@ function markConnected(
 export function PluginsOverlay({
   onConnectedAppsChange,
   onClose,
-  onOpenMcp,
   activeBotId,
 }: {
   onConnectedAppsChange?: (apps: ReturnType<typeof connectedAppMarks>) => void;
   onClose: () => void;
-  onOpenMcp?: () => void;
   activeBotId?: string;
 }) {
   const { t } = useLingui();
@@ -118,6 +123,12 @@ export function PluginsOverlay({
   // The list stays mounted under the detail page; going back restores its place and focus.
   const listReturn = useRef<{ scrollTop: number; opener: HTMLElement | null } | null>(null);
   const mcpRefreshGeneration = useRef(0);
+  const hostMcp = useHostMcp();
+  const [mcpPages, setMcpPages] = useState<McpPage[]>([]);
+  const mcpPage = mcpPages.at(-1) ?? null;
+  const mcpBackRef = useRef<HTMLButtonElement>(null);
+  // The page being left on the way back, whose opener takes focus again.
+  const mcpReturn = useRef<McpPage | null>(null);
 
   async function refreshMcp() {
     const generation = ++mcpRefreshGeneration.current;
@@ -235,9 +246,42 @@ export function PluginsOverlay({
     setTools([]);
   }
 
+  function openMcp(route: McpRoute, opener: HTMLElement) {
+    if (mcpPages.length === 0) {
+      listReturn.current = { scrollTop: listRef.current?.scrollTop ?? 0, opener };
+    }
+    mcpReturn.current = null;
+    setMcpPages((pages) => [...pages, { route, opener, openerKey: opener.dataset.mcpKey }]);
+  }
+
+  function replaceMcp(route: McpRoute) {
+    setMcpPages((pages) => [
+      ...pages.slice(0, -1),
+      { ...(pages.at(-1) ?? { opener: null }), route },
+    ]);
+  }
+
+  function closeMcp() {
+    mcpReturn.current = mcpPages.at(-1) ?? null;
+    setMcpPages((pages) => pages.slice(0, -1));
+  }
+
   useLayoutEffect(() => {
     if (detailKey) {
       detailBackRef.current?.focus();
+      return;
+    }
+    if (mcpPage) {
+      const left = mcpReturn.current;
+      mcpReturn.current = null;
+      // Rows re-render when a page closes, so find the opener again by its key.
+      const opener = left?.opener?.isConnected
+        ? left.opener
+        : left?.openerKey
+          ? document.querySelector<HTMLElement>(`[data-mcp-key="${CSS.escape(left.openerKey)}"]`)
+          : null;
+      if (opener) opener.focus();
+      else if (mcpPage.route.view !== "add") mcpBackRef.current?.focus();
       return;
     }
     const back = listReturn.current;
@@ -245,7 +289,7 @@ export function PluginsOverlay({
     if (!back) return;
     if (listRef.current) listRef.current.scrollTop = back.scrollTop;
     (back.opener?.isConnected ? back.opener : searchRef.current)?.focus();
-  }, [detailKey]);
+  }, [detailKey, mcpPage]);
 
   function itemConnected(item: ConnectionCatalogItem) {
     return isCatalogItemConnected(connections, item);
@@ -393,9 +437,17 @@ export function PluginsOverlay({
   function beginCatalogSurface(
     result: IntegrationCatalogResult,
     surface: IntegrationCatalogSurface,
+    opener: HTMLElement,
   ) {
     if (!surface.source || (surface.kind !== "mcp" && surface.kind !== "openapi")) return;
-    setSourceKind(surface.kind === "mcp" ? "mcp" : "api");
+    if (surface.kind === "mcp") {
+      openMcp(
+        { view: "add", source: surface.source, name: result.name, auth: surface.auth },
+        opener,
+      );
+      return;
+    }
+    setSourceKind("api");
     setSourceName(result.name);
     setSourceUrl(surface.source);
     setCredential("");
@@ -434,10 +486,7 @@ export function PluginsOverlay({
               ? { openApi: true, auth }
               : sourceKind === "graphql"
                 ? { auth }
-                : {
-                    preset: "custom",
-                    auth: sourceKind === "executor" ? { type: "bearer" } : auth,
-                  },
+                : { preset: "custom", auth: { type: "bearer" } },
       });
       setCredential("");
       setSourceKind(null);
@@ -680,6 +729,11 @@ export function PluginsOverlay({
           closeDetail();
           return;
         }
+        if (details.reason === "escape-key" && mcpPage) {
+          details.cancel();
+          closeMcp();
+          return;
+        }
         onClose();
       }}
     >
@@ -688,7 +742,21 @@ export function PluginsOverlay({
         className="flex h-[700px] max-h-[calc(100%-2rem)] w-[800px] max-w-[calc(100%-2rem)] flex-col gap-0 overflow-hidden rounded-2xl bg-card p-0 sm:max-w-[800px]"
       >
         {detailItem ? renderDetail(detailItem) : null}
-        {!detailItem ? (
+        {mcpPage && !detailItem ? (
+          <McpServersPanel
+            route={mcpPage.route}
+            host={hostMcp}
+            backRef={mcpBackRef}
+            backLabel={mcpPages.length > 1 ? t`MCP servers` : t`Integrations`}
+            backAriaLabel={mcpPages.length > 1 ? t`Back to MCP servers` : t`Back to integrations`}
+            closeButton={closeButton}
+            onNavigate={openMcp}
+            onReplace={replaceMcp}
+            onBack={closeMcp}
+            onServersChange={setMcpServers}
+          />
+        ) : null}
+        {!detailItem && !mcpPage ? (
           <DialogHeader className="flex-row items-center justify-between gap-2 px-7 pt-6">
             <div className="flex min-w-0 flex-1 items-center gap-1.5">
               {connectedOnly ? (
@@ -729,7 +797,7 @@ export function PluginsOverlay({
           </DialogHeader>
         ) : null}
 
-        {!detailItem ? (
+        {!detailItem && !mcpPage ? (
           <div className="px-7 pt-4">
             <Input
               ref={searchRef}
@@ -746,7 +814,7 @@ export function PluginsOverlay({
           </div>
         ) : null}
 
-        {loading ? (
+        {loading && !mcpPage ? (
           <div className="grid flex-1 place-items-center" aria-busy="true">
             <Spinner
               className="size-5 text-muted-foreground"
@@ -758,7 +826,7 @@ export function PluginsOverlay({
         <div
           ref={listRef}
           id="integration-list"
-          hidden={loading || Boolean(detailItem)}
+          hidden={loading || Boolean(detailItem) || Boolean(mcpPage)}
           className="rk-scroll flex-1 overflow-y-auto px-7 pt-3 pb-6"
         >
           {detailItem ? null : errorNotice}
@@ -769,11 +837,14 @@ export function PluginsOverlay({
                 <h2 className="text-sm font-medium">
                   <Trans>MCP servers</Trans>
                 </h2>
-                {onOpenMcp ? (
-                  <Button variant="link" size="xs" onClick={onOpenMcp}>
-                    <Trans>Manage MCP servers</Trans>
-                  </Button>
-                ) : null}
+                <Button
+                  variant="link"
+                  size="xs"
+                  data-mcp-key="manage"
+                  onClick={(event) => openMcp({ view: "list" }, event.currentTarget)}
+                >
+                  <Trans>Manage MCP servers</Trans>
+                </Button>
               </div>
               {mcpError ? (
                 <div role="alert" className="flex items-center gap-2 text-sm text-destructive">
@@ -789,31 +860,41 @@ export function PluginsOverlay({
                     .toLowerCase()
                     .includes(query.trim().toLowerCase()),
                 )
-                .map((server) => (
-                  <div
-                    key={server.id}
-                    data-testid="registered-mcp-server"
-                    className="flex min-w-0 items-center gap-3 rounded-xl px-2.5 py-2"
-                  >
-                    <ConnectorIcon name={server.name} />
-                    <span className="min-w-0 flex-1 truncate text-[15px] font-medium">
-                      {server.name}
-                    </span>
-                    <span className="shrink-0 text-[12.5px] text-muted-foreground">
-                      {!server.enabled ? (
-                        <Trans>Disabled</Trans>
-                      ) : server.oauthStatus === "reconnect" ? (
-                        <Trans>OAuth expired</Trans>
-                      ) : server.oauthStatus === "connected" ? (
-                        <Trans>OAuth connected</Trans>
-                      ) : server.hasSecret ? (
-                        <Trans>Credential saved</Trans>
-                      ) : (
-                        <Trans>No auth</Trans>
-                      )}
-                    </span>
-                  </div>
-                ))}
+                .map((server) => {
+                  const local = hostMcp.servers.find((entry) => entry.serverId === server.id);
+                  const status = mcpStatusLabel(server, local);
+                  return (
+                    <button
+                      key={server.id}
+                      type="button"
+                      data-testid="registered-mcp-server"
+                      data-mcp-key={`catalog:${server.id}`}
+                      className="flex min-h-12 w-full min-w-0 items-center gap-3 rounded-xl px-2.5 py-2 text-start outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={(event) =>
+                        openMcp({ view: "detail", serverId: server.id }, event.currentTarget)
+                      }
+                    >
+                      <ConnectorIcon name={server.name} />
+                      <span className="min-w-0 flex-1 truncate text-[15px] font-medium" dir="auto">
+                        {server.name}
+                      </span>
+                      <span className="max-w-[50%] shrink-0 truncate text-[12.5px] text-muted-foreground">
+                        {mcpLocationLabel(server, local, "short")}
+                        {status ? (
+                          <>
+                            {" · "}
+                            <span className={mcpStatusTone(server, local)}>{status}</span>
+                          </>
+                        ) : null}
+                      </span>
+                      <ChevronRight
+                        size={17}
+                        className="shrink-0 text-muted-foreground rtl:rotate-180"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  );
+                })}
             </section>
           ) : null}
 
@@ -959,7 +1040,9 @@ export function PluginsOverlay({
                                 size="sm"
                                 disabled={!canAdd}
                                 title={canAdd ? undefined : t`Manual setup required`}
-                                onClick={() => beginCatalogSurface(result, surface)}
+                                onClick={(event) =>
+                                  beginCatalogSurface(result, surface, event.currentTarget)
+                                }
                               >
                                 {surface.kind.toUpperCase()} · {canAdd ? t`Add` : t`Manual`}
                               </Button>
@@ -1000,7 +1083,8 @@ export function PluginsOverlay({
                   variant="secondary"
                   className="rounded-full"
                   size="sm"
-                  onClick={() => beginSource("mcp")}
+                  data-mcp-key="advanced-add"
+                  onClick={(event) => openMcp({ view: "add" }, event.currentTarget)}
                 >
                   <Trans>Add MCP server</Trans>
                 </Button>
@@ -1052,8 +1136,6 @@ export function PluginsOverlay({
                         <Trans>Connect Treg</Trans>
                       ) : sourceKind === "executor" ? (
                         <Trans>Connect Executor</Trans>
-                      ) : sourceKind === "mcp" ? (
-                        <Trans>Add remote MCP server</Trans>
                       ) : sourceKind === "graphql" ? (
                         <Trans>Add GraphQL endpoint</Trans>
                       ) : (
@@ -1072,13 +1154,11 @@ export function PluginsOverlay({
                         value={sourceUrl}
                         onChange={(event) => setSourceUrl(event.target.value)}
                         placeholder={
-                          sourceKind === "mcp"
-                            ? "https://example.com/mcp"
-                            : sourceKind === "executor"
-                              ? "https://executor.example/mcp"
-                              : sourceKind === "graphql"
-                                ? "https://example.com/graphql"
-                                : "https://example.com/openapi.json"
+                          sourceKind === "executor"
+                            ? "https://executor.example/mcp"
+                            : sourceKind === "graphql"
+                              ? "https://example.com/graphql"
+                              : "https://example.com/openapi.json"
                         }
                       />
                     ) : null}
@@ -1193,13 +1273,14 @@ export function PluginsOverlay({
                     </Button>
                   </div>
                 ))}
-                {onOpenMcp && mcpServers.length === 0 && !mcpError ? (
+                {mcpServers.length === 0 && !mcpError ? (
                   <Button
                     type="button"
                     variant="link"
                     size="xs"
                     className="mt-2 px-0 text-muted-foreground"
-                    onClick={onOpenMcp}
+                    data-mcp-key="advanced-manage"
+                    onClick={(event) => openMcp({ view: "list" }, event.currentTarget)}
                   >
                     <Trans>Manage MCP servers</Trans>
                   </Button>

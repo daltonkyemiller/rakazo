@@ -14,6 +14,7 @@ import {
   EMPTY_PLUGIN_CATALOG_MESSAGE,
   humanizeToolName,
   isCatalogItemConnected,
+  mcpServerLocation,
 } from "@rakazo/core";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -30,6 +31,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ConnectorIcon } from "../../components/connector-icon";
+import { McpServerAdd } from "../../components/mcp-server-add";
 import { NativeActionButton } from "../../components/native-action-button";
 import { Chevron } from "../../components/row-accessories";
 import { rpc } from "../../lib/api";
@@ -49,6 +51,38 @@ import { closeSettingsSheet } from "../../lib/settings-sheet";
 import { errorText } from "../../lib/user-error";
 
 type SourceKind = "treg" | "executor" | "mcp" | "api" | "graphql";
+
+/** Where a registered server runs and, when known, whether it works. */
+function mcpServerSummary(
+  server: McpServer,
+  t: (message: string, values?: Record<string, number>) => string,
+) {
+  const location = mcpServerLocation(server);
+  const where =
+    location.kind === "server"
+      ? t("Rakazo server")
+      : location.kind === "mac"
+        ? t("Your Mac")
+        : location.host;
+  // Servers from releases before health reporting omit it.
+  const health = (server as Partial<McpServer>).health;
+  const status = !server.enabled
+    ? t("Disabled")
+    : server.oauthStatus === "reconnect"
+      ? t("OAuth expired")
+      : health?.status === "error"
+        ? t("Not working")
+        : health?.status === "installing"
+          ? t("Installing…")
+          : health?.status === "ok"
+            ? health.toolCount === null
+              ? t("Running")
+              : t(health.toolCount === 1 ? "{count} tool" : "{count} tools", {
+                  count: health.toolCount,
+                })
+            : null;
+  return status ? `${where} · ${status}` : where;
+}
 type ConnectionTool = { name: string; description: string };
 
 const LOGO_SIZE = 32;
@@ -542,10 +576,7 @@ export function IntegrationsScreen({ connectedOnly = false }: { connectedOnly?: 
               ? { openApi: true, auth: { type: requiresAuth ? "bearer" : "none" } }
               : sourceKind === "graphql"
                 ? { auth: { type: requiresAuth ? "bearer" : "none" } }
-                : {
-                    preset: "custom",
-                    auth: { type: sourceKind === "executor" || requiresAuth ? "bearer" : "none" },
-                  },
+                : { preset: "custom", auth: { type: "bearer" } },
       });
       setCredential("");
       setSourceKind(null);
@@ -794,23 +825,25 @@ export function IntegrationsScreen({ connectedOnly = false }: { connectedOnly?: 
                   .includes(query.trim().toLowerCase()),
               )
               .map((server) => (
-                <View key={server.id} testID="registered-mcp-server" style={styles.row}>
+                <Pressable
+                  key={server.id}
+                  testID="registered-mcp-server"
+                  style={styles.row}
+                  accessibilityRole="button"
+                  accessibilityLabel={server.name}
+                  onPress={() =>
+                    router.push({ pathname: "/(settings)/mcp-server", params: { id: server.id } })
+                  }
+                >
                   <ConnectorIcon name={server.name} size={LOGO_SIZE} />
                   <Text numberOfLines={1} style={[styles.title, styles.grow]}>
                     {server.name}
                   </Text>
-                  <Text style={styles.secondary}>
-                    {!server.enabled
-                      ? t("Disabled")
-                      : server.oauthStatus === "reconnect"
-                        ? t("OAuth expired")
-                        : server.oauthStatus === "connected"
-                          ? t("OAuth connected")
-                          : server.hasSecret
-                            ? t("Credential saved")
-                            : t("No auth")}
+                  <Text numberOfLines={1} style={[styles.secondary, styles.summary]}>
+                    {mcpServerSummary(server, t)}
                   </Text>
-                </View>
+                  <Chevron />
+                </Pressable>
               ))}
           </View>
         ) : null}
@@ -915,18 +948,24 @@ export function IntegrationsScreen({ connectedOnly = false }: { connectedOnly?: 
 
                 {sourceError ? <Text style={styles.error}>{sourceError}</Text> : null}
 
-                {sourceKind ? (
+                {sourceKind === "mcp" ? (
+                  <McpServerAdd
+                    servers={mcpServers}
+                    onAdded={() => void retryRefresh()}
+                    onCancel={() => setSourceKind(null)}
+                  />
+                ) : null}
+
+                {sourceKind && sourceKind !== "mcp" ? (
                   <View style={styles.card}>
                     <Text style={styles.title}>
                       {sourceKind === "treg"
                         ? t("Connect Treg")
                         : sourceKind === "executor"
                           ? t("Connect Executor")
-                          : sourceKind === "mcp"
-                            ? t("Remote MCP server")
-                            : sourceKind === "graphql"
-                              ? t("GraphQL endpoint")
-                              : t("OpenAPI JSON")}
+                          : sourceKind === "graphql"
+                            ? t("GraphQL endpoint")
+                            : t("OpenAPI JSON")}
                     </Text>
                     <TextInput
                       value={name}
@@ -942,13 +981,11 @@ export function IntegrationsScreen({ connectedOnly = false }: { connectedOnly?: 
                         autoCapitalize="none"
                         autoCorrect={false}
                         placeholder={
-                          sourceKind === "mcp"
-                            ? t("https://example.com/mcp")
-                            : sourceKind === "executor"
-                              ? t("https://executor.example/mcp")
-                              : sourceKind === "graphql"
-                                ? t("https://example.com/graphql")
-                                : t("https://example.com/openapi.json")
+                          sourceKind === "executor"
+                            ? t("https://executor.example/mcp")
+                            : sourceKind === "graphql"
+                              ? t("https://example.com/graphql")
+                              : t("https://example.com/openapi.json")
                         }
                         placeholderTextColor={native.tertiaryLabel}
                         style={styles.input}
@@ -1112,6 +1149,7 @@ function createIntegrationsStyles() {
       backgroundColor: native.fillPressed,
     },
     grow: { flex: 1, gap: 3, minWidth: 0 },
+    summary: { flexShrink: 1, maxWidth: "50%" },
     title: { color: native.label, fontSize: 15, fontWeight: "600" },
     secondary: { color: native.secondaryLabel, fontSize: 13 },
     accountActions: {

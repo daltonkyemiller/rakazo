@@ -18,8 +18,13 @@ test("shows directly registered MCP servers in Integrations without catalog conn
   await expandAdvancedSection(page.getByTestId("integrations-advanced"));
   await page.getByRole("button", { name: "Manage MCP servers", exact: true }).click();
   await expect(page.getByRole("heading", { name: "MCP servers", exact: true })).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "Server name", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Close MCP servers", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await page.getByRole("button", { name: "Add server", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Add MCP server", exact: true })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "URL, command, or config" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("heading", { name: "MCP servers", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Close integrations", exact: true }).click();
   for (const name of ["Dropbox", "GitHub"])
     await rpc(page, "mcp/servers/create", {
       slug: name.toLowerCase(),
@@ -38,7 +43,8 @@ test("shows directly registered MCP servers in Integrations without catalog conn
     const server = servers.getByTestId("registered-mcp-server").filter({
       has: page.getByText(name, { exact: true }),
     });
-    await expect(server.getByText("Credential saved", { exact: true })).toBeVisible();
+    // Each row says where the server runs and opens its detail; no inline controls.
+    await expect(server).toContainText(`${name.toLowerCase()}.example.test`);
     await expect(server.getByText(name.charAt(0), { exact: true })).toBeVisible();
     await expect(server.getByRole("button")).toHaveCount(0);
   }
@@ -55,5 +61,12 @@ test("shows directly registered MCP servers in Integrations without catalog conn
   );
   await servers.getByRole("button", { name: "Manage MCP servers", exact: true }).click();
   await expect(page.getByRole("heading", { name: "MCP servers", exact: true })).toBeVisible();
-  await expect(page.getByRole("dialog").getByText("GitHub", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("mcp-server-row").filter({ hasText: "GitHub" })).toBeVisible();
+  await page.getByTestId("mcp-server-row").filter({ hasText: "GitHub" }).click();
+  const detail = page.getByTestId("mcp-server-detail");
+  await expect(detail.getByRole("heading", { name: "GitHub" })).toBeVisible();
+  await expect(detail.getByText("Runs on github.example.test", { exact: true })).toBeVisible();
+  await expect(detail.getByText("Credential saved", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Back to MCP servers", exact: true }).click();
+  await expect(page.getByTestId("mcp-server-row").filter({ hasText: "GitHub" })).toBeFocused();
 });

@@ -73,8 +73,16 @@ vi.mock("react-native", () => {
     View,
     ScrollView: View,
     Text: ({ children }: { children: ReactNode }) => <span>{children}</span>,
-    Pressable: ({ children, onPress }: { children: ReactNode; onPress: () => void }) => (
-      <button type="button" onClick={onPress}>
+    Pressable: ({
+      children,
+      onPress,
+      testID,
+    }: {
+      children: ReactNode;
+      onPress: () => void;
+      testID?: string;
+    }) => (
+      <button type="button" data-testid={testID} onClick={onPress}>
         {children}
       </button>
     ),
@@ -550,20 +558,59 @@ it("keeps connected integrations out of the browse page", async () => {
   expect(container.textContent).toContain("Integrations");
 });
 
-it("shows registered MCP servers with connector initials and sentence case statuses", async () => {
+it("shows where registered MCP servers run and whether they work", async () => {
   const fallback = state.rpc.getMockImplementation();
+  const health = (status: string, toolCount: number | null = null) => ({
+    status,
+    message: null,
+    toolCount,
+    checkedAt: null,
+  });
   state.rpc.mockImplementation((proc: string) =>
     proc === "mcp/servers/list"
       ? Promise.resolve([
-          { id: "saved", name: "Saved server", enabled: true, hasSecret: true },
-          { id: "open", name: "Open server", enabled: true, hasSecret: false },
+          {
+            id: "remote",
+            name: "Linear",
+            enabled: true,
+            transport: "streamable_http",
+            endpoint: "https://mcp.linear.app/mcp",
+            health: health("ok", 3),
+          },
+          {
+            id: "stdio",
+            name: "Files",
+            enabled: true,
+            transport: "stdio",
+            endpoint: null,
+            health: health("error"),
+          },
+          {
+            id: "mac",
+            name: "Notes",
+            enabled: true,
+            transport: "streamable_http",
+            endpoint: "http://host.docker.internal:7801/mcp/host/command/abc",
+            health: health("unknown"),
+          },
+          // Releases before health reporting omit it.
+          {
+            id: "old",
+            name: "Legacy",
+            enabled: true,
+            transport: "sse",
+            endpoint: "https://legacy.example.test/sse",
+          },
         ])
       : fallback?.(proc),
   );
   await render();
   const rows = container.querySelectorAll('[data-testid="registered-mcp-server"]');
-  expect(rows).toHaveLength(2);
-  expect(rows[0]?.textContent).toBe("SSaved serverCredential saved");
-  expect(rows[1]?.textContent).toBe("OOpen serverNo auth");
+  expect([...rows].map((row) => row.textContent)).toEqual([
+    "LLinearmcp.linear.app · {count} tools",
+    "FFilesRakazo server · Not working",
+    "NNotesYour Mac",
+    "LLegacylegacy.example.test",
+  ]);
   for (const row of rows) expect(row.querySelector("button")).toBeNull();
 });

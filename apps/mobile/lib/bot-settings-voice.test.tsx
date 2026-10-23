@@ -767,7 +767,7 @@ describe("bot settings device voice menu", () => {
     );
     await act(async () =>
       [...container.querySelectorAll("button")]
-        .find((button) => button.textContent === "Private")!
+        .find((button) => button.textContent === "Own")!
         .click(),
     );
     await act(async () =>

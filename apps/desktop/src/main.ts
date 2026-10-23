@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { DesktopReachability, DesktopSetup } from "@rakazo/contracts";
+import { DesktopHostMcpInputSchema } from "@rakazo/contracts";
 import { LOCAL_SETTINGS_PAGE } from "@rakazo/contracts/local-settings";
 import type { Session } from "electron";
 import {
@@ -28,6 +29,7 @@ import { createBadgeHandler } from "./badge.js";
 import { openBrowserAuth } from "./browser-auth.js";
 import { DOCKER_INSTALL_LINKS, isDesktopSetupLink, runDocker } from "./docker-cli.js";
 import { prepareHostComputer } from "./host-computer.js";
+import { prepareHostMcp } from "./host-mcp.js";
 import { requestLocalSettings } from "./local-settings.js";
 import {
   LocalStackController,
@@ -139,6 +141,9 @@ const desktopUpdater = new DesktopUpdateController(
 let launchUpdateCheckScheduled = false;
 let localStack: LocalStackController;
 let hostComputer: Awaited<ReturnType<typeof prepareHostComputer>> | undefined;
+let hostMcp: Awaited<ReturnType<typeof prepareHostMcp>> | undefined;
+let hostMcpApprovalPending = false;
+let hostMcpGrantEpoch = 0;
 let requestingComputerAccess = false;
 
 markOnce("rk:main:module-evaluated");
@@ -711,6 +716,22 @@ async function showLocalSettings() {
   }
 }
 
+async function revokeHostAccess() {
+  hostMcpGrantEpoch++;
+  await Promise.all([hostComputer?.revoke(), hostMcp?.revoke()]);
+  installApplicationMenu();
+}
+
+function activateHostMcp(active: boolean) {
+  hostMcpGrantEpoch++;
+  void hostMcp?.activate(active).catch(() => {
+    dialog.showErrorBox(
+      "Local tools unavailable",
+      "Local tools could not change state. Quit Rakazo and reopen it before trying again.",
+    );
+  });
+}
+
 function installApplicationMenu() {
   const computerAccess: Electron.MenuItemConstructorOptions = {
     label: "Computer Access…",
@@ -719,12 +740,14 @@ function installApplicationMenu() {
   };
   const revokeComputerAccess: Electron.MenuItemConstructorOptions = {
     label: "Revoke Local Computer Access",
-    visible: hostComputer?.isEnabled() === true,
+    visible: hostComputer?.isEnabled() === true || hostMcp?.list().some((entry) => entry.enabled),
     click: () => {
-      void hostComputer
-        ?.revoke()
-        .finally(() => installApplicationMenu())
-        .catch(() => undefined);
+      void revokeHostAccess().catch(() => {
+        dialog.showErrorBox(
+          "Access revocation failed",
+          "Quit Rakazo to stop local tools, then try again.",
+        );
+      });
     },
   };
   const appSettings: Electron.MenuItemConstructorOptions = {
@@ -757,6 +780,7 @@ function installApplicationMenu() {
     click: () => {
       if (currentSetup?.mode === "new") {
         hostComputer?.activate(false);
+        activateHostMcp(false);
         installApplicationMenu();
         void localStack.stop();
       }
@@ -961,6 +985,7 @@ function activateDesktopMonitoring(url: string | undefined, targetSession?: Sess
 
 async function openAppOnce(targetUrl: string, switching: boolean) {
   hostComputer?.activate(currentSetup?.mode === "new" && targetUrl === localStack.webUrl());
+  activateHostMcp(currentSetup?.mode === "new" && targetUrl === localStack.webUrl());
   const target = await resolveSessionForTarget(targetUrl);
   // A failed switch must leave telemetry with the window that remains selected.
   if (mainWindow === null) activateDesktopMonitoring(targetUrl, target.value);
@@ -1007,6 +1032,12 @@ async function openAppOnce(targetUrl: string, switching: boolean) {
 }
 
 function syncHostComputerAccess() {
+  activateHostMcp(
+    currentSetup?.mode === "new" &&
+      mainWindow !== null &&
+      !mainWindow.isDestroyed() &&
+      appWindowTargets.get(mainWindow) === localStack.webUrl(),
+  );
   hostComputer?.activate(
     currentSetup?.mode === "new" &&
       mainWindow !== null &&
@@ -1129,6 +1160,11 @@ app.whenReady().then(async () => {
     hostComputer = await prepareHostComputer(userDataDir);
   } catch {
     /* Local access fails closed; Docker remains available. */
+  }
+  try {
+    if (process.platform === "darwin") hostMcp = await prepareHostMcp(userDataDir);
+  } catch {
+    /* Host MCPs fail closed independently of the existing computer bridge. */
   }
   localStack = new LocalStackController({
     hostComputer: hostComputer?.connection,
@@ -1267,6 +1303,125 @@ app.whenReady().then(async () => {
     currentSetup?.mode === "new" &&
     appWindowTargets.get(mainWindow!) === localStack.webUrl() &&
     safeOrigin(event.senderFrame.url) === safeOrigin(localStack.webUrl());
+  const requireHostMcp = (event: Electron.IpcMainInvokeEvent) => {
+    if (!isManagedComputerRequest(event) || !hostMcp)
+      throw new Error("Mac tools require an app-managed local instance.");
+    return hostMcp;
+  };
+  const hostMcpId = (value: unknown) => {
+    if (typeof value !== "string" || !/^[a-f0-9-]{36}$/.test(value))
+      throw new Error("Invalid local MCP registration.");
+    return value;
+  };
+  const approveHostMcp = async (
+    event: Electron.IpcMainInvokeEvent,
+    entry: {
+      kind: "command" | "computer";
+      name: string;
+      command?: string;
+      args?: string[];
+      cwd?: string;
+      envKeys: string[];
+    },
+  ) => {
+    if (hostMcpApprovalPending) return false;
+    hostMcpApprovalPending = true;
+    const epoch = hostMcpGrantEpoch;
+    try {
+      if (!(await localStack.matchesDesiredStack()) || !isManagedComputerRequest(event))
+        return false;
+      const detail =
+        entry.kind === "computer"
+          ? "Assigned bots can run commands and read or change files with your Mac account’s permissions. Rakazo must stay open. Revoke access from the app menu."
+          : [
+              `Command: ${entry.command} ${JSON.stringify(entry.args ?? [])}`,
+              entry.cwd ? `Directory: ${entry.cwd}` : "",
+              entry.envKeys.length ? `Environment: ${entry.envKeys.join(", ")}` : "",
+              "This process runs with your Mac account’s permissions. Assigned bots can use its tools while Rakazo is open. Revoke access from the app menu.",
+            ]
+              .filter(Boolean)
+              .join("\n\n");
+      const result = await dialog.showMessageBox(mainWindow!, {
+        type: "warning",
+        title: "Allow Mac tools?",
+        message:
+          entry.kind === "computer"
+            ? "Allow Mac commands and files?"
+            : `Allow “${entry.name}” to run on your Mac?`,
+        detail,
+        buttons: ["Cancel", "Allow"],
+        defaultId: 0,
+        cancelId: 0,
+        noLink: true,
+      });
+      const matches = await localStack.matchesDesiredStack();
+      return (
+        result.response === 1 &&
+        matches &&
+        epoch === hostMcpGrantEpoch &&
+        isManagedComputerRequest(event)
+      );
+    } finally {
+      hostMcpApprovalPending = false;
+    }
+  };
+  ipcMain.handle("desktop.mcp.state", (event) => {
+    if (!fromMainWindow(event) || event.senderFrame !== event.sender.mainFrame)
+      throw new Error("Local MCP state is only available to the main window.");
+    const available = isManagedComputerRequest(event) && !!hostMcp;
+    return { available, servers: available ? hostMcp!.list() : [] };
+  });
+  ipcMain.handle("desktop.mcp.add", async (event, value: unknown) => {
+    const manager = requireHostMcp(event);
+    const input = DesktopHostMcpInputSchema.parse(value);
+    if (
+      !(await approveHostMcp(event, {
+        ...input,
+        envKeys: Object.keys("env" in input ? (input.env ?? {}) : {}),
+      }))
+    )
+      return null;
+    const epoch = hostMcpGrantEpoch;
+    const registration = await manager.add(input);
+    if (epoch !== hostMcpGrantEpoch || !isManagedComputerRequest(event)) {
+      await manager.remove(registration.server.id);
+      return null;
+    }
+    installApplicationMenu();
+    return registration;
+  });
+  ipcMain.handle(
+    "desktop.mcp.attach",
+    async (event, id: unknown, serverId: unknown, spaceId: unknown) => {
+      const manager = requireHostMcp(event);
+      if (
+        ![serverId, spaceId].every(
+          (value) => typeof value === "string" && value.length > 0 && value.length <= 200,
+        )
+      )
+        throw new Error("Invalid MCP assignment.");
+      await manager.attach(hostMcpId(id), serverId as string, spaceId as string);
+    },
+  );
+  ipcMain.handle("desktop.mcp.remove", async (event, id: unknown) => {
+    await requireHostMcp(event).remove(hostMcpId(id));
+    installApplicationMenu();
+  });
+  ipcMain.handle("desktop.mcp.setEnabled", async (event, id: unknown, enabled: unknown) => {
+    const manager = requireHostMcp(event);
+    const key = hostMcpId(id);
+    if (typeof enabled !== "boolean") throw new Error("Invalid local MCP state.");
+    if (enabled && !manager.get(key).enabled && !(await approveHostMcp(event, manager.get(key))))
+      return;
+    const epoch = hostMcpGrantEpoch;
+    await manager.setEnabled(key, enabled);
+    if (enabled && (epoch !== hostMcpGrantEpoch || !isManagedComputerRequest(event)))
+      await manager.setEnabled(key, false);
+    installApplicationMenu();
+  });
+  ipcMain.handle("desktop.mcp.test", async (event, id: unknown) =>
+    requireHostMcp(event).test(hostMcpId(id)),
+  );
   ipcMain.handle("desktop.computer.requestAccess", async (event) => {
     if (!isManagedComputerRequest(event) || !hostComputer)
       throw new Error("Local computer access requires an app-managed local instance.");
@@ -1276,6 +1431,7 @@ app.whenReady().then(async () => {
       if (!(await localStack.matchesDesiredStack()) || !isManagedComputerRequest(event))
         return false;
       if (hostComputer.isEnabled()) return true;
+      const epoch = hostMcpGrantEpoch;
       const result = await dialog.showMessageBox(mainWindow!, {
         type: "warning",
         title: "Allow local computer access?",
@@ -1287,7 +1443,8 @@ app.whenReady().then(async () => {
         cancelId: 0,
         noLink: true,
       });
-      if (result.response !== 1 || !isManagedComputerRequest(event)) return false;
+      if (result.response !== 1 || epoch !== hostMcpGrantEpoch || !isManagedComputerRequest(event))
+        return false;
       hostComputer.activate(true);
       await hostComputer.grant();
       installApplicationMenu();
@@ -1298,8 +1455,7 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle("desktop.computer.revokeAccess", async (event) => {
     if (isManagedComputerRequest(event)) {
-      await hostComputer?.revoke();
-      installApplicationMenu();
+      await revokeHostAccess();
     }
   });
   ipcMain.handle(
@@ -1551,6 +1707,8 @@ app.on("before-quit", () => {
   clearTimeout(warmWindowTimer);
   // Containers keep running; only an in-flight pull/up is cut short.
   hostComputer?.activate(false);
+  hostMcpGrantEpoch++;
   void hostComputer?.close();
+  void hostMcp?.close();
   localStack?.abort();
 });

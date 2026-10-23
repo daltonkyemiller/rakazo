@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./host-computer-server": "./src/host-computer-server.ts"
+    "./host-computer-server": "./src/host-computer-server.ts",
+    "./host-mcp-server": "./src/host-mcp-server.ts"
   },
   "scripts": {
     "check": "tsc --noEmit -p tsconfig.json",

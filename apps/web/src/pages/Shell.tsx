@@ -254,9 +254,6 @@ const PeerMessagesOverlay = lazyOverlay(() =>
 const PluginsOverlay = lazyOverlay(() =>
   import("./PluginsOverlay").then((module) => module.PluginsOverlay),
 );
-const McpServersOverlay = lazyOverlay(() =>
-  import("./McpServersOverlay").then((module) => module.McpServersOverlay),
-);
 
 type PendingBrowserNotification = {
   event: Pick<ProductEvent, "id" | "type" | "threadId" | "botId" | "payload">;
@@ -472,7 +469,6 @@ function SpaceShell() {
     commitSnapshot(update(snapshotRef.current));
   }
   const [pluginsOpen, setPluginsOpen] = usePreloadRecoveryState("integrations", false);
-  const [mcpOpen, setMcpOpen] = usePreloadRecoveryState("mcp", false);
   const [settingsOpen, setSettingsOpen] = usePreloadRecoveryState("settings", false);
   const [settingsSection, setSettingsSection] = usePreloadRecoveryState<SettingsSection>(
     "settingsSection",
@@ -3952,13 +3948,8 @@ function SpaceShell() {
             onConnectedAppsChange={setFooterLogos}
             activeBotId={activeBotId.current}
             onClose={() => setPluginsOpen(false)}
-            onOpenMcp={() => {
-              setPluginsOpen(false);
-              setMcpOpen(true);
-            }}
           />
         ) : null}
-        {mcpOpen ? <McpServersOverlay onClose={() => setMcpOpen(false)} /> : null}
         {messagingSettingsOpen ? (
           <MessagingSettingsOverlay onClose={() => setMessagingSettingsOpen(false)} />
         ) : null}

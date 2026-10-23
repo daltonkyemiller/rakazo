@@ -304,13 +304,15 @@ test("takeover, routine, plugins, and export are reachable", async ({ page }, te
   await expect(feed.getByText("GitHub", { exact: true })).toBeVisible();
   await captureScreenshot(page, testInfo, "11c-catalog-feed");
 
+  // A catalog MCP entry opens the same add page, prefilled, inside the one dialog.
   await feed.getByRole("button", { name: "MCP · Add", exact: true }).click();
-  await expect(page.getByPlaceholder("Display name")).toHaveValue("GitHub");
-  await expect(page.getByPlaceholder("https://example.com/mcp")).toHaveValue(
+  await expect(page.getByRole("heading", { name: "Add MCP server" })).toBeVisible();
+  await expect(page.getByLabel("URL, command, or config")).toHaveValue(
     "https://mcp.example.test/mcp",
   );
-  await expect(page.locator("select")).toHaveValue("bearer");
-  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.getByLabel("Server name")).toHaveValue("GitHub");
+  await expect(page.getByLabel("Access token", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Back to integrations", exact: true }).click();
 
   await page.getByRole("button", { name: "Add Treg", exact: true }).click();
   await page.getByPlaceholder("Treg token").fill("fake-treg-browser-credential");
@@ -318,10 +320,14 @@ test("takeover, routine, plugins, and export are reachable", async ({ page }, te
   await expect(page.getByText(/MCP · https:\/\/treg\.to\/mcp\/ · Credential saved/)).toBeVisible();
 
   await page.getByRole("button", { name: "Add MCP server", exact: true }).click();
-  await page.getByPlaceholder("Display name").fill("Browser MCP");
-  await page.getByPlaceholder("https://example.com/mcp").fill("https://mcp.example.test/mcp");
-  await page.getByRole("button", { name: "Verify and add", exact: true }).click();
-  await expect(page.getByText(/MCP · https:\/\/mcp\.example\.test\/mcp · No auth/)).toBeVisible();
+  await page.getByLabel("URL, command, or config").fill("https://mcp.example.test/mcp");
+  await page.getByLabel("Server name").fill("Browser MCP");
+  await page.getByRole("button", { name: "Add server", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Browser MCP" })).toBeVisible();
+  await page.getByRole("button", { name: "Back to integrations", exact: true }).click();
+  await expect(
+    page.getByTestId("registered-mcp-server").filter({ hasText: "Browser MCP" }),
+  ).toContainText("mcp.example.test");
 
   await page.getByRole("button", { name: "Add OpenAPI", exact: true }).click();
   await page.getByPlaceholder("Display name").fill("Browser API");

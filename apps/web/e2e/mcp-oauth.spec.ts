@@ -87,16 +87,11 @@ test("connects an MCP server through the OAuth popup callback", async ({ page },
   });
 
   await page.getByRole("button", { name: "Connect apps", exact: true }).click();
-  await expandAdvancedSection(page.getByTestId("integrations-advanced"));
   await page.getByRole("button", { name: "Manage MCP servers", exact: true }).click();
   await expect(page.getByRole("heading", { name: "MCP servers" })).toBeVisible();
-  await expect(page.getByText("Linear MCP", { exact: true })).toBeVisible();
-  await expect(page.getByLabel("Access token (optional)")).toBeHidden();
+  await page.getByTestId("mcp-server-row").filter({ hasText: "Linear MCP" }).click();
+  await expect(page.getByRole("heading", { name: "Linear MCP" })).toBeVisible();
   await captureScreenshot(page, testInfo, "mcp-oauth-ready");
-
-  await page.getByText("Advanced", { exact: true }).click();
-  await expect(page.getByLabel("Access token (optional)")).toBeVisible();
-  await page.getByText("Advanced", { exact: true }).click();
 
   const popupPromise = page.waitForEvent("popup");
   await page.getByRole("button", { name: "Connect OAuth", exact: true }).click();
@@ -119,7 +114,9 @@ test("connects an MCP server through the OAuth popup callback", async ({ page },
     channel.postMessage({ type: "mcp-oauth-complete" });
     channel.close();
   }, MCP_OAUTH_CHANNEL);
-  await expect(page.getByText("OAuth expired", { exact: true })).toBeVisible();
+  await expect(
+    page.getByTestId("mcp-server-detail").getByText("OAuth expired", { exact: true }),
+  ).toBeVisible();
   await captureScreenshot(page, testInfo, "mcp-oauth-expired");
 });
 
@@ -174,12 +171,16 @@ test("adds an MCP server with a pre-registered OAuth client", async ({ page }, t
 
   await page.getByRole("button", { name: "Connect apps", exact: true }).click();
   await expandAdvancedSection(page.getByTestId("integrations-advanced"));
-  await page.getByRole("button", { name: "Manage MCP servers", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "MCP servers" })).toBeVisible();
+  await page.getByRole("button", { name: "Add MCP server", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Add MCP server" })).toBeVisible();
 
+  await page.getByLabel("URL, command, or config").fill("https://gmailmcp.example.test/mcp/v1");
+  await expect(page.getByLabel("Server name")).toHaveValue("Example");
   await page.getByLabel("Server name").fill("Gmail");
-  await page.getByLabel("Server URL").fill("https://gmailmcp.example.test/mcp/v1");
-  await page.getByText("Advanced", { exact: true }).click();
+  await page
+    .getByTestId("mcp-server-draft")
+    .getByRole("button", { name: "Advanced", exact: true })
+    .click();
   await expect(page.getByLabel("Redirect URI")).toBeHidden();
   await page.getByLabel("OAuth client ID (optional)").fill("client-1.apps.example.test");
   await page.getByLabel("OAuth client secret (optional)").fill("client-secret");
@@ -187,8 +188,7 @@ test("adds an MCP server with a pre-registered OAuth client", async ({ page }, t
   await captureScreenshot(page, testInfo, "mcp-oauth-client-form");
 
   await page.getByRole("button", { name: "Add server", exact: true }).click();
-  await expect(page.getByText("Gmail", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Gmail" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Connect OAuth", exact: true })).toBeVisible();
-  await expect(page.getByLabel("OAuth client ID (optional)")).toHaveValue("");
-  await expect(page.getByLabel("OAuth client secret (optional)")).toHaveValue("");
+  await expect(page.getByTestId("mcp-server-draft")).toHaveCount(0);
 });

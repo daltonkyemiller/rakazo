@@ -44,6 +44,7 @@ import type { ReactNode } from "react";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { ErrorBoundary, SectionLoadFailed } from "../../components/ErrorBoundary";
 import { InstructionSettings } from "../../components/InstructionSettings";
+import { MacAccessRow } from "../../components/MacAccess";
 import { botProfilePatch } from "../../lib/bot-profile-patch";
 import { thinkingLevelLabel } from "../../lib/model-catalog";
 import { lazyComponent } from "../../lib/preload-recovery";
@@ -96,7 +97,7 @@ function ComputerModePicker({
             }}
             className="capitalize aria-pressed:border-foreground/40 aria-pressed:text-foreground"
           >
-            {mode === "team" ? <Trans>Team</Trans> : <Trans>Private</Trans>}
+            {mode === "team" ? <Trans>Shared</Trans> : <Trans>Own</Trans>}
           </Toggle>
         ))}
       </div>
@@ -759,6 +760,7 @@ export function BotSettings({
                 value={computerMode}
                 onChange={setComputerMode}
               />
+              <MacAccessRow botId={bot.id} />
               {memoryProviderConfigured ? (
                 <div className="mt-4 text-sm text-foreground">
                   <Trans>Memory scope</Trans>

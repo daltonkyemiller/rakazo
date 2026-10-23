@@ -146,6 +146,8 @@ describe("mobile i18n", () => {
       "Sign-up did not return a session",
       "{count} model",
       "{count} models",
+      "{count} tool",
+      "{count} tools",
       // Labels the t() literal scan cannot see: built from maps or ternaries.
       "System",
       "Light",

@@ -18,6 +18,11 @@ msgid " (unread)"
 msgstr " (unread)"
 
 #. placeholder {0}: health.toolCount
+#: src/components/mcp/mcp-labels.ts
+msgid "{0, plural, one {# tool} other {# tools}}"
+msgstr "{0, plural, one {# tool} other {# tools}}"
+
+#. placeholder {0}: health.toolCount
 #: src/components/McpServerHealthLine.tsx
 msgid "{0, plural, one {Running · # tool} other {Running · # tools}}"
 msgstr "{0, plural, one {Running · # tool} other {Running · # tools}}"
@@ -50,6 +55,11 @@ msgstr "{0} (over {1})"
 msgid "{0} {unitLabel}"
 msgstr "{0} {unitLabel}"
 
+#. placeholder {0}: server.name
+#: src/components/mcp/McpServersPanel.tsx
+msgid "{0} added"
+msgstr "{0} added"
+
 #. placeholder {0}: block.name
 #: src/pages/shell/message-cards.tsx
 msgid "{0} connection"
@@ -71,12 +81,12 @@ msgid "{0} is calling you"
 msgstr "{0} is calling you"
 
 #. placeholder {0}: updated.name
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "{0} is not working"
 msgstr "{0} is not working"
 
 #. placeholder {0}: updated.name
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "{0} is running"
 msgstr "{0} is running"
 
@@ -100,6 +110,11 @@ msgstr "{0} rollup hours"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "{0} runs · {1} tokens"
 msgstr "{0} runs · {1} tokens"
+
+#. placeholder {0}: server.name
+#: src/components/mcp/McpServersPanel.tsx
+msgid "{0} was removed, but its setup on this Mac could not be."
+msgstr "{0} was removed, but its setup on this Mac could not be."
 
 #. placeholder {0}: bot.name
 #: src/pages/ExternalConversationSettings.tsx
@@ -322,6 +337,10 @@ msgstr "A bit of everything"
 msgid "A command's output"
 msgstr "A command's output"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "A quote is not closed."
+msgstr "A quote is not closed."
+
 #. placeholder {0}: oauth.verificationUri.replace(/^https:\/\//, "")
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
@@ -332,6 +351,10 @@ msgstr "A sign-in tab opened at <0>{0}</0>. Enter this code there — this windo
 #: src/pages/Onboarding.tsx
 msgid "A subscription credential is stored securely."
 msgstr "A subscription credential is stored securely."
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "A working directory only works on this Mac."
+msgstr "A working directory only works on this Mac."
 
 #: src/components/InfoTooltip.tsx
 msgid "About {label}"
@@ -346,10 +369,11 @@ msgid "About spaces"
 msgstr "About spaces"
 
 #: src/components/integrations/IntegrationSetup.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Access token"
 msgstr "Access token"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Access token (optional)"
 msgstr "Access token (optional)"
 
@@ -401,7 +425,6 @@ msgstr "Active model"
 msgid "Activity"
 msgstr "Activity"
 
-#: src/pages/McpServersOverlay.tsx
 #: src/pages/PluginsOverlay.tsx
 #: src/pages/ScratchpadSection.tsx
 msgid "Add"
@@ -436,22 +459,19 @@ msgstr "Add a passkey for faster sign-in?"
 msgid "Add a run time for this one-shot."
 msgstr "Add a run time for this one-shot."
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Add a server name."
 msgstr "Add a server name."
-
-#: src/pages/McpServersOverlay.tsx
-msgid "Add a stdio command."
-msgstr "Add a stdio command."
 
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/use-routine-editor.ts
 msgid "Add a trigger to run this routine."
 msgstr "Add a trigger to run this routine."
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Add an HTTPS server URL."
-msgstr "Add an HTTPS server URL."
+#. placeholder {0}: row.name
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Add a value for {0}."
+msgstr "Add a value for {0}."
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Add another"
@@ -481,11 +501,16 @@ msgstr "Add GraphQL"
 msgid "Add GraphQL endpoint"
 msgstr "Add GraphQL endpoint"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Add header"
+msgstr "Add header"
+
 #: src/pages/ScratchpadSection.tsx
 msgid "Add item"
 msgstr "Add item"
 
 #: src/components/integrations/IntegrationSetup.tsx
+#: src/components/mcp/McpServersPanel.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "Add MCP server"
 msgstr "Add MCP server"
@@ -503,11 +528,8 @@ msgstr "Add OpenAPI"
 msgid "Add passkey"
 msgstr "Add passkey"
 
-#: src/pages/PluginsOverlay.tsx
-msgid "Add remote MCP server"
-msgstr "Add remote MCP server"
-
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "Add server"
 msgstr "Add server"
 
@@ -527,13 +549,21 @@ msgstr "Add Treg"
 msgid "Add trigger"
 msgstr "Add trigger"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Add variable"
+msgstr "Add variable"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Added"
+msgstr "Added"
+
+#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "Adding…"
 msgstr "Adding…"
 
+#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/AccountSettingsOverlay.tsx
-#: src/pages/McpServersOverlay.tsx
 #: src/pages/model-settings/catalog-model-fields.tsx
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
@@ -556,9 +586,10 @@ msgstr "Agent computer"
 msgid "Agent connections"
 msgstr "Agent connections"
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Agents:"
-msgstr "Agents:"
+#: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Agents"
+msgstr "Agents"
 
 #: src/pages/Artifacts.tsx
 msgid "All bots"
@@ -594,6 +625,14 @@ msgstr "Allow {0} without asking"
 #: src/components/ApprovalRulesSettings.tsx
 msgid "Allow email actions without asking"
 msgstr "Allow email actions without asking"
+
+#: src/components/MacAccess.tsx
+msgid "Allow it from Rakazo on your Mac."
+msgstr "Allow it from Rakazo on your Mac."
+
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Allow on this Mac"
+msgstr "Allow on this Mac"
 
 #: src/components/AskCard.tsx
 msgid "Allow once"
@@ -732,10 +771,6 @@ msgstr "Archived"
 msgid "Archived. Chat, memory, and files kept."
 msgstr "Archived. Chat, memory, and files kept."
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Arguments"
-msgstr "Arguments"
-
 #: src/components/SidebarFooter.tsx
 #: src/pages/Artifacts.tsx
 msgid "Artifacts"
@@ -803,11 +838,11 @@ msgstr "Authentication failed."
 msgid "Authorization code or callback URL"
 msgstr "Authorization code or callback URL"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Authorization parameters (optional)"
 msgstr "Authorization parameters (optional)"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Authorization server"
 msgstr "Authorization server"
 
@@ -854,6 +889,7 @@ msgstr "Avatars"
 
 #: src/pages/Auth.tsx
 #: src/pages/Board.tsx
+#: src/pages/HostComputerPrompt.tsx
 #: src/pages/RoutineEditor.tsx
 msgid "Back"
 msgstr "Back"
@@ -865,6 +901,10 @@ msgstr "Back to connected integrations"
 #: src/pages/PluginsOverlay.tsx
 msgid "Back to integrations"
 msgstr "Back to integrations"
+
+#: src/pages/PluginsOverlay.tsx
+msgid "Back to MCP servers"
+msgstr "Back to MCP servers"
 
 #: src/pages/Auth.tsx
 msgid "Back to sign in"
@@ -948,6 +988,10 @@ msgstr "Bot's model"
 msgid "Bots"
 msgstr "Bots"
 
+#: src/components/MacAccess.tsx
+msgid "Bots already run on your Mac."
+msgstr "Bots already run on your Mac."
+
 #: src/components/ModelCredits.tsx
 msgid "Bots and browser automation"
 msgstr "Bots and browser automation"
@@ -955,6 +999,14 @@ msgstr "Bots and browser automation"
 #: src/pages/shell/transcript.tsx
 msgid "Bots are working"
 msgstr "Bots are working"
+
+#: src/pages/HostComputerPrompt.tsx
+msgid "Bots run directly on this Mac."
+msgstr "Bots run directly on this Mac."
+
+#: src/pages/HostComputerPrompt.tsx
+msgid "Bots run on isolated computers."
+msgstr "Bots run on isolated computers."
 
 #: src/pages/Paywall.tsx
 msgid "Bots with their own computer and browser"
@@ -1053,6 +1105,10 @@ msgstr "Cancelled"
 #: src/pages/Artifacts.tsx
 msgid "Card view"
 msgstr "Card view"
+
+#: src/components/MacAccess.tsx
+msgid "Change"
+msgstr "Change"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Change password"
@@ -1157,6 +1213,10 @@ msgstr "Choose a bot…"
 msgid "Choose a new password"
 msgstr "Choose a new password"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Choose a server"
+msgstr "Choose a server"
+
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Choose file"
 msgstr "Choose file"
@@ -1164,6 +1224,10 @@ msgstr "Choose file"
 #: src/components/ModelCredits.tsx
 msgid "Choose how to use Rakazo"
 msgstr "Choose how to use Rakazo"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Choose where it runs."
+msgstr "Choose where it runs."
 
 #: src/pages/shell/dialogs.tsx
 msgid "Clear"
@@ -1220,10 +1284,6 @@ msgstr "Close image preview"
 #: src/pages/PluginsOverlay.tsx
 msgid "Close integrations"
 msgstr "Close integrations"
-
-#: src/pages/McpServersOverlay.tsx
-msgid "Close MCP servers"
-msgstr "Close MCP servers"
 
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/SettingsOverlay.tsx
@@ -1300,7 +1360,7 @@ msgstr "Comfortable"
 msgid "Coming soon"
 msgstr "Coming soon"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/RoutineEditor.tsx
 msgid "Command"
 msgstr "Command"
@@ -1313,6 +1373,11 @@ msgstr "Command variable"
 #: src/pages/shell/composer.tsx
 msgid "Commands"
 msgstr "Commands"
+
+#: src/components/MacAccess.tsx
+#: src/pages/HostComputerPrompt.tsx
+msgid "Commands and files"
+msgstr "Commands and files"
 
 #: src/pages/Board.tsx
 msgid "Comment"
@@ -1332,6 +1397,10 @@ msgstr "Complete"
 #: src/pages/shell/message-view.tsx
 msgid "Computer"
 msgstr "Computer"
+
+#: src/pages/HostComputerPrompt.tsx
+msgid "Computer access"
+msgstr "Computer access"
 
 #: src/pages/Shell.tsx
 #: src/pages/shell/computer-view.tsx
@@ -1366,12 +1435,7 @@ msgstr "Computers are off. Set SANDBOX_PROVIDER=docker with SANDBOX_SUPERVISOR_T
 msgid "Configured by deployment"
 msgstr "Configured by deployment"
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Configured servers"
-msgstr "Configured servers"
-
 #: src/pages/KnowledgeSection.tsx
-#: src/pages/McpServersOverlay.tsx
 msgid "Confirm delete"
 msgstr "Confirm delete"
 
@@ -1379,6 +1443,10 @@ msgstr "Confirm delete"
 #: src/pages/Auth.tsx
 msgid "Confirm password"
 msgstr "Confirm password"
+
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Confirm remove"
+msgstr "Confirm remove"
 
 #: src/lib/model-connection-preflight.ts
 msgid "Confirm the URL is reachable from this browser session, then test again."
@@ -1417,7 +1485,7 @@ msgstr "Connect Executor"
 msgid "Connect MCP server “{name}”"
 msgstr "Connect MCP server “{name}”"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 msgid "Connect OAuth"
 msgstr "Connect OAuth"
 
@@ -1449,7 +1517,7 @@ msgid "Connected. Its tools are available from your next message."
 msgstr "Connected. Its tools are available from your next message."
 
 #: src/components/integrations/IntegrationSetup.tsx
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/memory-providers/HonchoSettingsForm.tsx
 #: src/pages/memory-providers/SerenitySettingsForm.tsx
 #: src/pages/memory-providers/SupermemorySettingsForm.tsx
@@ -1478,6 +1546,7 @@ msgstr "Context limit"
 
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/Auth.tsx
+#: src/pages/HostComputerPrompt.tsx
 #: src/pages/Onboarding.tsx
 msgid "Continue"
 msgstr "Continue"
@@ -1523,7 +1592,11 @@ msgstr "Copy .env example"
 msgid "Could not add"
 msgstr "Could not add"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Could not add {serverName}, and its setup on this Mac could not be removed."
+msgstr "Could not add {serverName}, and its setup on this Mac could not be removed."
+
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Could not add MCP server"
 msgstr "Could not add MCP server"
 
@@ -1534,6 +1607,11 @@ msgstr "Could not approve this server"
 #: src/pages/shell/message-cards.tsx
 msgid "Could not authorize this app"
 msgstr "Could not authorize this app"
+
+#: src/components/MacAccess.tsx
+#: src/components/mcp/McpServersPanel.tsx
+msgid "Could not change Mac access"
+msgstr "Could not change Mac access"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Could not change password"
@@ -1628,7 +1706,7 @@ msgstr "Could not delete bot"
 msgid "Could not delete group"
 msgstr "Could not delete group"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "Could not delete MCP server"
 msgstr "Could not delete MCP server"
 
@@ -1656,7 +1734,7 @@ msgstr "Could not delete this artifact."
 msgid "Could not disconnect memory provider"
 msgstr "Could not disconnect memory provider"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "Could not disconnect OAuth"
 msgstr "Could not disconnect OAuth"
 
@@ -1728,7 +1806,7 @@ msgstr "Could not load credentials."
 msgid "Could not load integrations"
 msgstr "Could not load integrations"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "Could not load MCP servers"
 msgstr "Could not load MCP servers"
@@ -1915,7 +1993,7 @@ msgstr "Could not send reset email"
 msgid "Could not send that"
 msgstr "Could not send that"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "Could not start OAuth"
 msgstr "Could not start OAuth"
 
@@ -1931,7 +2009,7 @@ msgstr "Could not submit this answer"
 msgid "Could not take control"
 msgstr "Could not take control"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "Could not test MCP server"
 msgstr "Could not test MCP server"
 
@@ -1939,7 +2017,7 @@ msgstr "Could not test MCP server"
 msgid "Could not update"
 msgstr "Could not update"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "Could not update agent access"
 msgstr "Could not update agent access"
 
@@ -2039,7 +2117,15 @@ msgstr "Creating…"
 msgid "Credential"
 msgstr "Credential"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Credential files"
+msgstr "Credential files"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Credential files only work on the Rakazo server."
+msgstr "Credential files only work on the Rakazo server."
+
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "Credential saved"
 msgstr "Credential saved"
@@ -2136,7 +2222,6 @@ msgstr "Default scope"
 #: src/pages/Artifacts.tsx
 #: src/pages/BotContextMenu.tsx
 #: src/pages/KnowledgeSection.tsx
-#: src/pages/McpServersOverlay.tsx
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/archived-chats.tsx
 #: src/pages/shell/dialogs.tsx
@@ -2229,6 +2314,7 @@ msgstr "Desktop app"
 msgid "Desktop update"
 msgstr "Desktop update"
 
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/RoutineRunHistory.tsx
 #: src/pages/shell/composer-error.tsx
 msgid "Details"
@@ -2242,7 +2328,7 @@ msgstr "Direct MCP"
 msgid "Disable a tool"
 msgstr "Disable a tool"
 
-#: src/pages/PluginsOverlay.tsx
+#: src/components/mcp/mcp-labels.ts
 msgid "Disabled"
 msgstr "Disabled"
 
@@ -2250,7 +2336,7 @@ msgstr "Disabled"
 msgid "Discard recording"
 msgstr "Discard recording"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/ModelSettingsOverlay.tsx
 #: src/pages/VoiceSettingsOverlay.tsx
@@ -2364,7 +2450,7 @@ msgstr "Drag, drop, or paste an image"
 msgid "Duplicate"
 msgstr "Duplicate"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Each name can be used once."
 msgstr "Each name can be used once."
 
@@ -2448,7 +2534,8 @@ msgstr "Enter a whole number from 1 to 1000 for the image limit."
 msgid "Enter an API key before testing."
 msgstr "Enter an API key before testing."
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServerDetail.tsx
 msgid "Environment variables"
 msgstr "Environment variables"
 
@@ -2572,7 +2659,7 @@ msgstr "Fields that mark a change"
 msgid "Fields to compare, e.g. id, modifiedTime (optional)"
 msgstr "Fields to compare, e.g. id, modifiedTime (optional)"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "File"
 msgstr "File"
 
@@ -2720,15 +2807,15 @@ msgstr "header"
 msgid "Header \"{header}\""
 msgstr "Header \"{header}\""
 
-#: src/pages/McpServersOverlay.tsx
 #: src/pages/PluginsOverlay.tsx
 #: src/pages/shell/bot-credentials.tsx
 msgid "Header name"
 msgstr "Header name"
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Header value"
-msgstr "Header value"
+#: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Headers"
+msgstr "Headers"
 
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Hear a sample"
@@ -2838,6 +2925,7 @@ msgstr "Inputs"
 msgid "Install update"
 msgstr "Install update"
 
+#: src/components/mcp/mcp-labels.ts
 #: src/components/McpServerHealthLine.tsx
 msgid "Installing…"
 msgstr "Installing…"
@@ -3035,6 +3123,7 @@ msgid "Loading voice providers…"
 msgstr "Loading voice providers…"
 
 #: src/App.tsx
+#: src/components/mcp/McpServersPanel.tsx
 #: src/pages/Artifacts.tsx
 #: src/pages/Auth.tsx
 #: src/pages/IntegrationSetup.tsx
@@ -3081,6 +3170,20 @@ msgstr "Low"
 #: src/pages/shell/bot-credentials.tsx
 msgid "Lowercase letters, numbers, hyphens and underscores, starting with a letter."
 msgstr "Lowercase letters, numbers, hyphens and underscores, starting with a letter."
+
+#: src/components/MacAccess.tsx
+#: src/pages/HostComputerPrompt.tsx
+msgid "Mac access"
+msgstr "Mac access"
+
+#: src/pages/HostComputerPrompt.tsx
+msgid "Mac access for {botName}"
+msgstr "Mac access for {botName}"
+
+#: src/components/MacAccess.tsx
+#: src/pages/HostComputerPrompt.tsx
+msgid "Mac setup did not finish. Revoke Mac access from the Rakazo menu, then try again."
+msgstr "Mac setup did not finish. Revoke Mac access from the Rakazo menu, then try again."
 
 #: src/components/ComputerUpdateProgress.tsx
 msgid "Make sure nothing is still running on this computer."
@@ -3152,7 +3255,7 @@ msgstr "Maximum output tokens"
 msgid "MCP endpoint"
 msgstr "MCP endpoint"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "MCP servers"
 msgstr "MCP servers"
@@ -3386,10 +3489,10 @@ msgstr "Mute"
 msgid "Muted"
 msgstr "Muted"
 
+#: src/components/mcp/McpServerAdd.tsx
 #: src/components/teach/SkillDraftCard.tsx
 #: src/pages/Auth.tsx
 #: src/pages/GroupPanel.tsx
-#: src/pages/McpServersOverlay.tsx
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/bot-credentials.tsx
 #: src/pages/shell/bot-panel.tsx
@@ -3534,7 +3637,11 @@ msgstr "No matching models"
 msgid "No MCP or API tool sources installed yet."
 msgstr "No MCP or API tool sources installed yet."
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
+msgid "No MCP servers found."
+msgstr "No MCP servers found."
+
+#: src/components/mcp/McpServersPanel.tsx
 msgid "No MCP servers yet."
 msgstr "No MCP servers yet."
 
@@ -3609,6 +3716,7 @@ msgstr "Not connected"
 msgid "Not now"
 msgstr "Not now"
 
+#: src/components/mcp/mcp-labels.ts
 #: src/components/McpServerHealthLine.tsx
 msgid "Not working"
 msgstr "Not working"
@@ -3638,16 +3746,15 @@ msgstr "Now using {0}."
 msgid "OAuth authorization was cancelled."
 msgstr "OAuth authorization was cancelled."
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "OAuth client ID (optional)"
 msgstr "OAuth client ID (optional)"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "OAuth client secret (optional)"
 msgstr "OAuth client secret (optional)"
 
-#: src/pages/McpServersOverlay.tsx
-#: src/pages/PluginsOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 msgid "OAuth connected"
 msgstr "OAuth connected"
 
@@ -3655,10 +3762,14 @@ msgstr "OAuth connected"
 msgid "OAuth connection failed"
 msgstr "OAuth connection failed"
 
-#: src/pages/McpServersOverlay.tsx
-#: src/pages/PluginsOverlay.tsx
+#: src/components/mcp/mcp-labels.ts
+#: src/components/mcp/McpServerDetail.tsx
 msgid "OAuth expired"
 msgstr "OAuth expired"
+
+#: src/components/MacAccess.tsx
+msgid "Off on this Mac."
+msgstr "Off on this Mac."
 
 #: src/pages/RoutineEditor.tsx
 msgid "On a schedule"
@@ -3726,6 +3837,10 @@ msgstr "Open in full window"
 msgid "Open navigation"
 msgstr "Open navigation"
 
+#: src/components/MacAccess.tsx
+msgid "Open Rakazo on your Mac to use it."
+msgstr "Open Rakazo on your Mac to use it."
+
 #: src/pages/ScratchpadSection.tsx
 msgid "Open work"
 msgstr "Open work"
@@ -3753,10 +3868,6 @@ msgstr "Opening your Space…"
 msgid "Optional"
 msgstr "Optional"
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Optional header value"
-msgstr "Optional header value"
-
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Or connect an API key"
 msgstr "Or connect an API key"
@@ -3781,6 +3892,10 @@ msgstr "Original message unavailable"
 #: src/pages/Onboarding.tsx
 msgid "Other model…"
 msgstr "Other model…"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Own"
+msgstr "Own"
 
 #: src/lib/identity-display.ts
 #: src/pages/Board.tsx
@@ -3932,10 +4047,6 @@ msgstr "Previous settings sections"
 msgid "Priority"
 msgstr "Priority"
 
-#: src/pages/shell/bot-panel.tsx
-msgid "Private"
-msgstr "Private"
-
 #: src/pages/shell/dialogs.tsx
 msgid "Private workspace with its own bots and groups."
 msgstr "Private workspace with its own bots and groups."
@@ -3974,6 +4085,11 @@ msgstr "Quote"
 msgid "Rakazo credits"
 msgstr "Rakazo credits"
 
+#: src/components/mcp/mcp-labels.ts
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Rakazo server"
+msgstr "Rakazo server"
+
 #: src/pages/memory-providers/HonchoSettingsForm.tsx
 msgid "rakazo-shared and IDs starting with bot- are reserved for Rakazo."
 msgstr "rakazo-shared and IDs starting with bot- are reserved for Rakazo."
@@ -4011,7 +4127,7 @@ msgstr "Recent"
 msgid "Reconnect"
 msgstr "Reconnect"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 msgid "Reconnect OAuth"
 msgstr "Reconnect OAuth"
 
@@ -4076,7 +4192,7 @@ msgstr "Recreate a computer that is not working."
 msgid "Recreating the computer"
 msgstr "Recreating the computer"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Redirect URI"
 msgstr "Redirect URI"
 
@@ -4119,7 +4235,8 @@ msgid "Reload"
 msgstr "Reload"
 
 #: src/components/ApprovalRulesSettings.tsx
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/PluginsOverlay.tsx
 #: src/pages/ScratchpadSection.tsx
 #: src/pages/shell/bot-credentials.tsx
@@ -4127,6 +4244,8 @@ msgid "Remove"
 msgstr "Remove"
 
 #. placeholder {0}: attachment.file.name
+#. placeholder {0}: row.name
+#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/shell/composer.tsx
 msgid "Remove {0}"
 msgstr "Remove {0}"
@@ -4182,6 +4301,7 @@ msgstr "Removed with chat, computer, and memory."
 msgid "Removed, but list refresh failed"
 msgstr "Removed, but list refresh failed"
 
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/PluginsOverlay.tsx
 msgid "Removing…"
 msgstr "Removing…"
@@ -4237,6 +4357,10 @@ msgstr "Replying to {0}"
 #: src/lib/user-error.ts
 msgid "Request a new code"
 msgstr "Request a new code"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Required"
+msgstr "Required"
 
 #: src/pages/shell/message-cards.tsx
 msgid "Research & writing"
@@ -4385,6 +4509,7 @@ msgstr "Run time must be in the future."
 msgid "running"
 msgstr "running"
 
+#: src/components/mcp/mcp-labels.ts
 #: src/components/McpServerHealthLine.tsx
 #: src/pages/ActivityList.tsx
 msgid "Running"
@@ -4398,9 +4523,39 @@ msgstr "Running · Stop"
 msgid "Running…"
 msgstr "Running…"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Runs as you, with your access to files and apps."
+msgstr "Runs as you, with your access to files and apps."
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Runs on"
+msgstr "Runs on"
+
+#. placeholder {0}: location.host
+#: src/components/mcp/mcp-labels.ts
+msgid "Runs on {0}"
+msgstr "Runs on {0}"
+
+#: src/components/mcp/mcp-labels.ts
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Runs on Rakazo server"
+msgstr "Runs on Rakazo server"
+
+#: src/components/mcp/mcp-labels.ts
+msgid "Runs on this Mac"
+msgstr "Runs on this Mac"
+
+#: src/components/mcp/mcp-labels.ts
+msgid "Runs on your Mac"
+msgstr "Runs on your Mac"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Runs when this bot receives a verified message from this provider."
 msgstr "Runs when this bot receives a verified message from this provider."
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Runs where Rakazo is hosted, away from this Mac."
+msgstr "Runs where Rakazo is hosted, away from this Mac."
 
 #: src/components/AskCard.tsx
 #: src/components/PasskeySettings.tsx
@@ -4472,7 +4627,7 @@ msgstr "Say yes or no, or answer in a sentence."
 msgid "Scheduled routines"
 msgstr "Scheduled routines"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Scopes (optional)"
 msgstr "Scopes (optional)"
 
@@ -4595,7 +4750,7 @@ msgstr "Server"
 msgid "Server integrations"
 msgstr "Server integrations"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Server name"
 msgstr "Server name"
 
@@ -4605,7 +4760,6 @@ msgid "Server settings"
 msgstr "Server settings"
 
 #: src/components/integrations/IntegrationSetup.tsx
-#: src/pages/McpServersOverlay.tsx
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 #: src/pages/VoiceSettingsOverlay.tsx
@@ -4654,6 +4808,10 @@ msgstr "Shared chat with {GROUP_MEMBER_MIN}-{GROUP_MEMBER_MAX} bots. They all re
 #: src/pages/SettingsOverlay.tsx
 msgid "Shared documents"
 msgstr "Shared documents"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Shell variables, pipes, and substitutions are not run. Use plain values."
+msgstr "Shell variables, pipes, and substitutions are not run. Use plain values."
 
 #: src/pages/GroupPanel.tsx
 msgid "Show all"
@@ -4880,7 +5038,7 @@ msgstr "Stop teaching"
 msgid "Stopped."
 msgstr "Stopped."
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Stored encrypted"
 msgstr "Stored encrypted"
 
@@ -4918,6 +5076,10 @@ msgstr "Supports images"
 msgid "Supports thinking"
 msgstr "Supports thinking"
 
+#: src/pages/HostComputerPrompt.tsx
+msgid "Switch"
+msgstr "Switch"
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Switching…"
 msgstr "Switching…"
@@ -4937,10 +5099,6 @@ msgstr "Teach a task"
 #: src/pages/Shell.tsx
 msgid "Teaching in progress. Stop teaching before sending a new message."
 msgstr "Teaching in progress. Stop teaching before sending a new message."
-
-#: src/pages/shell/bot-panel.tsx
-msgid "Team"
-msgstr "Team"
 
 #: src/pages/shell/computer-view.tsx
 msgid "Team Computer"
@@ -4966,7 +5124,7 @@ msgstr "Test"
 msgid "Test API key"
 msgstr "Test API key"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerDetail.tsx
 msgid "Test connection"
 msgstr "Test connection"
 
@@ -4978,8 +5136,8 @@ msgstr "Test run"
 msgid "Test sign-in"
 msgstr "Test sign-in"
 
+#: src/components/mcp/McpServerDetail.tsx
 #: src/components/ModelConnectionPreflightNotice.tsx
-#: src/pages/McpServersOverlay.tsx
 msgid "Testing…"
 msgstr "Testing…"
 
@@ -5025,6 +5183,10 @@ msgstr "Thinking"
 msgid "Thinking: {activeThinkingLabel}"
 msgstr "Thinking: {activeThinkingLabel}"
 
+#: src/pages/HostComputerPrompt.tsx
+msgid "This applies to every bot. Files on this Mac stay where they are, and bots with Mac access can still use them."
+msgstr "This applies to every bot. Files on this Mac stay where they are, and bots with Mac access can still use them."
+
 #: src/pages/shell/computer-view.tsx
 msgid "This bot runs on this computer, not a Linux desktop. Shell and files use your home folder."
 msgstr "This bot runs on this computer, not a Linux desktop. Shell and files use your home folder."
@@ -5050,6 +5212,10 @@ msgstr "This chat is view-only"
 msgid "this computer"
 msgstr "this computer"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "This config is not valid JSON."
+msgstr "This config is not valid JSON."
+
 #. placeholder {0}: pendingDelete.versionCount
 #: src/pages/Artifacts.tsx
 msgid "This deletes all {0} versions of this artifact. This can't be undone."
@@ -5062,6 +5228,11 @@ msgstr "This file is not valid UTF-8 text."
 #: src/pages/HostComputerPrompt.tsx
 msgid "this Mac"
 msgstr "this Mac"
+
+#: src/components/mcp/mcp-labels.ts
+#: src/components/mcp/McpServerAdd.tsx
+msgid "This Mac"
+msgstr "This Mac"
 
 #: src/pages/Artifacts.tsx
 msgid "This month"
@@ -5095,13 +5266,17 @@ msgstr "This reset link is invalid or expired"
 msgid "This server cannot be assigned without a bot."
 msgstr "This server cannot be assigned without a bot."
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "This server did not request browser authorization."
 msgstr "This server did not request browser authorization."
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServersPanel.tsx
 msgid "This server is already connected. Disconnect it first to authorize again."
 msgstr "This server is already connected. Disconnect it first to authorize again."
+
+#: src/components/mcp/McpServersPanel.tsx
+msgid "This server is no longer available."
+msgstr "This server is no longer available."
 
 #: src/pages/model-settings/connection-controls.tsx
 msgid "This subscription sign-in is not available in Rakazo yet. Use a deployment credential or choose another provider."
@@ -5187,6 +5362,10 @@ msgstr "Transcript"
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Transcription model"
 msgstr "Transcription model"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Transport"
+msgstr "Transport"
 
 #: src/pages/ExternalConversationSettings.tsx
 msgid "Treat like a person"
@@ -5306,6 +5485,10 @@ msgstr "Update instructions?"
 msgid "Update progress"
 msgstr "Update progress"
 
+#: src/components/MacAccess.tsx
+msgid "Update Rakazo on this Mac to allow it."
+msgstr "Update Rakazo on this Mac to allow it."
+
 #: src/components/SoftwareUpdateSection.tsx
 msgid "Updated"
 msgstr "Updated"
@@ -5344,11 +5527,23 @@ msgstr "Upload"
 msgid "Urgent"
 msgstr "Urgent"
 
+#: src/components/mcp/McpServerDetail.tsx
+msgid "URL"
+msgstr "URL"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "URL, command, or config"
+msgstr "URL, command, or config"
+
 #: src/components/SidebarFooter.tsx
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/SettingsOverlay.tsx
 msgid "Usage"
 msgstr "Usage"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Use {{oauth.access_token}} for the access token."
+msgstr "Use {{oauth.access_token}} for the access token."
 
 #. Switches the saved timezone to this device's, e.g. 'Use Pacific/Auckland'
 #. placeholder {0}: deviceTimezone.replaceAll("_", " ")
@@ -5360,14 +5555,14 @@ msgstr "Use {0}"
 msgid "Use {hostLabel}"
 msgstr "Use {hostLabel}"
 
-#: src/pages/McpServersOverlay.tsx
-msgid "Use {oauthEnvReference} for the access token."
-msgstr "Use {oauthEnvReference} for the access token."
-
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "Use a found model"
 msgstr "Use a found model"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Use an http or https URL."
+msgstr "Use an http or https URL."
 
 #: src/lib/model-connection-preflight.ts
 msgid "Use Connect to verify the key."
@@ -5380,6 +5575,14 @@ msgstr "Use default guidance"
 #: src/pages/Auth.tsx
 msgid "Use email code"
 msgstr "Use email code"
+
+#: src/pages/HostComputerPrompt.tsx
+msgid "Use isolated computers"
+msgstr "Use isolated computers"
+
+#: src/pages/HostComputerPrompt.tsx
+msgid "Use isolated computers?"
+msgstr "Use isolated computers?"
 
 #: src/components/ModelCredits.tsx
 msgid "Use my API key"
@@ -5427,7 +5630,7 @@ msgstr "Uses this server's own {hostCredentialSource} credentials to access {sel
 msgid "Using your API key"
 msgstr "Using your API key"
 
-#: src/pages/McpServersOverlay.tsx
+#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/shell/bot-credentials.tsx
 msgid "Value"
 msgstr "Value"
@@ -5555,6 +5758,11 @@ msgstr "Where should bots run?"
 msgid "Won't do"
 msgstr "Won't do"
 
+#: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Working directory"
+msgstr "Working directory"
+
 #: src/lib/roster-status.ts
 #: src/pages/Auth.tsx
 msgid "Working…"
@@ -5607,6 +5815,10 @@ msgstr "Your API key"
 #: src/pages/Auth.tsx
 msgid "Your email address"
 msgstr "Your email address"
+
+#: src/components/mcp/mcp-labels.ts
+msgid "Your Mac"
+msgstr "Your Mac"
 
 #. js-lingui-explicit-id
 #: src/lib/run-error.ts

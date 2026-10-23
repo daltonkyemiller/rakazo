@@ -111,6 +111,7 @@ export const Composer = memo(function Composer({
     return mentionMatch ? (mentionMatch[1] ?? "") : null;
   });
   const [mentionHighlightKey, setMentionHighlightKey] = useState<string | null>(null);
+  const [slashHighlightKey, setSlashHighlightKey] = useState<string | null>(null);
   const [slashQuery, setSlashQuery] = useState<string | null>(() => {
     const slashMatch = /^\/([^\n]*)$/.exec(draft);
     return slashMatch ? (slashMatch[1] ?? "") : null;
@@ -165,6 +166,7 @@ export const Composer = memo(function Composer({
   const replyAnnouncementKind = useRef<"reply" | "cancelled" | null>(null);
   const prevReplyTarget = useRef<ThreadMessage | null>(null);
   const mentionListboxId = useId();
+  const slashListboxId = useId();
   const dragDepth = useRef(0);
   const [draggingFiles, setDraggingFiles] = useState(false);
   const canSend =
@@ -221,6 +223,8 @@ export const Composer = memo(function Composer({
     writeComposerDraft(draftKey, "");
     setDraft("");
     setSlashQuery(null);
+    setSlashHighlightKey(null);
+    focusComposer();
   }
 
   function runSlashAction(action: SlashActionId) {
@@ -228,6 +232,7 @@ export const Composer = memo(function Composer({
     writeComposerDraft(draftKey, "");
     setDraft("");
     setSlashQuery(null);
+    setSlashHighlightKey(null);
     onSlashAction?.(action);
   }
 
@@ -254,9 +259,6 @@ export const Composer = memo(function Composer({
     mentionOptions.length,
   );
   const mentionPickerOpen = mentionOptions.length > 0;
-  const activeMentionOptionId = mentionPickerOpen
-    ? `${mentionListboxId}-option-${activeMentionIndex}`
-    : undefined;
 
   const slashSkillOptions = useMemo(() => {
     if (slashQuery === null) return [];
@@ -279,10 +281,28 @@ export const Composer = memo(function Composer({
     return SLASH_ACTIONS.filter((action) => !query || action.label.toLowerCase().includes(query));
   }, [slashQuery]);
 
+  useEffect(() => {
+    setSlashHighlightKey(null);
+  }, [slashQuery]);
+  const slashOptionKeys = [
+    ...slashSkillOptions.map((skill) => `skill:${skill.id}`),
+    ...slashActionOptions.map((action) => `action:${action.id}`),
+  ];
+  const activeSlashIndex = clampMentionHighlightIndex(
+    slashOptionKeys.indexOf(slashHighlightKey ?? ""),
+    slashOptionKeys.length,
+  );
+
   const showSlashPicker =
     slashQuery !== null &&
     mentionQuery === null &&
     (slashSkillOptions.length > 0 || slashActionOptions.length > 0);
+  const pickerOpen = mentionPickerOpen || showSlashPicker;
+  const pickerListboxId = showSlashPicker ? slashListboxId : mentionListboxId;
+  const activePickerIndex = showSlashPicker ? activeSlashIndex : activeMentionIndex;
+  const activePickerOptionId = pickerOpen
+    ? `${pickerListboxId}-option-${activePickerIndex}`
+    : undefined;
 
   async function send() {
     if (!canSend || sending || disabled) return;
@@ -546,16 +566,24 @@ export const Composer = memo(function Composer({
       ) : null}
       {showSlashPicker ? (
         <div
+          id={slashListboxId}
+          role="listbox"
+          aria-label={t`Commands`}
           data-testid="slash-picker"
           className="mb-2 overflow-hidden rounded-[14px] border border-border bg-muted"
         >
-          {slashSkillOptions.map((skill) => (
+          {slashSkillOptions.map((skill, index) => (
             <button
               key={skill.id}
+              id={`${slashListboxId}-option-${index}`}
               type="button"
+              role="option"
+              aria-selected={index === activeSlashIndex}
               aria-label={t`Skill ${skill.name}`}
+              onMouseDown={(event) => event.preventDefault()}
+              onMouseMove={() => setSlashHighlightKey(`skill:${skill.id}`)}
               onClick={() => insertSkill(skill)}
-              className="flex w-full items-start gap-3 px-4 py-2.5 text-start hover:bg-accent"
+              className={`flex w-full items-start gap-3 px-4 py-2.5 text-start ${index === activeSlashIndex ? "bg-accent" : ""}`}
             >
               <Box size={16} strokeWidth={1.7} className="mt-0.5 shrink-0 text-muted-foreground" />
               <span className="min-w-0">
@@ -568,15 +596,21 @@ export const Composer = memo(function Composer({
               </span>
             </button>
           ))}
-          {slashActionOptions.map((action) => {
+          {slashActionOptions.map((action, actionIndex) => {
+            const index = slashSkillOptions.length + actionIndex;
             const label = slashActionLabel(action.id);
             return (
               <button
                 key={action.id}
+                id={`${slashListboxId}-option-${index}`}
                 type="button"
+                role="option"
+                aria-selected={index === activeSlashIndex}
                 aria-label={label}
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseMove={() => setSlashHighlightKey(`action:${action.id}`)}
                 onClick={() => runSlashAction(action.id)}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-start hover:bg-accent"
+                className={`flex w-full items-center gap-3 px-4 py-2.5 text-start ${index === activeSlashIndex ? "bg-accent" : ""}`}
               >
                 <Settings size={16} strokeWidth={1.7} className="shrink-0 text-muted-foreground" />
                 <span className="text-[14px] text-foreground">{label}</span>
@@ -694,10 +728,20 @@ export const Composer = memo(function Composer({
                 metaKey: event.metaKey,
                 enterToSend,
                 isComposing: event.nativeEvent.isComposing || event.keyCode === 229,
-                optionCount: mentionOptions.length,
-                highlightedIndex: activeMentionIndex,
+                optionCount: showSlashPicker ? slashOptionKeys.length : mentionOptions.length,
+                highlightedIndex: activePickerIndex,
               });
               if (action.type === "complete") {
+                if (showSlashPicker) {
+                  event.preventDefault();
+                  const skill = slashSkillOptions[action.index];
+                  if (skill) insertSkill(skill);
+                  else {
+                    const slashAction = slashActionOptions[action.index - slashSkillOptions.length];
+                    if (slashAction) runSlashAction(slashAction.id);
+                  }
+                  return;
+                }
                 const mention = mentionOptions[action.index];
                 if (!mention) return;
                 event.preventDefault();
@@ -706,13 +750,16 @@ export const Composer = memo(function Composer({
               }
               if (action.type === "move") {
                 event.preventDefault();
-                setMentionHighlightKey(mentionChipKey(mentionOptions[action.index]!));
+                if (showSlashPicker) setSlashHighlightKey(slashOptionKeys[action.index]!);
+                else setMentionHighlightKey(mentionChipKey(mentionOptions[action.index]!));
                 return;
               }
               if (action.type === "dismiss") {
                 event.preventDefault();
                 setMentionQuery(null);
                 setMentionHighlightKey(null);
+                setSlashQuery(null);
+                setSlashHighlightKey(null);
                 return;
               }
               if (action.type === "send") {
@@ -732,9 +779,9 @@ export const Composer = memo(function Composer({
             role="combobox"
             aria-autocomplete="list"
             aria-haspopup="listbox"
-            aria-expanded={mentionPickerOpen}
-            aria-controls={mentionPickerOpen ? mentionListboxId : undefined}
-            aria-activedescendant={activeMentionOptionId}
+            aria-expanded={pickerOpen}
+            aria-controls={pickerOpen ? pickerListboxId : undefined}
+            aria-activedescendant={activePickerOptionId}
             name="chat-message"
             autoComplete="off"
             dir="auto"

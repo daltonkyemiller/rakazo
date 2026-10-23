@@ -161,6 +161,54 @@ function pressEnter(textarea: HTMLTextAreaElement) {
 }
 
 describe("Composer", () => {
+  it.each(["Enter", "Tab"])("completes a slash skill with %s without sending", (key) => {
+    const onSend = vi.fn();
+    const textarea = renderComposer(onSend);
+    textarea.focus();
+    type(textarea, "/summ");
+    const option = container?.querySelector('[role="option"][aria-selected="true"]');
+    expect(option?.textContent).toContain("summarize");
+    expect(textarea.getAttribute("aria-activedescendant")).toBe(option?.id);
+    act(() => textarea.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true })));
+    expect(container?.querySelector('[data-testid="skill-chip"]')?.textContent).toContain(
+      "summarize",
+    );
+    expect(container?.querySelector('[data-testid="slash-picker"]')).toBeNull();
+    expect(textarea.value).toBe("");
+    expect(document.activeElement).toBe(textarea);
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
+  it("wraps slash navigation across skills and actions, and completes the selected action", () => {
+    const onSend = vi.fn();
+    const onSlashAction = vi.fn();
+    const textarea = renderComposer(onSend, { onSlashAction });
+    type(textarea, "/");
+    act(() =>
+      textarea.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true })),
+    );
+    expect(container?.querySelector('[aria-selected="true"]')?.textContent).toContain(
+      "Settings: Usage",
+    );
+    pressEnter(textarea);
+    expect(onSlashAction).toHaveBeenCalledWith("settings-usage");
+    expect(textarea.value).toBe("");
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
+  it("dismisses slash suggestions without changing the draft or stealing focus", () => {
+    const textarea = renderComposer(vi.fn());
+    textarea.focus();
+    type(textarea, "/summ");
+    act(() =>
+      textarea.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
+    );
+    expect(container?.querySelector('[data-testid="slash-picker"]')).toBeNull();
+    expect(textarea.getAttribute("aria-expanded")).toBe("false");
+    expect(textarea.value).toBe("/summ");
+    expect(document.activeElement).toBe(textarea);
+  });
+
   it.each([false, true])(
     "keeps the keyboard mention selection when targets refresh (reorder: %s)",
     (reorder) => {

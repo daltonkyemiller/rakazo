@@ -22,12 +22,12 @@ test("composer / picker lists skills above actions", async ({ page }, testInfo) 
 
   const picker = page.getByTestId("slash-picker");
   await expect(picker).toBeVisible();
-  const skillButton = picker.getByRole("button", { name: "Skill Daily standup" });
-  const chatSettings = picker.getByRole("button", { name: "Chat Settings" });
+  const skillButton = picker.getByRole("option", { name: "Skill Daily standup" });
+  const chatSettings = picker.getByRole("option", { name: "Chat Settings" });
   await expect(skillButton).toBeVisible();
   await expect(chatSettings).toBeVisible();
-  await expect(picker.getByRole("button", { name: "Settings: General" })).toBeVisible();
-  await expect(picker.getByRole("button", { name: "Settings: Usage" })).toBeVisible();
+  await expect(picker.getByRole("option", { name: "Settings: General" })).toBeVisible();
+  await expect(picker.getByRole("option", { name: "Settings: Usage" })).toBeVisible();
 
   const skillBox = await skillButton.boundingBox();
   const actionBox = await chatSettings.boundingBox();
@@ -36,12 +36,20 @@ test("composer / picker lists skills above actions", async ({ page }, testInfo) 
   expect(skillBox!.y).toBeLessThan(actionBox!.y);
 
   await expect(skillButton).toContainText("Prepare a concise standup");
-  const interrogate = picker.getByRole("button", { name: "Skill Interrogate", exact: true });
+  const interrogate = picker.getByRole("option", { name: "Skill Interrogate", exact: true });
   await expect(interrogate).toBeVisible();
   await expect(interrogate).toContainText("Review only; never applies fixes.");
   await captureScreenshot(page, testInfo, "slash-skills-picker");
 
-  await skillButton.click();
+  await expect(composer).toHaveAttribute("aria-expanded", "true");
+  const options = picker.getByRole("option");
+  await expect(options.first()).toHaveAttribute("aria-selected", "true");
+  await composer.press("ArrowUp");
+  await expect(options.last()).toHaveAttribute("aria-selected", "true");
+  await composer.press("ArrowDown");
+  await expect(options.first()).toHaveAttribute("aria-selected", "true");
+  await composer.fill("/Daily");
+  await composer.press("Tab");
   await expect(page.getByTestId("slash-picker")).toHaveCount(0);
   const skillChip = page.getByTestId("skill-chip");
   await expect(skillChip).toBeVisible();
@@ -59,11 +67,26 @@ test("composer / picker lists skills above actions", async ({ page }, testInfo) 
   await composer.fill("/Inter");
   await expect(interrogate).toBeVisible();
   await captureScreenshot(page, testInfo, "interrogate-skill-picker");
-  await interrogate.click();
+  await composer.press("Escape");
+  await expect(picker).toBeHidden();
+  await expect(composer).toHaveValue("/Inter");
+  await composer.fill("/Interrogate");
+  await composer.press("Enter");
   await expect(skillChip).toContainText("Interrogate");
   await expect(composer).toHaveValue("");
   await page.getByRole("button", { name: "Remove skill Interrogate" }).click();
 
+  await composer.fill("/settings");
+  await composer.press("ArrowDown");
+  await expect(picker.getByRole("option", { name: "Settings: General" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await composer.press("Enter");
+  await expect(page.getByTestId("settings-header")).toContainText("General");
+  await page.keyboard.press("Escape");
+  await expect(composer).toHaveValue("");
+  await expect(composer).toBeFocused();
   await composer.fill("@");
   await expect(page.getByTestId("slash-picker")).toHaveCount(0);
 });

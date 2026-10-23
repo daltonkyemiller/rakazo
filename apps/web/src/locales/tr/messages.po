@@ -1310,6 +1310,10 @@ msgstr "Komut"
 msgid "Command variable"
 msgstr "Komut değişkeni"
 
+#: src/pages/shell/composer.tsx
+msgid "Commands"
+msgstr ""
+
 #: src/pages/Board.tsx
 msgid "Comment"
 msgstr ""

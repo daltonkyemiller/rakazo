@@ -214,7 +214,7 @@ test("memory and skills are readable and editable in the app", async ({ page }, 
   const composer = page.getByRole("combobox", { name: /^Message/ });
   await composer.fill("/");
   await expect(
-    page.getByRole("button", { name: "Skill greet-politely", exact: true }),
+    page.getByRole("option", { name: "Skill greet-politely", exact: true }),
   ).toBeVisible();
   await composer.fill("");
 
@@ -275,7 +275,7 @@ test("memory and skills are readable and editable in the app", async ({ page }, 
   await knowledge.getByRole("button", { name: "Confirm delete", exact: true }).click();
   await expect(skillRow).toBeHidden();
   await composer.fill("/");
-  await expect(page.getByRole("button", { name: "Skill greet-politely", exact: true })).toHaveCount(
+  await expect(page.getByRole("option", { name: "Skill greet-politely", exact: true })).toHaveCount(
     0,
   );
   expect(await rpc<Array<{ name: string }>>(page, "agentSkills/list", {})).not.toContainEqual(

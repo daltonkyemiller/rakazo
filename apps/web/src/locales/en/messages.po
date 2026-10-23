@@ -1310,6 +1310,10 @@ msgstr "Command"
 msgid "Command variable"
 msgstr "Command variable"
 
+#: src/pages/shell/composer.tsx
+msgid "Commands"
+msgstr "Commands"
+
 #: src/pages/Board.tsx
 msgid "Comment"
 msgstr "Comment"

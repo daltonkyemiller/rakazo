@@ -4,6 +4,7 @@ import type {
   AgentSkillCatalogEntry,
   Connection,
   ConnectionCatalogItem,
+  McpServer,
   MessageBlock,
   MessageReaction,
   Routine,
@@ -861,41 +862,44 @@ function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId: string
       .catch(() => setMentionGroups([]));
   }, [refreshMentionBots]);
 
-  useEffect(() => {
-    if (mentionBots.length === 0) {
-      setMentionRoutines([]);
-      setMentionConnectors([]);
-      return;
-    }
-    let cancelled = false;
-    const botNameById = new Map(mentionBots.map((bot) => [bot.id, bot.name]));
-    void Promise.all(
-      mentionBots.map((bot) =>
-        rpc<Routine[]>("routines/list", { botId: bot.id })
-          .then((rows) =>
-            rows.map((routine) => ({
-              ...routine,
-              botName: botNameById.get(bot.id) ?? bot.name,
-            })),
-          )
-          .catch(() => [] as Array<Routine & { botName?: string }>),
-      ),
-    ).then((lists) => {
-      if (!cancelled) setMentionRoutines(lists.flat());
-    });
-    void Promise.all([
-      rpc<Connection[]>("connections/list").catch(() => [] as Connection[]),
-      rpc<ConnectionCatalogItem[]>("connections/catalog", {}).catch(
-        () => [] as ConnectionCatalogItem[],
-      ),
-    ]).then(([connections, catalog]) => {
-      if (cancelled) return;
-      setMentionConnectors(mentionPickerConnectors(connections, catalog));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [mentionBots]);
+  useFocusEffect(
+    useCallback(() => {
+      if (mentionBots.length === 0) {
+        setMentionRoutines([]);
+        setMentionConnectors([]);
+        return;
+      }
+      let cancelled = false;
+      const botNameById = new Map(mentionBots.map((bot) => [bot.id, bot.name]));
+      void Promise.all(
+        mentionBots.map((bot) =>
+          rpc<Routine[]>("routines/list", { botId: bot.id })
+            .then((rows) =>
+              rows.map((routine) => ({
+                ...routine,
+                botName: botNameById.get(bot.id) ?? bot.name,
+              })),
+            )
+            .catch(() => [] as Array<Routine & { botName?: string }>),
+        ),
+      ).then((lists) => {
+        if (!cancelled) setMentionRoutines(lists.flat());
+      });
+      void Promise.all([
+        rpc<Connection[]>("connections/list").catch(() => [] as Connection[]),
+        rpc<ConnectionCatalogItem[]>("connections/catalog", {}).catch(
+          () => [] as ConnectionCatalogItem[],
+        ),
+        rpc<McpServer[]>("mcp/servers/list").catch(() => [] as McpServer[]),
+      ]).then(([connections, catalog, servers]) => {
+        if (cancelled) return;
+        setMentionConnectors(mentionPickerConnectors(connections, catalog, servers));
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, [mentionBots]),
+  );
 
   function isCurrentTarget(targetBotId: string | undefined, targetGroupId: string | undefined) {
     return activeBotId.current === targetBotId && activeGroupId.current === targetGroupId;

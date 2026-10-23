@@ -1,4 +1,4 @@
-import type { Connection, ConnectionCatalogItem } from "@rakazo/contracts";
+import type { Connection, ConnectionCatalogItem, McpServer } from "@rakazo/contracts";
 import { formatCron } from "./cron.js";
 import { displayName } from "./display-name.js";
 import { hasMentionToken } from "./group-mentions.js";
@@ -18,6 +18,7 @@ export type ComposerMention = {
   botId?: string;
   /** Connected connection row id when kind is connector + connected. */
   connectionId?: string;
+  mcpServerId?: string;
   authStatus?: "connected" | "needs_auth";
   /** Catalog artwork for connector chips. */
   logo?: string | null;
@@ -37,7 +38,9 @@ export type MentionPickerConnector = {
   name: string;
   authStatus: "connected" | "needs_auth";
   connectionId?: string;
+  mcpServerId?: string;
   logo?: string | null;
+  subtitle?: string;
 };
 
 /**
@@ -47,6 +50,7 @@ export type MentionPickerConnector = {
 export function mentionPickerConnectors(
   connections: readonly Connection[],
   catalog: readonly ConnectionCatalogItem[],
+  servers: readonly Pick<McpServer, "id" | "name" | "slug" | "enabled">[] = [],
 ): MentionPickerConnector[] {
   const connected = connections.filter((row) => row.status === "connected");
   const logoFor = (row: Connection) =>
@@ -62,6 +66,22 @@ export function mentionPickerConnectors(
     connectionId: row.id,
     logo: logoFor(row),
   }));
+  for (const server of servers) {
+    if (!server.enabled) continue;
+    const artwork = catalog.find(
+      (item) =>
+        item.slug.toLowerCase() === server.slug.toLowerCase() ||
+        item.name.toLowerCase() === server.name.toLowerCase(),
+    );
+    options.push({
+      id: `mcp:${server.id}`,
+      name: server.name,
+      mcpServerId: server.id,
+      authStatus: "connected",
+      logo: artwork?.logo ?? null,
+      subtitle: "MCP server",
+    });
+  }
   for (const item of catalog) {
     if (item.connected || item.noAuth) continue;
     if (
@@ -156,6 +176,7 @@ export function toThreadMentionPayload(
       continue;
     }
     if (mention.kind === "connector") {
+      if (mention.mcpServerId) continue;
       const connectionId = mention.connectionId ?? mention.id;
       if (mention.authStatus === "needs_auth" && !mention.connectionId) continue;
       if (!connectionId || connectionId.startsWith("catalog:")) continue;
@@ -299,9 +320,11 @@ export function buildComposerMentionOptions(input: {
       id: connector.id,
       name: connector.name,
       connectionId: connector.connectionId,
+      mcpServerId: connector.mcpServerId,
       authStatus: connector.authStatus,
       logo: connector.logo,
-      subtitle: connector.authStatus === "connected" ? "Connected" : "Needs auth",
+      subtitle:
+        connector.subtitle ?? (connector.authStatus === "connected" ? "Connected" : "Needs auth"),
     });
   }
 
@@ -336,7 +359,12 @@ export function resolveComposerSendPlan(input: {
     "routine",
     "connector",
   ]);
-  trimmed = appendConnectorIntent(trimmed, needsAuthConnectorNames(input.mentions));
+  // MCP tags are explicit prompt intent; existing servers enforce tool access through assignments.
+  // Keep them out of the connection-only wire payload so older servers can accept the message.
+  trimmed = appendConnectorIntent(trimmed, [
+    ...needsAuthConnectorNames(input.mentions),
+    ...parts.connectors.filter((mention) => mention.mcpServerId).map((mention) => mention.name),
+  ]);
   if (!trimmed && parts.connectors.length) {
     trimmed = parts.connectors.map((mention) => `@${mention.name}`).join(" ");
   }

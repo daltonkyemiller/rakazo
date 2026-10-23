@@ -4,6 +4,7 @@ import {
   completeOnboarding,
   createNamedBot,
   openNewGroup,
+  rpc,
   signup,
 } from "./helpers";
 
@@ -92,4 +93,38 @@ test("mention picker completes with Enter and Tab", async ({ page }, testInfo) =
   await expect(page.getByTestId("transcript")).toContainText("hello without a picker", {
     timeout: 60_000,
   });
+});
+
+test("registered MCP servers can be tagged without sending a connection ID", async ({
+  page,
+}, testInfo) => {
+  await signup(page, `mcp-mention-${Date.now()}@rakazo.test`, "password12", "MCP Mentions");
+  await completeOnboarding(page);
+  await rpc(page, "mcp/servers/create", {
+    slug: "work-notes",
+    name: "Work Notes",
+    transport: "streamable_http",
+    endpoint: "https://notes.example.test/mcp",
+    enabled: true,
+  });
+  await page.reload();
+  const composer = page.getByRole("combobox", { name: /^Message / }).first();
+  await composer.fill("@Work");
+  const picker = page.getByTestId("mention-picker");
+  const option = picker.getByRole("option", { name: "@Work Notes", exact: true });
+  await expect(option).toBeVisible();
+  await expect(option).toContainText("MCP server");
+  await captureScreenshot(page, testInfo, "mention-registered-mcp-server");
+  await composer.press("Enter");
+  await expect(page.getByTestId("mention-chip").filter({ hasText: "Work Notes" })).toBeVisible();
+  await composer.press("End");
+  await composer.press(" ");
+  await page.keyboard.type("Find my draft");
+  const request = page.waitForRequest(
+    (request) => request.url().endsWith("/rpc/threads/send") && request.method() === "POST",
+  );
+  await composer.press("Enter");
+  const sent = (await request).postDataJSON().json;
+  expect(sent.text).toContain("Use these connectors if relevant: Work Notes.");
+  expect(sent.mentions ?? []).toEqual([]);
 });

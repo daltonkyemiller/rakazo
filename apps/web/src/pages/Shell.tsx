@@ -7,6 +7,7 @@ import type {
   ComputerReleaseReason,
   ComputerStatus,
   Group,
+  McpServer,
   Me,
   MessageReaction,
   ProductEvent,
@@ -2030,17 +2031,18 @@ function SpaceShell() {
     void Promise.all([
       catalogRequest.then(() => rpc.connections.list().catch(() => null)),
       catalogRequest,
-    ]).then(([connections, catalog]) => {
+      rpc.mcp.servers.list().catch(() => [] as McpServer[]),
+    ]).then(([connections, catalog, servers]) => {
       if (cancelled) return;
       if (catalog && connections) setFooterLogos(connectedAppMarks(catalog, connections));
       setMentionConnectors(
-        bots.length ? mentionPickerConnectors(connections ?? [], catalog ?? []) : [],
+        bots.length ? mentionPickerConnectors(connections ?? [], catalog ?? [], servers) : [],
       );
     });
     return () => {
       cancelled = true;
     };
-  }, [initialBotsLoaded, mentionBotsKey]);
+  }, [initialBotsLoaded, mentionBotsKey, pluginsOpen]);
 
   useLayoutEffect(() => {
     if (initialBotsLoaded) {

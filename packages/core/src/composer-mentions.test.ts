@@ -445,3 +445,37 @@ describe("mention search relevance", () => {
     expect(searchComposerMentions(mentions, "")).toEqual(mentions);
   });
 });
+
+it("offers enabled MCP servers separately and sends their intent without connection-only IDs", () => {
+  const connectors = mentionPickerConnectors(
+    [],
+    [],
+    [
+      { id: "notes", slug: "work-notes", name: "Work Notes", enabled: true },
+      { id: "off", slug: "disabled", name: "Disabled", enabled: false },
+    ],
+  );
+  const options = buildComposerMentionOptions({
+    query: "notes",
+    bots: [],
+    groups: [],
+    routines: [],
+    connectors,
+  });
+  expect(options).toHaveLength(1);
+  expect(options[0]).toMatchObject({
+    kind: "connector",
+    id: "mcp:notes",
+    mcpServerId: "notes",
+    name: "Work Notes",
+    subtitle: "MCP server",
+  });
+  const plan = resolveComposerSendPlan({
+    text: "@Work Notes Find my draft",
+    mentions: options,
+    hasAttachments: false,
+  });
+  expect(plan.trimmed).toBe("Find my draft\n\nUse these connectors if relevant: Work Notes.");
+  expect(plan.mentionPayload).toEqual([]);
+  expect(plan.shouldSend).toBe(true);
+});

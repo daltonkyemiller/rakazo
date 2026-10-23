@@ -90,6 +90,14 @@ it("keeps the nested preview opaque and blocks remote images and fonts", () => {
   expect(shell).not.toContain("allow-same-origin");
 });
 
+it("allows embedded images and fonts through both inherited policies", () => {
+  const policy = shellContentSecurityPolicy(shell);
+  for (const directive of ["img-src", "font-src"]) {
+    expect(directiveSources(policy, directive)).toEqual(["data:"]);
+    expect(directiveSources(PREVIEW_CSP, directive)).toEqual(["data:"]);
+  }
+});
+
 it("renders only string messages from the embedding app", () => {
   const script = shell.match(/<script>([\s\S]*?)<\/script>/)?.[1];
   if (!script) throw new Error("shell script missing");

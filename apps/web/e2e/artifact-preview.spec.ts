@@ -58,8 +58,10 @@ test("agent-attached files appear as cards with previews and downloads", async (
 
   // HTML renders in the sandboxed preview.
   await expect(page.getByRole("button", { name: "Send" })).toBeVisible({ timeout: 30_000 });
+  const inlineImage =
+    "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
   await composer.fill(
-    "write path notes/page.html and attach it to the thread says <h1>Rendered page</h1><p id=ran></p><script>document.getElementById('ran').textContent = 'script ran'</script>",
+    `write path notes/page.html and attach it to the thread says <h1>Rendered page</h1><p id=ran></p><script>document.getElementById('ran').textContent = 'script ran'</script><img alt=Embedded src="${inlineImage}"><img alt=Remote src="https://example.invalid/blocked.png">`,
   );
   await page.keyboard.press("Enter");
 
@@ -75,6 +77,14 @@ test("agent-attached files appear as cards with previews and downloads", async (
   const preview = shell.contentFrame().locator("iframe#preview").contentFrame();
   await expect(preview.getByRole("heading", { name: "Rendered page" })).toBeVisible();
   await expect(preview.getByText("script ran")).toBeVisible();
+  await expect
+    .poll(() =>
+      preview.getByAltText("Embedded").evaluate((image: HTMLImageElement) => image.naturalWidth),
+    )
+    .toBe(1);
+  expect(
+    await preview.getByAltText("Remote").evaluate((image: HTMLImageElement) => image.naturalWidth),
+  ).toBe(0);
   // The preview's opaque origin keeps it away from the app's storage and DOM.
   expect(await preview.locator("body").evaluate(() => window.origin)).toBe("null");
   await captureScreenshot(page, testInfo, "html-preview-open");

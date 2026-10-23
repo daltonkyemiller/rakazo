@@ -307,9 +307,10 @@ test("takeover, routine, plugins, and export are reachable", async ({ page }, te
   // A catalog MCP entry opens the same add page, prefilled, inside the one dialog.
   await feed.getByRole("button", { name: "MCP · Add", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Add MCP server" })).toBeVisible();
-  await expect(page.getByLabel("URL, command, or config")).toHaveValue(
-    "https://mcp.example.test/mcp",
-  );
+  // A known source skips straight to its review.
+  await expect(
+    page.getByTestId("mcp-server-draft").getByText("https://mcp.example.test/mcp", { exact: true }),
+  ).toBeVisible();
   await expect(page.getByLabel("Server name")).toHaveValue("GitHub");
   await expect(page.getByLabel("Access token", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Back to integrations", exact: true }).click();
@@ -321,6 +322,7 @@ test("takeover, routine, plugins, and export are reachable", async ({ page }, te
 
   await page.getByRole("button", { name: "Add MCP server", exact: true }).click();
   await page.getByLabel("URL, command, or config").fill("https://mcp.example.test/mcp");
+  await page.keyboard.press("Enter");
   await page.getByLabel("Server name").fill("Browser MCP");
   await page.getByRole("button", { name: "Add server", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Browser MCP" })).toBeVisible();

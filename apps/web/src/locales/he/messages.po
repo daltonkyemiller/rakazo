@@ -17,6 +17,11 @@ msgstr ""
 msgid " (unread)"
 msgstr " (לא נקראה)"
 
+#. placeholder {0}: drafts.length
+#: src/components/mcp/McpServerAdd.tsx
+msgid "{0, plural, one {# server} other {# servers}}"
+msgstr ""
+
 #. placeholder {0}: health.toolCount
 #: src/components/mcp/mcp-labels.ts
 msgid "{0, plural, one {# tool} other {# tools}}"
@@ -373,10 +378,6 @@ msgstr "על מרחבים"
 msgid "Access token"
 msgstr "טוקן גישה"
 
-#: src/components/mcp/McpServerAdd.tsx
-msgid "Access token (optional)"
-msgstr "טוקן גישה (אופציונלי)"
-
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/SettingsOverlay.tsx
 msgid "Account"
@@ -435,6 +436,10 @@ msgstr "הוספה"
 msgid "Add {0} to the group"
 msgstr ""
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Add a client ID."
+msgstr ""
+
 #: src/pages/RoutineEditor.tsx
 msgid "Add a command to run"
 msgstr ""
@@ -471,6 +476,10 @@ msgstr ""
 #. placeholder {0}: row.name
 #: src/components/mcp/McpServerAdd.tsx
 msgid "Add a value for {0}."
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Add an access token."
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
@@ -537,6 +546,10 @@ msgstr "הוספת שרת"
 msgid "Add server URL"
 msgstr "הוספת URL של שרת"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Add the authorization server."
+msgstr ""
+
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Add to routine"
 msgstr "הוספה לרוטינה"
@@ -562,7 +575,6 @@ msgstr ""
 msgid "Adding…"
 msgstr "מוסיף…"
 
-#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/model-settings/catalog-model-fields.tsx
 #: src/pages/model-settings/compatible-model-fields.tsx
@@ -586,9 +598,8 @@ msgstr "מחשב הסוכן"
 msgid "Agent connections"
 msgstr "חיבורי סוכנים"
 
-#: src/components/mcp/McpServerAdd.tsx
-#: src/components/mcp/McpServerDetail.tsx
-msgid "Agents"
+#: src/components/mcp/McpAgentAccess.tsx
+msgid "Agents with access"
 msgstr ""
 
 #: src/pages/Artifacts.tsx
@@ -833,6 +844,10 @@ msgstr "צירוף קובץ"
 msgid "Attachment"
 msgstr "קובץ מצורף"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Authentication"
+msgstr ""
+
 #: src/lib/model-connection-preflight.ts
 msgid "Authentication failed."
 msgstr "האימות נכשל."
@@ -843,8 +858,8 @@ msgid "Authorization code or callback URL"
 msgstr "קוד הרשאה או URL להחזרה (callback)"
 
 #: src/components/mcp/McpServerAdd.tsx
-msgid "Authorization parameters (optional)"
-msgstr "פרמטרים להרשאה (אופציונלי)"
+msgid "Authorization parameters"
+msgstr ""
 
 #: src/components/mcp/McpServerAdd.tsx
 msgid "Authorization server"
@@ -1023,6 +1038,10 @@ msgstr "תווית Brain"
 #: src/pages/PluginsOverlay.tsx
 msgid "Browse MCP servers"
 msgstr "עיון בשרתי MCP"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Browser sign-in"
+msgstr ""
 
 #: src/pages/KnowledgeSection.tsx
 msgid "Built-in"
@@ -1256,10 +1275,12 @@ msgid "Clearing…"
 msgstr "מנקה…"
 
 #: src/components/integrations/IntegrationSetup.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Client ID"
 msgstr "Client ID"
 
 #: src/components/integrations/IntegrationSetup.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Client secret"
 msgstr "Client secret"
 
@@ -1369,6 +1390,11 @@ msgstr "בקרוב"
 msgid "Command"
 msgstr "פקודה"
 
+#. placeholder {0}: first.command
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Command · {0}"
+msgstr ""
+
 #: src/components/AskCard.tsx
 #: src/pages/shell/bot-credentials.tsx
 msgid "Command variable"
@@ -1434,6 +1460,10 @@ msgstr "המחשבים זמינים. אפשר לטעון מחדש או לפתו�
 #: src/components/ComputersUnavailableHint.tsx
 msgid "Computers are off. Set SANDBOX_PROVIDER=docker with SANDBOX_SUPERVISOR_TOKEN, or set SANDBOX_PROVIDER to e2b, daytona, or boat with its API key. Recreate the stack after changing .env."
 msgstr "המחשבים כבויים. יש להגדיר SANDBOX_PROVIDER=docker עם SANDBOX_SUPERVISOR_TOKEN, או להגדיר את SANDBOX_PROVIDER ל-e2b, daytona או boat עם מפתח ה-API שלו. אחרי שינוי .env יש ליצור מחדש את ה-stack."
+
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Configuration"
+msgstr ""
 
 #: src/pages/ModelSettingsOverlay.tsx
 msgid "Configured by deployment"
@@ -1549,6 +1579,7 @@ msgid "Context limit"
 msgstr "מגבלת הקשר"
 
 #: src/components/integrations/IntegrationSetup.tsx
+#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/Auth.tsx
 #: src/pages/HostComputerPrompt.tsx
 #: src/pages/Onboarding.tsx
@@ -2322,7 +2353,6 @@ msgstr "אפליקציית הדסקטופ"
 msgid "Desktop update"
 msgstr "עדכון לאפליקציית הדסקטופ"
 
-#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/RoutineRunHistory.tsx
 #: src/pages/shell/composer-error.tsx
 msgid "Details"
@@ -2481,6 +2511,10 @@ msgstr "עריכת שם"
 #: src/pages/BotContextMenu.tsx
 msgid "Edit Profile"
 msgstr "עריכת פרופיל"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Edit source"
+msgstr ""
 
 #: src/pages/Auth.tsx
 msgid "Email"
@@ -2885,6 +2919,10 @@ msgstr "איך לבדוק"
 msgid "I’m done"
 msgstr "סיימתי"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "If the server asks, you sign in from its page after adding it."
+msgstr ""
+
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "If you heard that, voice is ready."
 msgstr "אם שמעת את זה, הקול מוכן."
@@ -2924,6 +2962,10 @@ msgstr ""
 #: src/pages/shell/bot-panel.tsx
 msgid "Inherit default"
 msgstr "ירושה מברירת המחדל"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Initial access token"
+msgstr ""
 
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Inputs"
@@ -3477,6 +3519,10 @@ msgstr "עוד"
 msgid "More computer actions"
 msgstr "פעולות נוספות במחשב"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "More options"
+msgstr ""
+
 #: src/pages/ModelBackupsSettings.tsx
 msgid "Move {full} down"
 msgstr "הזזת {full} למטה"
@@ -3654,8 +3700,8 @@ msgid "No MCP servers found."
 msgstr ""
 
 #: src/components/mcp/McpServersPanel.tsx
-msgid "No MCP servers yet."
-msgstr "עדיין אין שרתי MCP."
+msgid "No MCP servers yet"
+msgstr ""
 
 #: src/pages/GroupPanel.tsx
 msgid "No members yet"
@@ -3712,6 +3758,10 @@ msgstr "עדיין אין כרטיסים"
 msgid "No trigger"
 msgstr "ללא טריגר"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "None"
+msgstr ""
+
 #: src/lib/ticket-priority.ts
 msgid "Normal"
 msgstr "רגיל"
@@ -3759,12 +3809,8 @@ msgid "OAuth authorization was cancelled."
 msgstr "הרשאת OAuth בוטלה."
 
 #: src/components/mcp/McpServerAdd.tsx
-msgid "OAuth client ID (optional)"
-msgstr "מזהה לקוח OAuth (אופציונלי)"
-
-#: src/components/mcp/McpServerAdd.tsx
-msgid "OAuth client secret (optional)"
-msgstr "סוד לקוח OAuth (אופציונלי)"
+msgid "OAuth client"
+msgstr ""
 
 #: src/components/mcp/McpServerDetail.tsx
 msgid "OAuth connected"
@@ -3778,6 +3824,10 @@ msgstr "חיבור OAuth נכשל"
 #: src/components/mcp/McpServerDetail.tsx
 msgid "OAuth expired"
 msgstr "תוקף OAuth פג"
+
+#: src/components/mcp/McpServerDetail.tsx
+msgid "OAuth not connected"
+msgstr ""
 
 #: src/components/MacAccess.tsx
 msgid "Off on this Mac."
@@ -3853,6 +3903,10 @@ msgstr "פתיחת הניווט"
 msgid "Open Rakazo on your Mac to use it."
 msgstr ""
 
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Open settings"
+msgstr ""
+
 #: src/pages/ScratchpadSection.tsx
 msgid "Open work"
 msgstr "עבודה פתוחה"
@@ -3874,6 +3928,7 @@ msgstr "פותח צ׳אט…"
 msgid "Opening your Space…"
 msgstr "פותח את המרחב…"
 
+#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
 #: src/pages/VoiceSettingsOverlay.tsx
@@ -3961,6 +4016,10 @@ msgstr "באיחור תשלום"
 msgid "Paste a replacement key"
 msgstr "יש להדביק מפתח חלופי"
 
+#: src/components/mcp/McpServersPanel.tsx
+msgid "Paste a URL, command, or config to connect one."
+msgstr ""
+
 #: src/pages/model-settings/compatible-model-fields.tsx
 msgid "Paste the OpenAI-compatible address from your server. Rakazo adds /v1 if needed."
 msgstr "יש להדביק את הכתובת התואמת ל-OpenAI מהשרת. Rakazo מוסיף /v1 במידת הצורך."
@@ -3976,6 +4035,10 @@ msgstr "יש להדביק את מפתח ה-API ולבדוק שוב."
 #: src/pages/RoutineEditor.tsx
 msgid "Paused"
 msgstr "מושהה"
+
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Paused on this Mac"
+msgstr ""
 
 #: src/components/ModelCredits.tsx
 msgid "Pay your model provider directly."
@@ -4245,6 +4308,11 @@ msgstr "לשחרר את המחשב שהפעולה בו נקטעה?"
 #: src/components/InstructionSettings.tsx
 msgid "Reload"
 msgstr "טעינה מחדש"
+
+#. placeholder {0}: hostOf(first.endpoint)
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Remote server · {0}"
+msgstr ""
 
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/mcp/McpServerAdd.tsx
@@ -4640,8 +4708,8 @@ msgid "Scheduled routines"
 msgstr ""
 
 #: src/components/mcp/McpServerAdd.tsx
-msgid "Scopes (optional)"
-msgstr "היקפים (אופציונלי)"
+msgid "Scopes"
+msgstr ""
 
 #: src/pages/model-settings/model-picker.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -5022,10 +5090,15 @@ msgstr "מתחיל"
 msgid "Starting…"
 msgstr "מתחיל…"
 
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/ActivityList.tsx
 #: src/pages/Board.tsx
 msgid "Status"
 msgstr "סטטוס"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Stays on this Mac"
+msgstr ""
 
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Steps"
@@ -5376,6 +5449,7 @@ msgid "Transcription model"
 msgstr "מודל תמלול"
 
 #: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServerDetail.tsx
 msgid "Transport"
 msgstr ""
 

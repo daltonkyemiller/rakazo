@@ -175,15 +175,13 @@ test("adds an MCP server with a pre-registered OAuth client", async ({ page }, t
   await expect(page.getByRole("heading", { name: "Add MCP server" })).toBeVisible();
 
   await page.getByLabel("URL, command, or config").fill("https://gmailmcp.example.test/mcp/v1");
+  await page.keyboard.press("Enter");
   await expect(page.getByLabel("Server name")).toHaveValue("Example");
   await page.getByLabel("Server name").fill("Gmail");
-  await page
-    .getByTestId("mcp-server-draft")
-    .getByRole("button", { name: "Advanced", exact: true })
-    .click();
   await expect(page.getByLabel("Redirect URI")).toBeHidden();
-  await page.getByLabel("OAuth client ID (optional)").fill("client-1.apps.example.test");
-  await page.getByLabel("OAuth client secret (optional)").fill("client-secret");
+  await page.getByRole("button", { name: "OAuth client", exact: true }).click();
+  await page.getByLabel("Client ID", { exact: true }).fill("client-1.apps.example.test");
+  await page.getByLabel("Client secret", { exact: true }).fill("client-secret");
   await expect(page.getByLabel("Redirect URI")).toHaveValue(`${browserOrigin}/mcp/oauth/callback`);
   await captureScreenshot(page, testInfo, "mcp-oauth-client-form");
 

@@ -15,6 +15,8 @@ const settingsScreens = new Set([
   "integrations",
   "connected-integrations",
   "language",
+  "mcp-server",
+  "mcp-server-add",
   "models",
   "voice",
 ]);

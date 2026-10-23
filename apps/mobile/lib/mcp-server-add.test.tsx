@@ -22,7 +22,63 @@ vi.mock("../components/native-action-button", () => ({
     </button>
   ),
 }));
+vi.mock("../components/native-segmented-control", () => ({
+  NativeSegmentedControl: ({
+    options,
+    onChange,
+  }: {
+    options: { value: string; label: string }[];
+    onChange: (value: string) => void;
+  }) => (
+    <div>
+      {options.map((option) => (
+        <button key={option.value} type="button" onClick={() => onChange(option.value)}>
+          {option.label}
+        </button>
+      ))}
+    </div>
+  ),
+}));
 vi.mock("../components/settings-group", () => ({
+  SettingsGroup: ({
+    label,
+    footer,
+    children,
+  }: {
+    label?: string;
+    footer?: string;
+    children: ReactNode;
+  }) => (
+    <section>
+      {label}
+      {children}
+      {footer}
+    </section>
+  ),
+  SettingsRow: ({
+    title,
+    value,
+    detail,
+    accessibilityLabel,
+    onPress,
+  }: {
+    title: string;
+    value?: string;
+    detail?: string;
+    accessibilityLabel?: string;
+    onPress?: () => void;
+  }) =>
+    onPress ? (
+      <button type="button" aria-label={accessibilityLabel} onClick={onPress}>
+        {title}
+      </button>
+    ) : (
+      <div>
+        {title}
+        {value}
+        {detail}
+      </div>
+    ),
   SettingsSwitch: ({
     label,
     value,
@@ -71,6 +127,7 @@ vi.mock("react-native", () => ({
       onChange={(event) => onChangeText?.(event.target.value)}
     />
   ),
+  Platform: { select: (options: { default: unknown }) => options.default },
   StyleSheet: { create: (styles: unknown) => styles },
 }));
 
@@ -104,7 +161,7 @@ const input = (label: string) => {
 };
 const button = (label: string) => {
   const element = [...container.querySelectorAll("button")].find(
-    (entry) => entry.textContent === label,
+    (entry) => (entry.getAttribute("aria-label") ?? entry.textContent) === label,
   );
   if (!element) throw new Error(`Missing ${label}`);
   return element;
@@ -125,13 +182,14 @@ async function click(element: Element) {
 
 it("adds a pasted URL and grants agents without dropping their other servers", async () => {
   const onAdded = vi.fn();
-  const onCancel = vi.fn();
+  const onDone = vi.fn();
   await act(async () =>
-    root.render(<McpServerAdd servers={[]} onAdded={onAdded} onCancel={onCancel} />),
+    root.render(<McpServerAdd servers={[]} onAdded={onAdded} onDone={onDone} />),
   );
+  // A paste that reads as a server skips straight to its review.
   await type(input("URL, command, or config"), "https://mcp.linear.app/mcp");
   expect(input("Server name").value).toBe("Linear");
-  expect(container.textContent).not.toContain("Runs on Rakazo server");
+  expect(container.textContent).not.toContain("Rakazo server");
   await click(input("Scout"));
   await click(button("Add server"));
 
@@ -151,18 +209,18 @@ it("adds a pasted URL and grants agents without dropping their other servers", a
     ],
   });
   expect(onAdded).toHaveBeenCalledTimes(1);
-  expect(onCancel).toHaveBeenCalledTimes(1);
+  expect(onDone).toHaveBeenCalledTimes(1);
 });
 
 it("requires real values for placeholder secrets and runs commands on the server", async () => {
   await act(async () =>
-    root.render(<McpServerAdd servers={[]} onAdded={vi.fn()} onCancel={vi.fn()} />),
+    root.render(<McpServerAdd servers={[]} onAdded={vi.fn()} onDone={vi.fn()} />),
   );
   await type(
     input("URL, command, or config"),
     `BRAVE_API_KEY="<api-key>" npx -y @brave/brave-search-mcp-server --region "us east"`,
   );
-  expect(container.textContent).toContain("Runs on Rakazo server");
+  expect(container.textContent).toContain("Runs onRakazo server");
   expect(input("BRAVE_API_KEY").type).toBe("password");
   await click(button("Add server"));
   expect(container.textContent).toContain("Add a value for BRAVE_API_KEY.");
@@ -183,7 +241,7 @@ it("requires real values for placeholder secrets and runs commands on the server
 
 it("explains input it will not evaluate", async () => {
   await act(async () =>
-    root.render(<McpServerAdd servers={[]} onAdded={vi.fn()} onCancel={vi.fn()} />),
+    root.render(<McpServerAdd servers={[]} onAdded={vi.fn()} onDone={vi.fn()} />),
   );
   const source = input("URL, command, or config");
   await type(source, "npx server | tee log");
@@ -194,4 +252,26 @@ it("explains input it will not evaluate", async () => {
     "Shell variables, pipes, and substitutions are not run. Use plain values.",
   );
   expect(() => button("Add server")).toThrow();
+});
+
+it("returns to the source to edit it, and requires a token when one is chosen", async () => {
+  await act(async () =>
+    root.render(<McpServerAdd servers={[]} onAdded={vi.fn()} onDone={vi.fn()} />),
+  );
+  await type(input("URL, command, or config"), "https://mcp.example.test/mcp");
+  await click(button("Edit source"));
+  expect(input("URL, command, or config").value).toBe("https://mcp.example.test/mcp");
+  await click(button("Continue"));
+  expect(input("Server name").value).toBe("Example");
+
+  await click(button("Access token"));
+  await click(button("Add server"));
+  expect(container.textContent).toContain("Add an access token.");
+  expect(rpc).not.toHaveBeenCalledWith("mcp/servers/create", expect.anything());
+  await type(input("Access token"), "fake-token");
+  await click(button("Add server"));
+  expect(rpc).toHaveBeenCalledWith(
+    "mcp/servers/create",
+    expect.objectContaining({ endpoint: "https://mcp.example.test/mcp", secret: "fake-token" }),
+  );
 });

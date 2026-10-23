@@ -17,6 +17,11 @@ msgstr ""
 msgid " (unread)"
 msgstr " (ungelesen)"
 
+#. placeholder {0}: drafts.length
+#: src/components/mcp/McpServerAdd.tsx
+msgid "{0, plural, one {# server} other {# servers}}"
+msgstr ""
+
 #. placeholder {0}: health.toolCount
 #: src/components/mcp/mcp-labels.ts
 msgid "{0, plural, one {# tool} other {# tools}}"
@@ -373,10 +378,6 @@ msgstr ""
 msgid "Access token"
 msgstr ""
 
-#: src/components/mcp/McpServerAdd.tsx
-msgid "Access token (optional)"
-msgstr "Zugriffstoken (optional)"
-
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/SettingsOverlay.tsx
 msgid "Account"
@@ -435,6 +436,10 @@ msgstr "Hinzufügen"
 msgid "Add {0} to the group"
 msgstr ""
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Add a client ID."
+msgstr ""
+
 #: src/pages/RoutineEditor.tsx
 msgid "Add a command to run"
 msgstr "Füge einen auszuführenden Befehl hinzu"
@@ -471,6 +476,10 @@ msgstr "Füge einen Auslöser für diese Routine hinzu."
 #. placeholder {0}: row.name
 #: src/components/mcp/McpServerAdd.tsx
 msgid "Add a value for {0}."
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Add an access token."
 msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
@@ -537,6 +546,10 @@ msgstr "Server hinzufügen"
 msgid "Add server URL"
 msgstr ""
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Add the authorization server."
+msgstr ""
+
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Add to routine"
 msgstr "Zur Routine hinzufügen"
@@ -562,7 +575,6 @@ msgstr ""
 msgid "Adding…"
 msgstr "Wird hinzugefügt…"
 
-#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/AccountSettingsOverlay.tsx
 #: src/pages/model-settings/catalog-model-fields.tsx
 #: src/pages/model-settings/compatible-model-fields.tsx
@@ -586,9 +598,8 @@ msgstr "Agent-Computer"
 msgid "Agent connections"
 msgstr ""
 
-#: src/components/mcp/McpServerAdd.tsx
-#: src/components/mcp/McpServerDetail.tsx
-msgid "Agents"
+#: src/components/mcp/McpAgentAccess.tsx
+msgid "Agents with access"
 msgstr ""
 
 #: src/pages/Artifacts.tsx
@@ -833,6 +844,10 @@ msgstr "Datei anhängen"
 msgid "Attachment"
 msgstr "Anhang"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Authentication"
+msgstr ""
+
 #: src/lib/model-connection-preflight.ts
 msgid "Authentication failed."
 msgstr "Authentifizierung fehlgeschlagen."
@@ -843,8 +858,8 @@ msgid "Authorization code or callback URL"
 msgstr "Autorisierungscode oder Callback-URL"
 
 #: src/components/mcp/McpServerAdd.tsx
-msgid "Authorization parameters (optional)"
-msgstr "Autorisierungsparameter (optional)"
+msgid "Authorization parameters"
+msgstr ""
 
 #: src/components/mcp/McpServerAdd.tsx
 msgid "Authorization server"
@@ -1022,6 +1037,10 @@ msgstr ""
 
 #: src/pages/PluginsOverlay.tsx
 msgid "Browse MCP servers"
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Browser sign-in"
 msgstr ""
 
 #: src/pages/KnowledgeSection.tsx
@@ -1256,10 +1275,12 @@ msgid "Clearing…"
 msgstr "Wird geleert…"
 
 #: src/components/integrations/IntegrationSetup.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Client ID"
 msgstr ""
 
 #: src/components/integrations/IntegrationSetup.tsx
+#: src/components/mcp/McpServerAdd.tsx
 msgid "Client secret"
 msgstr ""
 
@@ -1369,6 +1390,11 @@ msgstr ""
 msgid "Command"
 msgstr "Befehl"
 
+#. placeholder {0}: first.command
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Command · {0}"
+msgstr ""
+
 #: src/components/AskCard.tsx
 #: src/pages/shell/bot-credentials.tsx
 msgid "Command variable"
@@ -1434,6 +1460,10 @@ msgstr ""
 #: src/components/ComputersUnavailableHint.tsx
 msgid "Computers are off. Set SANDBOX_PROVIDER=docker with SANDBOX_SUPERVISOR_TOKEN, or set SANDBOX_PROVIDER to e2b, daytona, or boat with its API key. Recreate the stack after changing .env."
 msgstr "Computer sind aus. Setze SANDBOX_PROVIDER=docker mit SANDBOX_SUPERVISOR_TOKEN, oder setze SANDBOX_PROVIDER auf e2b, daytona oder boat mit dem passenden API-Key. Stack nach der Änderung von .env neu erstellen."
+
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Configuration"
+msgstr ""
 
 #: src/pages/ModelSettingsOverlay.tsx
 msgid "Configured by deployment"
@@ -1549,6 +1579,7 @@ msgid "Context limit"
 msgstr "Kontextlimit"
 
 #: src/components/integrations/IntegrationSetup.tsx
+#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/Auth.tsx
 #: src/pages/HostComputerPrompt.tsx
 #: src/pages/Onboarding.tsx
@@ -2322,7 +2353,6 @@ msgstr ""
 msgid "Desktop update"
 msgstr ""
 
-#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/RoutineRunHistory.tsx
 #: src/pages/shell/composer-error.tsx
 msgid "Details"
@@ -2481,6 +2511,10 @@ msgstr "Namen bearbeiten"
 #: src/pages/BotContextMenu.tsx
 msgid "Edit Profile"
 msgstr "Profil bearbeiten"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Edit source"
+msgstr ""
 
 #: src/pages/Auth.tsx
 msgid "Email"
@@ -2885,6 +2919,10 @@ msgstr "So wird geprüft"
 msgid "I’m done"
 msgstr "Ich bin fertig"
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "If the server asks, you sign in from its page after adding it."
+msgstr ""
+
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "If you heard that, voice is ready."
 msgstr "Wenn du das gehört hast, ist die Stimme einsatzbereit."
@@ -2924,6 +2962,10 @@ msgstr "Eingehender Anruf"
 #: src/pages/shell/bot-panel.tsx
 msgid "Inherit default"
 msgstr "Standard übernehmen"
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Initial access token"
+msgstr ""
 
 #: src/components/teach/SkillDraftCard.tsx
 msgid "Inputs"
@@ -3477,6 +3519,10 @@ msgstr ""
 msgid "More computer actions"
 msgstr ""
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "More options"
+msgstr ""
+
 #: src/pages/ModelBackupsSettings.tsx
 msgid "Move {full} down"
 msgstr "{full} nach unten verschieben"
@@ -3654,8 +3700,8 @@ msgid "No MCP servers found."
 msgstr ""
 
 #: src/components/mcp/McpServersPanel.tsx
-msgid "No MCP servers yet."
-msgstr "Noch keine MCP-Server."
+msgid "No MCP servers yet"
+msgstr ""
 
 #: src/pages/GroupPanel.tsx
 msgid "No members yet"
@@ -3712,6 +3758,10 @@ msgstr ""
 msgid "No trigger"
 msgstr ""
 
+#: src/components/mcp/McpServerAdd.tsx
+msgid "None"
+msgstr ""
+
 #: src/lib/ticket-priority.ts
 msgid "Normal"
 msgstr ""
@@ -3759,12 +3809,8 @@ msgid "OAuth authorization was cancelled."
 msgstr "OAuth-Autorisierung wurde abgebrochen."
 
 #: src/components/mcp/McpServerAdd.tsx
-msgid "OAuth client ID (optional)"
-msgstr "OAuth-Client-ID (optional)"
-
-#: src/components/mcp/McpServerAdd.tsx
-msgid "OAuth client secret (optional)"
-msgstr "OAuth-Client-Secret (optional)"
+msgid "OAuth client"
+msgstr ""
 
 #: src/components/mcp/McpServerDetail.tsx
 msgid "OAuth connected"
@@ -3778,6 +3824,10 @@ msgstr "OAuth-Verbindung fehlgeschlagen"
 #: src/components/mcp/McpServerDetail.tsx
 msgid "OAuth expired"
 msgstr "OAuth abgelaufen"
+
+#: src/components/mcp/McpServerDetail.tsx
+msgid "OAuth not connected"
+msgstr ""
 
 #: src/components/MacAccess.tsx
 msgid "Off on this Mac."
@@ -3853,6 +3903,10 @@ msgstr "Navigation öffnen"
 msgid "Open Rakazo on your Mac to use it."
 msgstr ""
 
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Open settings"
+msgstr ""
+
 #: src/pages/ScratchpadSection.tsx
 msgid "Open work"
 msgstr "Offene Arbeit"
@@ -3874,6 +3928,7 @@ msgstr "Chat wird geöffnet…"
 msgid "Opening your Space…"
 msgstr "Dein Arbeitsbereich wird geöffnet…"
 
+#: src/components/mcp/McpServerAdd.tsx
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
 #: src/pages/VoiceSettingsOverlay.tsx
@@ -3961,6 +4016,10 @@ msgstr ""
 msgid "Paste a replacement key"
 msgstr "Ersatzschlüssel einfügen"
 
+#: src/components/mcp/McpServersPanel.tsx
+msgid "Paste a URL, command, or config to connect one."
+msgstr ""
+
 #: src/pages/model-settings/compatible-model-fields.tsx
 msgid "Paste the OpenAI-compatible address from your server. Rakazo adds /v1 if needed."
 msgstr "Füge die OpenAI-kompatible Adresse deines Servers ein. Rakazo ergänzt /v1 bei Bedarf."
@@ -3975,6 +4034,10 @@ msgstr "Füge deinen API-Schlüssel ein und teste erneut."
 
 #: src/pages/RoutineEditor.tsx
 msgid "Paused"
+msgstr ""
+
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Paused on this Mac"
 msgstr ""
 
 #: src/components/ModelCredits.tsx
@@ -4245,6 +4308,11 @@ msgstr ""
 #: src/components/InstructionSettings.tsx
 msgid "Reload"
 msgstr "Neu laden"
+
+#. placeholder {0}: hostOf(first.endpoint)
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Remote server · {0}"
+msgstr ""
 
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/mcp/McpServerAdd.tsx
@@ -4640,8 +4708,8 @@ msgid "Scheduled routines"
 msgstr ""
 
 #: src/components/mcp/McpServerAdd.tsx
-msgid "Scopes (optional)"
-msgstr "Bereiche (optional)"
+msgid "Scopes"
+msgstr ""
 
 #: src/pages/model-settings/model-picker.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -5022,9 +5090,14 @@ msgstr "Startet"
 msgid "Starting…"
 msgstr "Wird gestartet…"
 
+#: src/components/mcp/McpServerDetail.tsx
 #: src/pages/ActivityList.tsx
 #: src/pages/Board.tsx
 msgid "Status"
+msgstr ""
+
+#: src/components/mcp/McpServerAdd.tsx
+msgid "Stays on this Mac"
 msgstr ""
 
 #: src/components/teach/SkillDraftCard.tsx
@@ -5376,6 +5449,7 @@ msgid "Transcription model"
 msgstr ""
 
 #: src/components/mcp/McpServerAdd.tsx
+#: src/components/mcp/McpServerDetail.tsx
 msgid "Transport"
 msgstr ""
 

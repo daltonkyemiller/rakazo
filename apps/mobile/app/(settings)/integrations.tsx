@@ -14,7 +14,6 @@ import {
   EMPTY_PLUGIN_CATALOG_MESSAGE,
   humanizeToolName,
   isCatalogItemConnected,
-  mcpServerLocation,
 } from "@rakazo/core";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -31,7 +30,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ConnectorIcon } from "../../components/connector-icon";
-import { McpServerAdd } from "../../components/mcp-server-add";
 import { NativeActionButton } from "../../components/native-action-button";
 import { Chevron } from "../../components/row-accessories";
 import { rpc } from "../../lib/api";
@@ -46,43 +44,13 @@ import {
   writeIntegrationsCache,
 } from "../../lib/integrations-cache";
 import { loadLastBotId } from "../../lib/last-bot";
+import { mcpServerSummary } from "../../lib/mcp-labels";
 import { native, useThemedStyles } from "../../lib/native";
 import { closeSettingsSheet } from "../../lib/settings-sheet";
 import { errorText } from "../../lib/user-error";
 
-type SourceKind = "treg" | "executor" | "mcp" | "api" | "graphql";
+type SourceKind = "treg" | "executor" | "api" | "graphql";
 
-/** Where a registered server runs and, when known, whether it works. */
-function mcpServerSummary(
-  server: McpServer,
-  t: (message: string, values?: Record<string, number>) => string,
-) {
-  const location = mcpServerLocation(server);
-  const where =
-    location.kind === "server"
-      ? t("Rakazo server")
-      : location.kind === "mac"
-        ? t("Your Mac")
-        : location.host;
-  // Servers from releases before health reporting omit it.
-  const health = (server as Partial<McpServer>).health;
-  const status = !server.enabled
-    ? t("Disabled")
-    : server.oauthStatus === "reconnect"
-      ? t("OAuth expired")
-      : health?.status === "error"
-        ? t("Not working")
-        : health?.status === "installing"
-          ? t("Installing…")
-          : health?.status === "ok"
-            ? health.toolCount === null
-              ? t("Running")
-              : t(health.toolCount === 1 ? "{count} tool" : "{count} tools", {
-                  count: health.toolCount,
-                })
-            : null;
-  return status ? `${where} · ${status}` : where;
-}
 type ConnectionTool = { name: string; description: string };
 
 const LOGO_SIZE = 32;
@@ -940,7 +908,11 @@ export function IntegrationsScreen({ connectedOnly = false }: { connectedOnly?: 
                                 ? t("Add GraphQL")
                                 : t("Add OpenAPI")
                       }
-                      onPress={() => beginSource(kind)}
+                      onPress={() =>
+                        kind === "mcp"
+                          ? router.push("/(settings)/mcp-server-add")
+                          : beginSource(kind)
+                      }
                       prominence="secondary"
                     />
                   ))}
@@ -948,15 +920,7 @@ export function IntegrationsScreen({ connectedOnly = false }: { connectedOnly?: 
 
                 {sourceError ? <Text style={styles.error}>{sourceError}</Text> : null}
 
-                {sourceKind === "mcp" ? (
-                  <McpServerAdd
-                    servers={mcpServers}
-                    onAdded={() => void retryRefresh()}
-                    onCancel={() => setSourceKind(null)}
-                  />
-                ) : null}
-
-                {sourceKind && sourceKind !== "mcp" ? (
+                {sourceKind ? (
                   <View style={styles.card}>
                     <Text style={styles.title}>
                       {sourceKind === "treg"

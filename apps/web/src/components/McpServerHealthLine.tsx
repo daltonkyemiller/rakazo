@@ -31,7 +31,7 @@ export function McpServerHealthLine({
         role="status"
         data-testid="mcp-health"
         data-status="checking"
-        className="mt-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+        className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
       >
         <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
         <span>
@@ -47,7 +47,7 @@ export function McpServerHealthLine({
         role="status"
         data-testid="mcp-health"
         data-status="installing"
-        className="mt-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+        className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
       >
         <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" />
         <span>
@@ -63,7 +63,7 @@ export function McpServerHealthLine({
         role="status"
         data-testid="mcp-health"
         data-status="ok"
-        className="mt-2 flex items-center gap-1.5 text-xs font-medium text-success"
+        className="flex items-center gap-1.5 text-xs font-medium text-success"
       >
         <CircleCheck aria-hidden="true" className="size-3.5 shrink-0" />
         <span>
@@ -80,7 +80,7 @@ export function McpServerHealthLine({
 
   if (health.status === "error") {
     return (
-      <div data-testid="mcp-health" data-status="error" className="mt-2">
+      <div data-testid="mcp-health" data-status="error">
         <p role="status" className="flex items-center gap-1.5 text-xs font-medium text-destructive">
           <TriangleAlert aria-hidden="true" className="size-3.5 shrink-0" />
           <span>
@@ -112,7 +112,7 @@ export function McpServerHealthLine({
       role="status"
       data-testid="mcp-health"
       data-status="unknown"
-      className="mt-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+      className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
     >
       <CircleDashed aria-hidden="true" className="size-3.5 shrink-0" />
       <span>

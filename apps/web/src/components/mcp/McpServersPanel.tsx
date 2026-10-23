@@ -1,18 +1,18 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Bot, BotMcpServer, IntegrationCatalogSurface, McpServer } from "@rakazo/contracts";
-import { isRetryableError, mcpServerLocation } from "@rakazo/core";
+import { isRetryableError } from "@rakazo/core";
 import { Button, DialogHeader, DialogTitle, Spinner, toast } from "@rakazo/ui-web";
-import { ArrowLeft, ChevronRight, Plus } from "lucide-react";
+import { ArrowLeft, Blocks, Plus } from "lucide-react";
 import type { ReactNode, Ref } from "react";
 import { useEffect, useState } from "react";
 import { connectMcpOauth, MCP_OAUTH_CHANNEL } from "../../lib/mcp-connect";
 import type { HostMcpState } from "../../lib/mcp-host";
 import { rpc } from "../../lib/rpc";
 import { errorText } from "../../lib/user-error";
-import { ConnectorIcon } from "../integrations/ConnectorIcon";
 import { McpServerAdd } from "./McpServerAdd";
 import { McpServerDetail } from "./McpServerDetail";
-import { mcpHealth, mcpLocationLabel, mcpStatusLabel, mcpStatusTone } from "./mcp-labels";
+import { McpServerRow } from "./McpServerRow";
+import { mcpHealth } from "./mcp-labels";
 
 /** How often the list is re-read while a server installs its package or is being tested. */
 const INSTALL_POLL_MS = 2500;
@@ -255,6 +255,113 @@ export function McpServersPanel({
   const detailServer =
     route.view === "detail" ? servers.find((server) => server.id === route.serverId) : undefined;
 
+  const title = (text: ReactNode) => (
+    <DialogTitle className="text-lg font-medium text-foreground">{text}</DialogTitle>
+  );
+  const errorNotice = error ? (
+    <p role="alert" className="text-sm text-destructive">
+      {error}
+    </p>
+  ) : null;
+
+  let body: ReactNode;
+  if (!loaded) {
+    body = (
+      <div className="grid place-items-center py-10" aria-busy="true">
+        <Spinner className="size-5 text-muted-foreground" aria-label={t`Loading…`} />
+      </div>
+    );
+  } else if (route.view === "detail") {
+    body = detailServer ? (
+      <McpServerDetail
+        server={detailServer}
+        local={localFor(detailServer)}
+        bots={bots}
+        assignedBotIds={assignedIds(detailServer.id)}
+        testing={testingIds.has(detailServer.id)}
+        oauthPending={oauthPending === detailServer.id}
+        confirmingRemove={confirmingRemove === detailServer.id}
+        removing={removing === detailServer.id}
+        onToggleAgent={(botId) => void toggleAgent(detailServer, botId)}
+        onTest={() => void testServer(detailServer)}
+        onConnectOAuth={() => void connectOAuth(detailServer)}
+        onDisconnectOAuth={() => void disconnectOAuth(detailServer)}
+        onRemove={() => void removeServer(detailServer)}
+        onOpenPermissions={
+          localFor(detailServer) && host.bridge?.openPermissions
+            ? () => {
+                void host.bridge
+                  ?.openPermissions?.()
+                  .catch((err) => setError(errorText(err, t`Could not open Mac permissions`)));
+              }
+            : undefined
+        }
+        onAllowLocal={() => {
+          const local = localFor(detailServer);
+          if (!local || !host.bridge) return;
+          void host.bridge
+            .setEnabled(local.id, true)
+            .then(host.refresh)
+            .catch((err) => setError(errorText(err, t`Could not change Mac access`)));
+        }}
+      />
+    ) : (
+      <p className="text-sm text-muted-foreground">
+        <Trans>This server is no longer available.</Trans>
+      </p>
+    );
+  } else if (servers.length === 0) {
+    body = (
+      <>
+        {title(<Trans>MCP servers</Trans>)}
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border px-6 py-12 text-center">
+          <div className="grid size-10 place-items-center rounded-xl border border-border bg-background text-muted-foreground">
+            <Blocks aria-hidden="true" className="size-[18px]" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              <Trans>No MCP servers yet</Trans>
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              <Trans>Paste a URL, command, or config to connect one.</Trans>
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            className="mt-1"
+            data-mcp-key="add"
+            onClick={(event) => onNavigate({ view: "add" }, event.currentTarget)}
+          >
+            <Plus />
+            <Trans>Add server</Trans>
+          </Button>
+        </div>
+      </>
+    );
+  } else {
+    body = (
+      <>
+        {title(<Trans>MCP servers</Trans>)}
+        <ul className="-mx-2.5">
+          {servers.map((server) => (
+            <li key={server.id}>
+              <McpServerRow
+                server={server}
+                local={localFor(server)}
+                testId="mcp-server-row"
+                rowKey={server.id}
+                onOpen={(event) =>
+                  onNavigate({ view: "detail", serverId: server.id }, event.currentTarget)
+                }
+              />
+            </li>
+          ))}
+        </ul>
+      </>
+    );
+  }
+
   return (
     <div data-testid="mcp-servers" className="flex min-h-0 flex-1 flex-col">
       <DialogHeader className="flex-row items-center justify-between gap-2 px-7 pt-6">
@@ -271,12 +378,12 @@ export function McpServersPanel({
           {backLabel}
         </Button>
         <div className="flex items-center gap-1">
-          {route.view === "list" ? (
+          {route.view === "list" && loaded && servers.length > 0 ? (
             <Button
               type="button"
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="rounded-full text-muted-foreground"
+              className="rounded-full"
               data-mcp-key="add"
               onClick={(event) => onNavigate({ view: "add" }, event.currentTarget)}
             >
@@ -287,129 +394,25 @@ export function McpServersPanel({
           {closeButton}
         </div>
       </DialogHeader>
-      <div className="rk-scroll flex-1 space-y-5 overflow-y-auto px-7 pt-4 pb-6">
-        {route.view === "list" ? (
-          <DialogTitle className="text-lg font-medium text-foreground">
-            <Trans>MCP servers</Trans>
-          </DialogTitle>
-        ) : route.view === "add" ? (
-          <DialogTitle className="text-lg font-medium text-foreground">
-            <Trans>Add MCP server</Trans>
-          </DialogTitle>
-        ) : null}
-
-        {error ? (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        ) : null}
-
-        {!loaded ? (
-          <div className="grid place-items-center py-10" aria-busy="true">
-            <Spinner className="size-5 text-muted-foreground" aria-label={t`Loading…`} />
+      {loaded && route.view === "add" ? (
+        <McpServerAdd
+          title={title(<Trans>Add MCP server</Trans>)}
+          initialSource={route.source}
+          initialName={route.name}
+          initialAuth={route.auth}
+          servers={servers}
+          bots={bots}
+          host={host}
+          onAdded={(server, botIds, more) => void added(server, botIds, more)}
+        />
+      ) : (
+        <div className="rk-scroll flex-1 overflow-y-auto px-7 pt-4 pb-8">
+          <div className="mx-auto w-full max-w-[34rem] space-y-5">
+            {errorNotice}
+            {body}
           </div>
-        ) : route.view === "add" ? (
-          <McpServerAdd
-            initialSource={route.source}
-            initialName={route.name}
-            initialAuth={route.auth}
-            servers={servers}
-            bots={bots}
-            host={host}
-            onAdded={(server, botIds, more) => void added(server, botIds, more)}
-          />
-        ) : route.view === "detail" ? (
-          detailServer ? (
-            <McpServerDetail
-              server={detailServer}
-              local={localFor(detailServer)}
-              bots={bots}
-              assignedBotIds={assignedIds(detailServer.id)}
-              testing={testingIds.has(detailServer.id)}
-              oauthPending={oauthPending === detailServer.id}
-              confirmingRemove={confirmingRemove === detailServer.id}
-              removing={removing === detailServer.id}
-              onToggleAgent={(botId) => void toggleAgent(detailServer, botId)}
-              onTest={() => void testServer(detailServer)}
-              onConnectOAuth={() => void connectOAuth(detailServer)}
-              onDisconnectOAuth={() => void disconnectOAuth(detailServer)}
-              onRemove={() => void removeServer(detailServer)}
-              onOpenPermissions={
-                localFor(detailServer) && host.bridge?.openPermissions
-                  ? () => {
-                      void host.bridge
-                        ?.openPermissions?.()
-                        .catch((err) =>
-                          setError(errorText(err, t`Could not open Mac permissions`)),
-                        );
-                    }
-                  : undefined
-              }
-              onAllowLocal={() => {
-                const local = localFor(detailServer);
-                if (!local || !host.bridge) return;
-                void host.bridge
-                  .setEnabled(local.id, true)
-                  .then(host.refresh)
-                  .catch((err) => setError(errorText(err, t`Could not change Mac access`)));
-              }}
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              <Trans>This server is no longer available.</Trans>
-            </p>
-          )
-        ) : servers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            <Trans>No MCP servers yet.</Trans>
-          </p>
-        ) : (
-          <ul className="-mx-2">
-            {servers.map((server) => {
-              const local = localFor(server);
-              const status = mcpStatusLabel(server, local);
-              return (
-                <li key={server.id}>
-                  <button
-                    type="button"
-                    data-testid="mcp-server-row"
-                    data-mcp-key={server.id}
-                    data-location={mcpServerLocation(server).kind}
-                    className="flex min-h-14 w-full min-w-0 items-center gap-3 rounded-lg px-2 py-2 text-start outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
-                    onClick={(event) =>
-                      onNavigate({ view: "detail", serverId: server.id }, event.currentTarget)
-                    }
-                  >
-                    <ConnectorIcon name={server.name} />
-                    <span className="min-w-0 flex-1">
-                      <span
-                        className="block truncate text-sm font-medium text-foreground"
-                        dir="auto"
-                      >
-                        {server.name}
-                      </span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {mcpLocationLabel(server, local, "short")}
-                        {status ? (
-                          <>
-                            {" · "}
-                            <span className={mcpStatusTone(server, local)}>{status}</span>
-                          </>
-                        ) : null}
-                      </span>
-                    </span>
-                    <ChevronRight
-                      size={17}
-                      className="shrink-0 text-muted-foreground rtl:rotate-180"
-                      aria-hidden="true"
-                    />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

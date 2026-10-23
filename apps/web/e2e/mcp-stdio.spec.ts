@@ -102,9 +102,12 @@ test("adds a stdio MCP server with encrypted environment variables", async ({ pa
   await page.getByRole("button", { name: "Add MCP server", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Add MCP server" })).toBeVisible();
 
-  // A pasted command line fills the form; without the desktop app it can only run on the server.
+  await captureScreenshot(page, testInfo, "mcp-add-source");
+  // A command line fills the review; without the desktop app it can only run on the server.
   await page.getByLabel("URL, command, or config").fill("npx -y invoices-mcp@1.0.0");
+  await page.keyboard.press("Enter");
   await expect(page.getByLabel("Server name")).toHaveValue("Invoices");
+  await expect(page.getByLabel("Server name")).toBeFocused();
   await expect(page.getByText("Runs on Rakazo server", { exact: true })).toBeVisible();
   await expect(page.getByRole("radio")).toHaveCount(0);
   await captureScreenshot(page, testInfo, "mcp-add-command");
@@ -169,17 +172,14 @@ test("adds a stdio MCP server with encrypted environment variables", async ({ pa
     "aria-pressed",
     "false",
   );
-  await page
-    .getByTestId("mcp-server-draft")
-    .getByRole("button", { name: "Advanced", exact: true })
-    .click();
   await expect(page.getByLabel("Redirect URI")).toHaveCount(0);
-  await page.getByLabel("OAuth client ID (optional)").fill("google-client");
-  await page.getByLabel("OAuth client secret (optional)").fill("google-secret");
+  await page.getByRole("button", { name: "OAuth client", exact: true }).click();
+  await page.getByLabel("Client ID", { exact: true }).fill("google-client");
+  await page.getByLabel("Client secret", { exact: true }).fill("google-secret");
   await page.getByLabel("Authorization server").fill("https://accounts.google.com");
-  await page.getByLabel("Scopes (optional)").fill("openid email");
+  await page.getByLabel("Scopes", { exact: true }).fill("openid email");
   await page
-    .getByLabel("Authorization parameters (optional)")
+    .getByLabel("Authorization parameters", { exact: true })
     .fill("access_type=offline&prompt=consent");
   await expect(page.getByLabel("Redirect URI")).toHaveValue(/\/mcp\/oauth\/callback$/);
   await expect(page.getByText("Use {{oauth.access_token}} for the access token.")).toBeVisible();
@@ -326,4 +326,115 @@ test("polls the server list while a stdio package is installing", async ({ page 
   const settled = listCalls;
   await page.waitForTimeout(3500);
   expect(listCalls).toBe(settled);
+});
+
+test("shows the MCP list, setup review, and server page in light and dark", async ({
+  page,
+}, testInfo) => {
+  const stamp = Date.now();
+  await signup(page, `mcp-screens-${stamp}@rakazo.test`, "password12", "MCP screens");
+  await completeOnboarding(page);
+
+  const checkedAt = new Date().toISOString();
+  const servers: McpServer[] = [
+    stdioServer({
+      id: "mcp-screens-docs",
+      slug: "docs",
+      name: "Docs",
+      transport: "streamable_http",
+      endpoint: "https://mcp.docs.example.test/mcp",
+      command: null,
+      args: [],
+      hasSecret: false,
+      oauthClientId: null,
+      health: { status: "ok", message: null, toolCount: 12, checkedAt },
+    }),
+    stdioServer({
+      id: "mcp-screens-files",
+      slug: "files",
+      name: "Files",
+      oauthStatus: "none",
+      oauthClientId: null,
+      envKeys: ["FILES_API_KEY"],
+      health: {
+        status: "error",
+        message: "MCP error -32000: Connection closed",
+        toolCount: null,
+        checkedAt,
+      },
+    }),
+  ];
+  await page.context().route("**/rpc/mcp/servers/list", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ json: servers }),
+    });
+  });
+
+  async function captureBoth(name: string) {
+    await captureScreenshot(page, testInfo, name);
+    await page.emulateMedia({ colorScheme: "dark" });
+    // Surfaces ease between themes; let the colours settle before capturing.
+    await page.waitForTimeout(400);
+    await captureScreenshot(page, testInfo, `${name}-dark`);
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.waitForTimeout(400);
+  }
+
+  await page.getByRole("button", { name: "Connect apps", exact: true }).click();
+  await page.getByRole("button", { name: "Manage MCP servers", exact: true }).click();
+  await expect(page.getByTestId("mcp-server-row")).toHaveCount(2);
+  await expect(page.getByTestId("mcp-server-row").filter({ hasText: "Docs" })).toContainText(
+    "12 tools",
+  );
+  await captureBoth("mcp-screens-list");
+
+  await page.getByRole("button", { name: "Add server", exact: true }).click();
+  const source = page.getByLabel("URL, command, or config");
+  await expect(source).toBeFocused();
+  await source.fill(
+    JSON.stringify(
+      {
+        mcpServers: {
+          search: { url: "https://mcp.search.example.test/mcp" },
+          notes: { command: "npx", args: ["-y", "notes-mcp"], env: { NOTES_TOKEN: "<token>" } },
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  await captureBoth("mcp-screens-source");
+  // A multi-line config keeps Enter for new lines; Continue reads it.
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByRole("radio")).toHaveCount(2);
+  await page.getByText("notes", { exact: true }).click();
+  await expect(page.getByLabel("Server name")).toHaveValue("notes");
+  await expect(page.getByLabel("Value", { exact: true })).toHaveAttribute(
+    "placeholder",
+    "Required",
+  );
+  await captureBoth("mcp-screens-review-command");
+  await page.getByText("search", { exact: true }).click();
+  await expect(page.getByLabel("Server name")).toHaveValue("search");
+  await page.getByRole("button", { name: "Access token", exact: true }).click();
+  await expect(page.getByLabel("Access token", { exact: true })).toBeVisible();
+  await captureBoth("mcp-screens-review-remote");
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("heading", { name: "MCP servers", exact: true })).toBeVisible();
+  await page.getByTestId("mcp-server-row").filter({ hasText: "Docs" }).click();
+  const detail = page.getByTestId("mcp-server-detail");
+  await expect(detail.getByRole("heading", { name: "Docs" })).toBeVisible();
+  await expect(detail.getByText("Runs on mcp.docs.example.test", { exact: true })).toBeVisible();
+  await expect(detail.getByTestId("mcp-health")).toHaveAttribute("data-status", "ok");
+  await expect(detail.getByText("OAuth connected", { exact: true })).toBeVisible();
+  await expect(detail.getByTestId("mcp-server-agents").getByRole("switch")).not.toHaveCount(0);
+  await captureBoth("mcp-screens-detail");
+
+  await page.getByRole("button", { name: "Back to MCP servers", exact: true }).click();
+  await page.getByTestId("mcp-server-row").filter({ hasText: "Files" }).click();
+  await expect(detail.getByTestId("mcp-health")).toHaveAttribute("data-status", "error");
+  await expect(detail.getByText("FILES_API_KEY", { exact: true })).toBeVisible();
+  await captureBoth("mcp-screens-detail-error");
 });

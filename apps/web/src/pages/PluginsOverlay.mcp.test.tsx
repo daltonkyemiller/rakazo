@@ -76,6 +76,13 @@ let assignments: BotMcpServer[];
 
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  // Bot avatars read the reduced-motion preference, which jsdom lacks.
+  window.matchMedia ??= () =>
+    ({
+      matches: true,
+      addEventListener() {},
+      removeEventListener() {},
+    }) as unknown as MediaQueryList;
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
@@ -181,6 +188,12 @@ async function press(key: string, init: KeyboardEventInit = {}) {
   });
 }
 
+/** Types a source and continues to its review, as Enter in the source field does. */
+async function enterSource(value: string) {
+  await type(field("URL, command, or config"), value);
+  await click(button("Continue"));
+}
+
 async function openAdd(onClose = vi.fn()) {
   await act(async () => root.render(<PluginsOverlay onClose={onClose} />));
   await click(button("Add MCP server"));
@@ -224,8 +237,9 @@ it("adds a pasted URL as a remote server, grants agents, and navigates back in o
   expect(dialogs()).toHaveLength(1);
   expect(document.activeElement).toBe(field("URL, command, or config"));
 
-  await type(field("URL, command, or config"), "https://mcp.linear.app/sse");
+  await enterSource("https://mcp.linear.app/sse");
   expect(field("Server name").value).toBe("Linear");
+  expect(document.activeElement).toBe(field("Server name"));
   expect(document.body.textContent).not.toContain("Runs on Rakazo server");
   await click(control("switch", "Scout"));
   await click(button("Add server"));
@@ -265,8 +279,7 @@ it("adds a pasted URL as a remote server, grants agents, and navigates back in o
 
 it("keeps quoted command arguments, clears placeholder secrets, and runs on the server without a Mac bridge", async () => {
   await openAdd();
-  await type(
-    field("URL, command, or config"),
+  await enterSource(
     JSON.stringify({
       mcpServers: {
         files: {
@@ -306,7 +319,7 @@ it("keeps quoted command arguments, clears placeholder secrets, and runs on the 
 it("shows backend errors inline when the server cannot run commands", async () => {
   rpc.mcp.servers.create.mockRejectedValueOnce(new Error("Local MCP commands are disabled"));
   await openAdd();
-  await type(field("URL, command, or config"), "uvx mcp-server-fetch");
+  await enterSource("uvx mcp-server-fetch");
   await click(button("Add server"));
   expect(alertText()).toContain("Local MCP commands are disabled");
   expect(document.querySelector('[data-testid="mcp-server-draft"]')).not.toBeNull();
@@ -326,14 +339,21 @@ it("refuses shell evaluation instead of splitting on whitespace", async () => {
 it("asks where a command runs on a Mac and registers it with a scoped token", async () => {
   const mcp = hostBridge();
   await openAdd();
-  await type(field("URL, command, or config"), `npx -y notes-mcp --vault "/Users/me/My Notes"`);
+  await enterSource(`npx -y notes-mcp --vault "/Users/me/My Notes"`);
+  expect(document.body.textContent).not.toContain("Runs on Rakazo server");
   await click(button("Add server"));
   expect(alertText()).toContain("Choose where it runs.");
   expect(mcp.add).not.toHaveBeenCalled();
 
   await click(control("radio", "This Mac"));
-  // Cmd+Enter in the source field submits without reaching for the button.
-  field("URL, command, or config").focus();
+  // Values typed for a Mac command are labelled as staying there.
+  await click(button("Add variable"));
+  expect(document.querySelector<HTMLInputElement>('input[aria-label="Value"]')?.placeholder).toBe(
+    "Stays on this Mac",
+  );
+  await click(button("Remove"));
+  // Cmd+Enter anywhere in the form submits without reaching for the button.
+  field("Server name").focus();
   await press("Enter", { metaKey: true });
 
   expect(mcp.add).toHaveBeenCalledWith({
@@ -359,7 +379,7 @@ it("removes the Mac registration when the backend rejects it, and stops when con
   const mcp = hostBridge();
   rpc.mcp.servers.create.mockRejectedValueOnce(new Error("Endpoint not allowed"));
   await openAdd();
-  await type(field("URL, command, or config"), "node /opt/weather/build/index.js");
+  await enterSource("node /opt/weather/build/index.js");
   await click(control("radio", "This Mac"));
   await click(button("Add server"));
   expect(mcp.remove).toHaveBeenCalledWith("local-1");
@@ -376,7 +396,7 @@ it("reports a Mac registration that could not be cleaned up", async () => {
   hostBridge({ removeFails: true });
   rpc.mcp.servers.create.mockRejectedValueOnce(new Error("Endpoint not allowed"));
   await openAdd();
-  await type(field("URL, command, or config"), "node /opt/weather/build/index.js");
+  await enterSource("node /opt/weather/build/index.js");
   await click(control("radio", "This Mac"));
   await click(button("Add server"));
   expect(alertText()).toContain(
@@ -386,8 +406,7 @@ it("reports a Mac registration that could not be cleaned up", async () => {
 
 it("lets a multi-server config pick one server at a time", async () => {
   await openAdd();
-  await type(
-    field("URL, command, or config"),
+  await enterSource(
     JSON.stringify({
       mcpServers: {
         linear: { url: "https://mcp.linear.app/mcp" },
@@ -508,7 +527,68 @@ it("opens macOS permissions only on request from a local server's details", asyn
   await click(document.querySelector('[data-testid="mcp-server-row"]') as Element);
   expect(mcp.openPermissions).not.toHaveBeenCalled();
   expect(mcp.test).not.toHaveBeenCalled();
-  await click(button("Details"));
-  await click(button("Mac permissions"));
+  expect(document.body.textContent).toContain("Mac permissions");
+  await click(button("Open settings"));
   expect(mcp.openPermissions).toHaveBeenCalledOnce();
+});
+
+it("goes straight to review on paste, and Edit source keeps the text", async () => {
+  await openAdd();
+  const source = field("URL, command, or config");
+  await act(async () => {
+    source.dispatchEvent(new Event("paste", { bubbles: true }));
+  });
+  await type(source, "https://mcp.linear.app/mcp");
+  expect(field("Server name").value).toBe("Linear");
+
+  await click(button("Edit source"));
+  expect(field("URL, command, or config").value).toBe("https://mcp.linear.app/mcp");
+  expect(document.activeElement).toBe(field("URL, command, or config"));
+  // A single-line source continues on Enter.
+  await press("Enter");
+  expect(field("Server name").value).toBe("Linear");
+});
+
+it("sends only the credential for the chosen authentication", async () => {
+  await openAdd();
+  await enterSource("https://mcp.example.test/mcp");
+  expect(document.querySelector('input[type="password"]')).toBeNull();
+
+  await click(button("Access token"));
+  await click(button("Add server"));
+  expect(alertText()).toContain("Add an access token.");
+  expect(document.activeElement).toBe(field("Access token"));
+  await type(field("Access token"), "fake-token");
+
+  await click(button("OAuth client"));
+  expect(field("Redirect URI").value).toBe("https://app.example.test/mcp/oauth/callback");
+  await click(button("Add server"));
+  expect(alertText()).toContain("Add a client ID.");
+  await type(field("Client ID"), "client-1.example.test");
+  await click(button("Add server"));
+
+  const [input] = rpc.mcp.servers.create.mock.calls[0] as [Record<string, unknown>];
+  expect(input.secret).toBeUndefined();
+  expect(input.oauthClient).toEqual({
+    clientId: "client-1.example.test",
+    clientSecret: undefined,
+    scope: undefined,
+    authorizationParams: undefined,
+  });
+});
+
+it("keeps an initial token available under OAuth advanced options without reusing another auth mode's token", async () => {
+  await openAdd();
+  await enterSource("https://mcp.example.test/mcp");
+  await click(button("OAuth client"));
+  await type(field("Client ID"), "client.example.test");
+  await click(button("More options"));
+  await type(field("Initial access token"), "fake-bootstrap-token");
+  await click(button("Add server"));
+  expect(rpc.mcp.servers.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      secret: "fake-bootstrap-token",
+      oauthClient: expect.objectContaining({ clientId: "client.example.test" }),
+    }),
+  );
 });

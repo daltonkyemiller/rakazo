@@ -38,9 +38,9 @@ import { ArrowLeft, ChevronRight, Plus, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ConnectorIcon } from "../components/integrations/ConnectorIcon";
 import { IntegrationSetup } from "../components/integrations/IntegrationSetup";
+import { McpServerRow } from "../components/mcp/McpServerRow";
 import type { McpRoute } from "../components/mcp/McpServersPanel";
 import { McpServersPanel } from "../components/mcp/McpServersPanel";
-import { mcpLocationLabel, mcpStatusLabel, mcpStatusTone } from "../components/mcp/mcp-labels";
 import { connectedAppMarks } from "../lib/connected-apps";
 import { useHostMcp } from "../lib/mcp-host";
 import { optionalCatalogFeedProbe } from "../lib/optional-catalog-feed";
@@ -280,8 +280,17 @@ export function PluginsOverlay({
         : left?.openerKey
           ? document.querySelector<HTMLElement>(`[data-mcp-key="${CSS.escape(left.openerKey)}"]`)
           : null;
-      if (opener) opener.focus();
-      else if (mcpPage.route.view !== "add") mcpBackRef.current?.focus();
+      if (opener) {
+        opener.focus();
+        return;
+      }
+      // The add page focuses its own field once it has loaded. Until then Back holds focus, so
+      // it never stays on a control this change just hid: the dialog would reclaim it a frame
+      // later, possibly after the field had already taken it.
+      const panel = mcpBackRef.current?.closest('[data-testid="mcp-servers"]');
+      if (mcpPage.route.view !== "add" || !panel?.contains(document.activeElement)) {
+        mcpBackRef.current?.focus();
+      }
       return;
     }
     const back = listReturn.current;
@@ -854,47 +863,26 @@ export function PluginsOverlay({
                   </Button>
                 </div>
               ) : null}
-              {mcpServers
-                .filter((server) =>
-                  `${server.name} ${server.description}`
-                    .toLowerCase()
-                    .includes(query.trim().toLowerCase()),
-                )
-                .map((server) => {
-                  const local = hostMcp.servers.find((entry) => entry.serverId === server.id);
-                  const status = mcpStatusLabel(server, local);
-                  return (
-                    <button
+              <div className="-mx-2.5 grid gap-x-6 sm:grid-cols-2">
+                {mcpServers
+                  .filter((server) =>
+                    `${server.name} ${server.description}`
+                      .toLowerCase()
+                      .includes(query.trim().toLowerCase()),
+                  )
+                  .map((server) => (
+                    <McpServerRow
                       key={server.id}
-                      type="button"
-                      data-testid="registered-mcp-server"
-                      data-mcp-key={`catalog:${server.id}`}
-                      className="flex min-h-12 w-full min-w-0 items-center gap-3 rounded-xl px-2.5 py-2 text-start outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
-                      onClick={(event) =>
+                      server={server}
+                      local={hostMcp.servers.find((entry) => entry.serverId === server.id)}
+                      testId="registered-mcp-server"
+                      rowKey={`catalog:${server.id}`}
+                      onOpen={(event) =>
                         openMcp({ view: "detail", serverId: server.id }, event.currentTarget)
                       }
-                    >
-                      <ConnectorIcon name={server.name} />
-                      <span className="min-w-0 flex-1 truncate text-[15px] font-medium" dir="auto">
-                        {server.name}
-                      </span>
-                      <span className="max-w-[50%] shrink-0 truncate text-[12.5px] text-muted-foreground">
-                        {mcpLocationLabel(server, local, "short")}
-                        {status ? (
-                          <>
-                            {" · "}
-                            <span className={mcpStatusTone(server, local)}>{status}</span>
-                          </>
-                        ) : null}
-                      </span>
-                      <ChevronRight
-                        size={17}
-                        className="shrink-0 text-muted-foreground rtl:rotate-180"
-                        aria-hidden="true"
-                      />
-                    </button>
-                  );
-                })}
+                    />
+                  ))}
+              </div>
             </section>
           ) : null}
 

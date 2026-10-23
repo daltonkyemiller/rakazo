@@ -75,6 +75,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="voice" options={glassHeaderOptions(t("Voice"))} />
       <Stack.Screen name="integrations" options={{ headerShown: false }} />
       <Stack.Screen name="mcp-server" options={glassHeaderOptions(t("MCP servers"))} />
+      <Stack.Screen name="mcp-server-add" options={glassHeaderOptions(t("Add MCP server"))} />
       <Stack.Screen name="connected-integrations" options={{ headerShown: false }} />
       <Stack.Screen
         name="integration-setup"

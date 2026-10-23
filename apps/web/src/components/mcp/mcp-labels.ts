@@ -43,10 +43,17 @@ export function mcpStatusLabel(server: McpServer, local?: DesktopHostMcpServer):
   return null;
 }
 
+/** Text and dot colours for a row's status; health stays neutral until something is wrong. */
 export function mcpStatusTone(server: McpServer, local?: DesktopHostMcpServer) {
-  if (server.oauthStatus === "reconnect") return "text-warning";
-  if (local?.status === "error" || mcpHealth(server)?.status === "error") {
-    return "text-destructive";
+  if (!server.enabled || local?.enabled === false) {
+    return { text: "text-muted-foreground", dot: "bg-muted-foreground/50" };
   }
-  return "text-muted-foreground";
+  if (server.oauthStatus === "reconnect") return { text: "text-warning", dot: "bg-warning" };
+  if (local?.status === "error" || mcpHealth(server)?.status === "error") {
+    return { text: "text-destructive", dot: "bg-destructive" };
+  }
+  if (mcpHealth(server)?.status === "ok") {
+    return { text: "text-muted-foreground", dot: "bg-success" };
+  }
+  return { text: "text-muted-foreground", dot: "bg-muted-foreground/50" };
 }

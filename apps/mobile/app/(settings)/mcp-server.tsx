@@ -2,12 +2,12 @@ import type { Bot, BotMcpServer, McpServer } from "@rakazo/contracts";
 import { mcpServerLocation } from "@rakazo/core";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text } from "react-native";
 import { glassHeaderOptions } from "../../components/glass-title";
-import { NativeActionButton } from "../../components/native-action-button";
-import { SettingsSwitch } from "../../components/settings-group";
+import { SettingsGroup, SettingsRow, SettingsSwitch } from "../../components/settings-group";
 import { rpc } from "../../lib/api";
 import { useI18n } from "../../lib/i18n";
+import { mcpStatusText } from "../../lib/mcp-labels";
 import { useMobileTokens } from "../../lib/native";
 import { errorText } from "../../lib/user-error";
 
@@ -20,6 +20,7 @@ export default function McpServerScreen() {
   const [bots, setBots] = useState<Bot[]>([]);
   const [assigned, setAssigned] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => {
     const [servers, nextBots, assignments] = await Promise.all([
@@ -59,18 +60,18 @@ export default function McpServerScreen() {
     }
   }
   async function test() {
-    setPending(true);
+    setTesting(true);
     setError(null);
     try {
       setServer(await rpc<McpServer>("mcp/servers/test", { id }));
     } catch (err) {
       setError(errorText(err, t("Could not test MCP server")));
     } finally {
-      setPending(false);
+      setTesting(false);
     }
   }
   function remove() {
-    Alert.alert(t("Remove"), server?.name, [
+    Alert.alert(t("Remove {name}?", { name: server?.name ?? "" }), undefined, [
       { text: t("Cancel"), style: "cancel" },
       {
         text: t("Remove"),
@@ -87,62 +88,127 @@ export default function McpServerScreen() {
       },
     ]);
   }
+
   const location = server && mcpServerLocation(server);
-  const locationText =
-    location?.kind === "mac"
-      ? t("Runs on your Mac")
-      : location?.kind === "server"
-        ? t("Runs on Rakazo server")
-        : location?.kind === "remote"
-          ? location.host
-          : "";
+  // Servers from releases before health and OAuth reporting omit those fields.
+  const health = server ? (server as Partial<McpServer>).health : undefined;
+  const oauthStatus = server ? (server as Partial<McpServer>).oauthStatus : undefined;
+  const status = server ? mcpStatusText(server, t) : null;
+  const oauthText =
+    oauthStatus === "connected"
+      ? t("OAuth connected")
+      : oauthStatus === "reconnect"
+        ? t("OAuth expired")
+        : server?.hasSecret
+          ? t("Credential saved")
+          : null;
+
   return (
     <>
       <Stack.Screen options={glassHeaderOptions(server?.name ?? t("MCP servers"))} />
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 20 }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 20, gap: 24 }}
+        contentInsetAdjustmentBehavior="automatic"
+      >
         {error ? (
-          <Text accessibilityRole="alert" style={{ color: colors.destructive }}>
+          <Text accessibilityRole="alert" style={{ color: colors.destructive, paddingStart: 16 }}>
             {error}
           </Text>
         ) : null}
-        {server ? (
+        {server && location ? (
           <>
-            <Text style={{ color: colors.mutedForeground }}>{locationText}</Text>
-            {server.description ? (
-              <Text style={{ color: colors.foreground }}>{server.description}</Text>
-            ) : null}
-            {server.health?.message ? (
-              <Text
-                style={{
-                  color:
-                    server.health.status === "error" ? colors.destructive : colors.mutedForeground,
-                }}
-              >
-                {server.health.message}
-              </Text>
-            ) : null}
-            {server.health ? (
-              <NativeActionButton
-                label={t("Test connection")}
-                disabled={pending}
-                onPress={() => void test()}
+            <SettingsGroup
+              footer={
+                oauthStatus === "reconnect"
+                  ? t("Sign in again from Rakazo on the web or your Mac.")
+                  : undefined
+              }
+            >
+              <SettingsRow
+                key="runs-on"
+                title={t("Runs on")}
+                value={
+                  location.kind === "mac"
+                    ? t("Your Mac")
+                    : location.kind === "server"
+                      ? t("Rakazo server")
+                      : location.host
+                }
               />
-            ) : null}
-            <View style={{ gap: 8 }}>
-              <Text accessibilityRole="header" style={{ color: colors.mutedForeground }}>
-                {t("Agents")}
-              </Text>
-              {bots.map((bot) => (
-                <SettingsSwitch
-                  key={bot.id}
-                  label={bot.name}
-                  value={assigned.includes(bot.id)}
-                  disabled={pending}
-                  onChange={(next) => void toggle(bot.id, next)}
+              {health ? (
+                <SettingsRow
+                  key="status"
+                  title={t("Status")}
+                  value={testing ? t("Checking connection…") : (status ?? t("Not checked yet"))}
+                  detail={health.status === "error" ? (health.message ?? undefined) : undefined}
                 />
-              ))}
-            </View>
-            <NativeActionButton label={t("Remove")} disabled={pending} onPress={remove} />
+              ) : null}
+              {oauthText ? (
+                <SettingsRow key="oauth" title={t("Sign-in")} value={oauthText} />
+              ) : null}
+              {health ? (
+                <SettingsRow
+                  key="test"
+                  title={t("Test connection")}
+                  accessibilityRole="button"
+                  disabled={testing || health.status === "installing"}
+                  dimmed={testing || health.status === "installing"}
+                  onPress={() => void test()}
+                />
+              ) : null}
+            </SettingsGroup>
+
+            {bots.length > 0 ? (
+              <SettingsGroup label={t("Agents with access")}>
+                {bots.map((bot) => (
+                  <SettingsSwitch
+                    key={bot.id}
+                    label={bot.name}
+                    value={assigned.includes(bot.id)}
+                    disabled={pending}
+                    onChange={(next) => void toggle(bot.id, next)}
+                  />
+                ))}
+              </SettingsGroup>
+            ) : null}
+
+            <SettingsGroup label={t("Configuration")}>
+              {location.kind === "remote" && server.endpoint ? (
+                <SettingsRow key="url" title={t("URL")} detail={server.endpoint} />
+              ) : null}
+              {server.command ? (
+                <SettingsRow
+                  key="command"
+                  title={t("Command")}
+                  detail={[server.command, ...server.args].join(" ")}
+                />
+              ) : null}
+              {server.envKeys?.length ? (
+                <SettingsRow
+                  key="env"
+                  title={t("Environment variables")}
+                  detail={server.envKeys.join(", ")}
+                />
+              ) : null}
+              {server.headerKeys?.length ? (
+                <SettingsRow
+                  key="headers"
+                  title={t("Headers")}
+                  detail={server.headerKeys.join(", ")}
+                />
+              ) : null}
+            </SettingsGroup>
+
+            <SettingsGroup>
+              <SettingsRow
+                key="remove"
+                title={t("Remove")}
+                destructive
+                accessibilityRole="button"
+                disabled={pending}
+                onPress={remove}
+              />
+            </SettingsGroup>
           </>
         ) : null}
       </ScrollView>

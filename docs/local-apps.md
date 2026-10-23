@@ -231,3 +231,37 @@ backend and Tailscale still need to run. These client commands do not start,
 stop, update or migrate that backend. Changes to API, worker or provider code
 need a source backend using the README's development setup; rebuilding a client
 does not update the Docker images.
+
+## Local MCP permissions on macOS
+
+A command-based MCP runs as a child process of the desktop app. macOS commonly
+attributes its privacy requests to Rakazo, rather than the executable's name.
+OS grants belong to the responsible app and are shared by its approved local MCPs;
+macOS does not maintain a separate permission list for each MCP registration.
+The MCP must call the relevant macOS authorization API when its tool needs access;
+listing its tools or approving its command does not grant those OS permissions.
+
+The signed host declares the hardened-runtime resource entitlements and usage
+strings for Photos, Contacts, calendars/reminders, camera, microphone, location,
+and Apple Events. These declarations allow the normal macOS authorization flow;
+they do not grant access or cause startup prompts. They apply to approved local
+MCPs generally, without recognizing a particular executable or provider.
+
+For a local server, **Details → Mac permissions** opens Privacy & Security.
+Photos, Contacts, Calendar, Reminders, camera, microphone, and location normally
+prompt on first use. Automation asks for access to each target app. Accessibility,
+Screen Recording, and Full Disk Access may require approval in System Settings;
+add the responsible host app when the category allows it, then restart the host
+if macOS requires it. Reading the Messages database generally needs Full Disk
+Access; sending through Apple Events uses Automation instead.
+
+A previously denied permission must be changed in System Settings. Rakazo does
+not reset existing consent, grant permissions silently, disable the hardened
+runtime, or install privileged helpers. An MCP that only checks authorization
+without requesting it must fix its own authorization flow; there is no universal
+MCP instruction that can force every third-party tool to request every OS right.
+
+When diagnosing a missing prompt, inspect the local TCC log for the responsible
+process and missing entitlement. Do not copy that log into public issues or
+commits: it can identify local apps, accounts, processes, and paths. Verify the
+actual packaged app's signature, entitlements, and Info.plist after rebuilding.

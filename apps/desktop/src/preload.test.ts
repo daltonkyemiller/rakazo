@@ -90,6 +90,7 @@ describe("desktop preload bridge", () => {
     await bridge.mcp!.setEnabled("local-id", false);
     await bridge.mcp!.test("local-id");
     await bridge.mcp!.remove("local-id");
+    await bridge.mcp!.openPermissions!();
     expect(invoke.mock.calls).toEqual([
       ["desktop.mcp.state"],
       ["desktop.mcp.add", input],
@@ -97,6 +98,7 @@ describe("desktop preload bridge", () => {
       ["desktop.mcp.setEnabled", "local-id", false],
       ["desktop.mcp.test", "local-id"],
       ["desktop.mcp.remove", "local-id"],
+      ["desktop.mcp.openPermissions"],
     ]);
   });
 

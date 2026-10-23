@@ -334,6 +334,17 @@ export function McpServersPanel({
               onConnectOAuth={() => void connectOAuth(detailServer)}
               onDisconnectOAuth={() => void disconnectOAuth(detailServer)}
               onRemove={() => void removeServer(detailServer)}
+              onOpenPermissions={
+                localFor(detailServer) && host.bridge?.openPermissions
+                  ? () => {
+                      void host.bridge
+                        ?.openPermissions?.()
+                        .catch((err) =>
+                          setError(errorText(err, t`Could not open Mac permissions`)),
+                        );
+                    }
+                  : undefined
+              }
               onAllowLocal={() => {
                 const local = localFor(detailServer);
                 if (!local || !host.bridge) return;

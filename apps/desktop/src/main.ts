@@ -1419,6 +1419,10 @@ app.whenReady().then(async () => {
       await manager.setEnabled(key, false);
     installApplicationMenu();
   });
+  ipcMain.handle("desktop.mcp.openPermissions", async (event) => {
+    requireHostMcp(event);
+    await shell.openExternal("x-apple.systempreferences:com.apple.preference.security?Privacy");
+  });
   ipcMain.handle("desktop.mcp.test", async (event, id: unknown) =>
     requireHostMcp(event).test(hostMcpId(id)),
   );

@@ -29,6 +29,7 @@ export function McpServerDetail({
   onDisconnectOAuth,
   onRemove,
   onAllowLocal,
+  onOpenPermissions,
 }: {
   server: McpServer;
   local?: DesktopHostMcpServer;
@@ -44,6 +45,7 @@ export function McpServerDetail({
   onDisconnectOAuth: () => void;
   onRemove: () => void;
   onAllowLocal: () => void;
+  onOpenPermissions?: () => void;
 }) {
   const { t } = useLingui();
   const health = mcpHealth(server);
@@ -195,7 +197,7 @@ export function McpServerDetail({
         </FieldSet>
       ) : null}
 
-      {details.length > 0 ? (
+      {details.length > 0 || onOpenPermissions ? (
         <Disclosure
           summary={<Trans>Details</Trans>}
           summaryClassName="text-sm text-muted-foreground"
@@ -210,6 +212,18 @@ export function McpServerDetail({
               </div>
             ))}
           </dl>
+          {onOpenPermissions ? (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs text-muted-foreground">
+                <Trans>
+                  Approve access in the macOS prompt. Some permissions require System Settings.
+                </Trans>
+              </p>
+              <Button variant="outline" size="sm" onClick={onOpenPermissions}>
+                <Trans>Mac permissions</Trans>
+              </Button>
+            </div>
+          ) : null}
         </Disclosure>
       ) : null}
     </div>

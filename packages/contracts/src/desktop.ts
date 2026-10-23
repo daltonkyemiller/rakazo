@@ -97,6 +97,7 @@ export interface RakazoDesktop {
     remove: (id: string) => Promise<void>;
     setEnabled: (id: string, enabled: boolean) => Promise<void>;
     test: (id: string) => Promise<{ toolCount: number }>;
+    openPermissions?: () => Promise<void>;
   };
   /** Optional for compatibility with older desktop releases. */
   badge?: {

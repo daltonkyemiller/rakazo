@@ -70,7 +70,17 @@
       "entitlements": "assets/entitlements.mac.plist",
       "entitlementsInherit": "assets/entitlements.mac.plist",
       "extendInfo": {
-        "NSMicrophoneUsageDescription": "Rakazo uses the microphone for dictation and voice calls with your bots."
+        "NSMicrophoneUsageDescription": "Rakazo uses the microphone for dictation, voice calls, and local MCP tools you ask to record audio.",
+        "NSPhotoLibraryUsageDescription": "Local MCP tools use your photo library when you ask bots to find or view photos.",
+        "NSContactsUsageDescription": "Local MCP tools use your contacts when you ask bots to find or manage contacts.",
+        "NSCalendarsFullAccessUsageDescription": "Local MCP tools use your calendars when you ask bots to read or manage events.",
+        "NSCalendarsUsageDescription": "Local MCP tools use your calendars when you ask bots to read or manage events.",
+        "NSRemindersFullAccessUsageDescription": "Local MCP tools use your reminders when you ask bots to read or manage tasks.",
+        "NSRemindersUsageDescription": "Local MCP tools use your reminders when you ask bots to read or manage tasks.",
+        "NSAppleEventsUsageDescription": "Local MCP tools control apps such as Messages when you ask bots to perform actions in them.",
+        "NSCameraUsageDescription": "Local MCP tools use your camera when you ask bots to capture an image or video.",
+        "NSLocationUsageDescription": "Local MCP tools use your location when you ask bots for location-based tasks.",
+        "NSLocationWhenInUseUsageDescription": "Local MCP tools use your location when you ask bots for location-based tasks."
       },
       "target": [
         "dmg",

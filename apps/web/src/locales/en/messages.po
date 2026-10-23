@@ -751,6 +751,10 @@ msgstr "Approval rules"
 msgid "Approve"
 msgstr "Approve"
 
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Approve access in the macOS prompt. Some permissions require System Settings."
+msgstr "Approve access in the macOS prompt. Some permissions require System Settings."
+
 #: src/pages/shell/message-cards.tsx
 msgid "Approve this server to let your agent use its tools."
 msgstr "Approve this server to let your agent use its tools."
@@ -1862,6 +1866,10 @@ msgstr "Could not open billing"
 #: src/pages/LocalSettings.tsx
 msgid "Could not open local settings. Start the local server and create its owner account, then try again."
 msgstr "Could not open local settings. Start the local server and create its owner account, then try again."
+
+#: src/components/mcp/McpServersPanel.tsx
+msgid "Could not open Mac permissions"
+msgstr "Could not open Mac permissions"
 
 #: src/pages/VoiceSettingsOverlay.tsx
 msgid "Could not play a test clip"
@@ -3179,6 +3187,10 @@ msgstr "Mac access"
 #: src/pages/HostComputerPrompt.tsx
 msgid "Mac access for {botName}"
 msgstr "Mac access for {botName}"
+
+#: src/components/mcp/McpServerDetail.tsx
+msgid "Mac permissions"
+msgstr "Mac permissions"
 
 #: src/components/MacAccess.tsx
 #: src/pages/HostComputerPrompt.tsx

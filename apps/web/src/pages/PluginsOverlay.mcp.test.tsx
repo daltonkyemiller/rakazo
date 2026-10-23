@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 
-import type { Bot, BotMcpServer, McpServer, RakazoDesktop } from "@rakazo/contracts";
+import type {
+  Bot,
+  BotMcpServer,
+  DesktopHostMcpServer,
+  McpServer,
+  RakazoDesktop,
+} from "@rakazo/contracts";
 import type { ReactNode } from "react";
 import { act } from "react";
 import type { Root } from "react-dom/client";
@@ -183,7 +189,12 @@ async function openAdd(onClose = vi.fn()) {
 
 function hostBridge({ removeFails = false } = {}) {
   const mcp = {
-    state: vi.fn(async () => ({ available: true, servers: [] })),
+    state: vi.fn(
+      async (): Promise<{ available: boolean; servers: DesktopHostMcpServer[] }> => ({
+        available: true,
+        servers: [],
+      }),
+    ),
     add: vi.fn(async (input: { name: string }) => ({
       server: {
         id: "local-1",
@@ -202,6 +213,7 @@ function hostBridge({ removeFails = false } = {}) {
     }),
     setEnabled: vi.fn(async () => undefined),
     test: vi.fn(async () => ({ toolCount: 1 })),
+    openPermissions: vi.fn(async () => undefined),
   };
   window.rakazoDesktop = { mcp } as unknown as RakazoDesktop;
   return mcp;
@@ -469,4 +481,34 @@ it.each([
   } finally {
     vi.useRealTimers();
   }
+});
+
+it("opens macOS permissions only on request from a local server's details", async () => {
+  const mcp = hostBridge();
+  const endpoint = "http://host.docker.internal:7801/mcp/host/command/local-1";
+  servers = [server({ endpoint })];
+  mcp.state.mockResolvedValue({
+    available: true,
+    servers: [
+      {
+        id: "local-1",
+        serverId: "srv-1",
+        name: "Example",
+        kind: "command",
+        endpoint,
+        command: "example-mcp",
+        envKeys: [],
+        enabled: true,
+        status: "ready",
+      },
+    ],
+  });
+  await act(async () => root.render(<PluginsOverlay onClose={vi.fn()} />));
+  await click(button("Manage MCP servers"));
+  await click(document.querySelector('[data-testid="mcp-server-row"]') as Element);
+  expect(mcp.openPermissions).not.toHaveBeenCalled();
+  expect(mcp.test).not.toHaveBeenCalled();
+  await click(button("Details"));
+  await click(button("Mac permissions"));
+  expect(mcp.openPermissions).toHaveBeenCalledOnce();
 });

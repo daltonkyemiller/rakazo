@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld("rakazoDesktop", {
     remove: (id) => ipcRenderer.invoke("desktop.mcp.remove", id),
     setEnabled: (id, enabled) => ipcRenderer.invoke("desktop.mcp.setEnabled", id, enabled),
     test: (id) => ipcRenderer.invoke("desktop.mcp.test", id),
+    openPermissions: () => ipcRenderer.invoke("desktop.mcp.openPermissions"),
   },
   badge: {
     set: (count) => ipcRenderer.invoke("desktop.badge.set", count),

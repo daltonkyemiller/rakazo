@@ -329,7 +329,7 @@ function DraftForm({
           value={authMode}
           onChange={setAuthMode}
           options={[
-            { value: "open", label: command ? t("None") : t("Browser sign-in") },
+            { value: "open", label: t("None") },
             { value: "token", label: t("Access token") },
           ]}
         />
@@ -348,11 +348,7 @@ function DraftForm({
               style={styles.cellInput}
             />
           </SettingsGroup>
-        ) : command ? null : (
-          <Text style={styles.note}>
-            {t("If the server asks, sign in from Rakazo on the web or your Mac.")}
-          </Text>
-        )}
+        ) : null}
       </View>
 
       <SettingsGroup label={command ? t("Environment variables") : t("Headers")}>

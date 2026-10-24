@@ -549,6 +549,20 @@ it("goes straight to review on paste, and Edit source keeps the text", async () 
   expect(field("Server name").value).toBe("Linear");
 });
 
+it("connects without credentials when None is selected after entering a token", async () => {
+  await openAdd();
+  await enterSource("https://mcp.example.test/mcp");
+  expect(button("None").getAttribute("aria-pressed")).toBe("true");
+  await click(button("Access token"));
+  await type(field("Access token"), "fake-token");
+  await click(button("None"));
+  await click(button("Add server"));
+
+  expect(rpc.mcp.servers.create).toHaveBeenCalledWith(
+    expect.objectContaining({ secret: undefined, oauthClient: undefined, headers: {} }),
+  );
+});
+
 it("sends only the credential for the chosen authentication", async () => {
   await openAdd();
   await enterSource("https://mcp.example.test/mcp");

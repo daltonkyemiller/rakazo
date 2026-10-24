@@ -32,8 +32,8 @@ import { McpAgentAccess } from "./McpAgentAccess";
 
 type Row = { id: number; name: string; value: string; file: boolean; missing: boolean };
 
-/** How a server proves who is calling: a browser sign-in it asks for, a token, or an OAuth app. */
-type AuthMode = "browser" | "none" | "token" | "oauth";
+/** Credentials supplied when connecting to a server. */
+type AuthMode = "none" | "token" | "oauth";
 
 let nextRowId = 0;
 const emptyRow = (): Row => ({ id: nextRowId++, name: "", value: "", file: false, missing: false });
@@ -402,7 +402,7 @@ function DraftForm({
   ]);
   const [authMode, setAuthMode] = useState<AuthMode>(() => {
     if (auth?.type === "bearer" && !command) return "token";
-    return command ? "none" : "browser";
+    return "none";
   });
   const [cwd, setCwd] = useState(draft.kind === "command" ? (draft.cwd ?? "") : "");
   const [secret, setSecret] = useState("");
@@ -763,19 +763,12 @@ function DraftForm({
         value={authMode}
         onChange={setAuthMode}
         options={[
-          command
-            ? { value: "none" as const, label: t`None` }
-            : { value: "browser" as const, label: t`Browser sign-in` },
+          { value: "none", label: t`None` },
           { value: "token", label: t`Access token` },
           { value: "oauth", label: t`OAuth client` },
         ]}
       />
       {auth?.note ? <p className="text-xs text-muted-foreground">{auth.note}</p> : null}
-      {mode === "browser" ? (
-        <p className="text-xs text-muted-foreground">
-          <Trans>If the server asks, you sign in from its page after adding it.</Trans>
-        </p>
-      ) : null}
       {mode === "token" ? (
         <Field>
           <FieldLabel htmlFor={`${ids}-secret`} className="sr-only">

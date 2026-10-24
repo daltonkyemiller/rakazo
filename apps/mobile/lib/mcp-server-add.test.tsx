@@ -212,6 +212,21 @@ it("adds a pasted URL and grants agents without dropping their other servers", a
   expect(onDone).toHaveBeenCalledTimes(1);
 });
 
+it("omits a previously entered token when authentication is None", async () => {
+  await act(async () =>
+    root.render(<McpServerAdd servers={[]} onAdded={vi.fn()} onDone={vi.fn()} />),
+  );
+  await type(input("URL, command, or config"), "https://mcp.example.test/mcp");
+  await click(button("Access token"));
+  await type(input("Access token"), "fake-token");
+  await click(button("None"));
+  await click(button("Add server"));
+
+  const call = rpc.mock.calls.find(([proc]) => proc === "mcp/servers/create");
+  expect(call).toBeDefined();
+  expect(call?.[1]).not.toHaveProperty("secret");
+});
+
 it("requires real values for placeholder secrets and runs commands on the server", async () => {
   await act(async () =>
     root.render(<McpServerAdd servers={[]} onAdded={vi.fn()} onDone={vi.fn()} />),

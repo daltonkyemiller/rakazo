@@ -57,14 +57,16 @@ export async function readScreenUrl(
   return null;
 }
 
-/** Point a loopback noVNC URL at the same host the app uses for the API. */
+/** Proxied screens use the phone's server origin; direct LAN screens retain their own port. */
 export function embeddableScreenUrl(url: string | null, apiBase: string): string | null {
   if (!url) return null;
   try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
     const api = new URL(apiBase);
-    if (isLocalHostname(parsed.hostname) && !isLocalHostname(api.hostname)) {
+    let parsed = url.startsWith("/novnc/") ? new URL(url, api) : new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    if (parsed.pathname.startsWith("/novnc/")) {
+      parsed = new URL(`${parsed.pathname}${parsed.search}${parsed.hash}`, api.origin);
+    } else if (isLocalHostname(parsed.hostname) && !isLocalHostname(api.hostname)) {
       parsed.hostname = api.hostname;
     }
     if (parsed.protocol === "http:" && !isLanOrLocalHost(parsed.hostname)) return null;

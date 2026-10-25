@@ -24,6 +24,7 @@ import { ComputerKeyboardBar } from "../components/computer-keyboard-bar";
 import { ComputerMaintenanceActions } from "../components/computer-maintenance-actions";
 import { ComputerModePicker } from "../components/computer-mode-picker";
 import { GlassIconButton } from "../components/glass-icon-button";
+import { MacAccessRow } from "../components/mac-access-row";
 import { NativeActionButton } from "../components/native-action-button";
 import { currentApiBase, rpc } from "../lib/api";
 import { useAppForeground } from "../lib/app-foreground";
@@ -492,6 +493,11 @@ export default function Computer() {
         disabled={switching || bootPending}
         onChange={(mode) => void setComputerMode(mode)}
       />
+      {botId ? (
+        <View style={{ marginTop: 16 }}>
+          <MacAccessRow botId={botId} />
+        </View>
+      ) : null}
 
       <Modal
         visible={computerOpen}

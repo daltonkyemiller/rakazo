@@ -33,6 +33,32 @@ function computer(overrides: Partial<ComputerStatus> = {}): ComputerStatus {
 }
 
 describe("embeddableScreenUrl", () => {
+  it("routes a loopback screen proxy through the phone's HTTPS server", () => {
+    expect(
+      embeddableScreenUrl(
+        "http://127.0.0.1:3100/novnc/session/view/123.fake/embed.html?resize=scale#screen",
+        "https://server.example.test",
+      ),
+    ).toBe(
+      "https://server.example.test/novnc/session/view/123.fake/embed.html?resize=scale#screen",
+    );
+  });
+
+  it("resolves relative screen proxies and preserves the configured server port", () => {
+    expect(
+      embeddableScreenUrl(
+        "/novnc/session/control/123.fake/embed.html",
+        "https://server.example.test:8443",
+      ),
+    ).toBe("https://server.example.test:8443/novnc/session/control/123.fake/embed.html");
+  });
+
+  it("does not allow a screen proxy to bypass public HTTP restrictions", () => {
+    expect(
+      embeddableScreenUrl("/novnc/session/view/123.fake/embed.html", "http://server.example.test"),
+    ).toBeNull();
+  });
+
   it("leaves a public stream URL alone", () => {
     const url = "https://sandbox.e2b.app/stream?authKey=abc&view_only=true";
     expect(embeddableScreenUrl(url, "https://api.rakazo.test")).toBe(url);

@@ -60,6 +60,10 @@ export function ComposerError({
     };
   }, [onRunErrorPresented, runError, runErrorId]);
 
+  const error = runError
+    ? normalizeRunError(runError, translateRunError, i18n.locale || "en")
+    : null;
+
   return sendError || runError ? (
     <div
       ref={runErrorRef}
@@ -78,11 +82,17 @@ export function ComposerError({
             {sendError}
           </button>
         ) : (
-          (sendError ??
-          (runError
-            ? normalizeRunError(runError, translateRunError, i18n.locale || "en").summary
-            : null))
+          (sendError ?? error?.summary)
         )}
+        {!sendError && error?.kind === "rate" ? (
+          <button
+            type="button"
+            onClick={onOpenModels}
+            className="mt-1 block text-left underline underline-offset-2 hover:text-foreground"
+          >
+            {t`Choose another model`}
+          </button>
+        ) : null}
         {!sendError && runError ? (
           <details key={runError} className="mt-1">
             <summary className="w-fit cursor-pointer">{t`Details`}</summary>

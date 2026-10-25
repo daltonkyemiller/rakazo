@@ -138,3 +138,19 @@ test("a covered run error is not remembered until it is presented", async ({ pag
   await expect(page.getByTestId("shell-root")).toHaveAttribute("data-ready", "true");
   await expect(error).toBeHidden();
 });
+
+test("a model cooldown shows its requested wait and offers model settings", async ({
+  page,
+}, testInfo) => {
+  await signup(page, `cooldown-${Date.now()}@rakazo.test`, "password12", "Cooldown");
+  await completeOnboarding(page);
+  await page.getByPlaceholder(/^Message /).fill("fail this run with cooldown");
+  await page.getByRole("button", { name: "Send" }).click();
+
+  const error = page.getByTestId("composer-error");
+  await expect(error).toContainText("temporarily limited usage. Requested wait: 53 min.");
+  await expect(error.locator("pre")).toBeHidden();
+  await captureScreenshot(page, testInfo, "model-cooldown");
+  await error.getByRole("button", { name: "Choose another model" }).click();
+  await expect(page.getByRole("combobox", { name: "Model", exact: true })).toBeVisible();
+});

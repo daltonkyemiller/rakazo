@@ -1,3 +1,5 @@
+import { modelCooldown } from "@rakazo/contracts/model-cooldown";
+
 /** A model call failed for a reason that should clear on its own, such as an overloaded provider. */
 export class TransientModelError extends Error {
   constructor(message: string) {
@@ -110,6 +112,7 @@ export function isTransientModelError(error: unknown): boolean {
     );
   return (
     isRetryableProviderUnavailable(error) &&
+    !modelCooldown(text) &&
     !/insufficient_quota|exceeded your current quota|quota exhausted|(?:chatgpt|5-hour|weekly(?: \(7-day\))?|monthly) usage limit|billing|credit balance|insufficient (?:funds|balance|credits)|payment|out of budget/.test(
       text,
     ) &&

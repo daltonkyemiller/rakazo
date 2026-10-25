@@ -97,6 +97,17 @@ describe("normalizeRunError", () => {
     expect(normalizeRunError(details)).toMatchObject({ summary: details, details });
   });
 
+  it("shows the requested cooldown without guessing a session limit or a reset time", () => {
+    const details =
+      "Server requested 3158s retry delay (max: 60s). 429 type:error,error:type:rate_limit_error,message:This request would exceed your account rate limit";
+    expect(normalizeRunError(details)).toEqual({
+      summary: "Your model provider temporarily limited usage. Requested wait: 53 min.",
+      details,
+      kind: "rate",
+      recovery: "model",
+    });
+  });
+
   it("keeps quota exhaustion distinct from 429 rate limits", () => {
     expect(
       normalizeRunError(

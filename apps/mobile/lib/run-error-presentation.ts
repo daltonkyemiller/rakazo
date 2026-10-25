@@ -97,7 +97,7 @@ export function runErrorWhatHappened(
   }
   switch (error.kind) {
     case "rate":
-      return t("The provider received too many requests to answer this bot.");
+      return t("The provider temporarily limited this bot's usage.");
     case "auth":
       return t("The provider refused the key this bot used for its reply.");
     case "model":

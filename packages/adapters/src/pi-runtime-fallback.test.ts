@@ -1068,6 +1068,16 @@ describe("Pi runtime ordered model fallback", () => {
     );
   });
 
+  it("does not retry the same model when its cooldown exceeds the SDK retry budget", async () => {
+    const diagnostic = "Server requested 3158s retry delay (max: 60s). 429 rate_limit_error";
+    providerState.stream.mockImplementation((target: Model<"openai-completions">) =>
+      stream(target, message(target, [], "error", diagnostic)),
+    );
+    await expect(run(request())).rejects.toThrow(diagnostic);
+    expect(providerState.stream).toHaveBeenCalledTimes(1);
+    expect(providerState.delay).not.toHaveBeenCalled();
+  });
+
   it("keeps the primary on a healthy response and leaves an empty chain unchanged", async () => {
     providerState.stream.mockImplementation((target: Model<"openai-completions">) =>
       stream(target, message(target, [{ type: "text", text: "Primary response." }], "stop")),

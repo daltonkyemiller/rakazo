@@ -1,3 +1,4 @@
+import { modelCooldown } from "@rakazo/contracts/model-cooldown";
 import { stuckWorkStatusMessages } from "./stuck-work.js";
 
 export const MISSING_TOOL_FINAL_RESPONSE_ERROR =
@@ -97,9 +98,15 @@ export function normalizeRunError(
   const financialQuota =
     /insufficient[_ ]quota|credits?|funds|spend|budget|billing|openrouter_key_limit/i.test(signals);
   if ((status === 429 || /rate[_ -]limit|too many requests/i.test(signals)) && !financialQuota) {
-    recovery = "connection";
+    const cooldown = modelCooldown(message);
+    recovery = cooldown ? "model" : "connection";
     kind = "rate";
-    summary = translate("{provider} is rate limiting requests. Try again shortly.", { provider });
+    summary = cooldown
+      ? translate("{provider} temporarily limited usage. Requested wait: {minutes} min.", {
+          provider,
+          minutes: new Intl.NumberFormat(locale).format(Math.ceil(cooldown.requestedMs / 60_000)),
+        })
+      : translate("{provider} is rate limiting requests. Try again shortly.", { provider });
   } else if (
     status === 402 ||
     /\b(?:daily|weekly|monthly|usage)[\s\S]{0,30}limit|\b(?:quota|insufficient[_ ](?:quota|credits?|funds)|credit[_ ]balance)\b|(?:key|credit|spend|spending|budget|billing)[\s\S]{0,40}(?:limit|exceed|exhaust|insufficient)|(?:limit|insufficient)[\s\S]{0,30}(?:credit|spend|budget)/i.test(

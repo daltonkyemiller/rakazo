@@ -15,6 +15,11 @@
       "development": "./src/client-build.ts",
       "default": "./src/client-build.ts"
     },
+    "./model-cooldown": {
+      "types": "./src/model-cooldown.ts",
+      "development": "./src/model-cooldown.ts",
+      "default": "./src/model-cooldown.ts"
+    },
     "./content-security-policy": {
       "types": "./src/content-security-policy.ts",
       "development": "./src/content-security-policy.ts",

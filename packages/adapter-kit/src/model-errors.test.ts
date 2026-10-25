@@ -43,6 +43,7 @@ describe("transient model errors", () => {
   });
 
   it.each([
+    ["rejected cooldown", "Server requested 3158s retry delay (max: 60s). 429 rate_limit_error"],
     ["usage limit", "You have hit your ChatGPT usage limit (plus plan). Try again in ~158 min."],
     [
       "exhausted quota",
@@ -89,6 +90,11 @@ describe("transient model errors", () => {
 describe("provider availability classification", () => {
   it.each([
     ["dropped fetch body", new TypeError("terminated"), true],
+    [
+      "long cooldown can use a backup",
+      "Server requested 3158s retry delay (max:60s). 429 rate_limit_error",
+      true,
+    ],
     [
       "Codex overload",
       new Error("Codex error: Our servers are currently overloaded. Please try again later."),

@@ -24,6 +24,12 @@ export const translateRunError: RunErrorTranslator = (message, values) => {
         message: "{provider} is rate limiting requests. Try again shortly.",
         values,
       });
+    case "{provider} temporarily limited usage. Requested wait: {minutes} min.":
+      return i18n._({
+        id: "{provider} temporarily limited usage. Requested wait: {minutes} min.",
+        message: "{provider} temporarily limited usage. Requested wait: {minutes} min.",
+        values,
+      });
     case "{summary} Resets {date}.":
       return i18n._({
         id: "{summary} Resets {date}.",

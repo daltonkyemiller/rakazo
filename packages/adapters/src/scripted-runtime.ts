@@ -31,7 +31,11 @@ export class ScriptedAgentRuntime implements AgentRuntime {
     const signal = context?.signal ?? controller.signal;
     try {
       if (shouldFail(request.prompt)) {
-        throw new Error("Scripted run failure");
+        throw new Error(
+          request.prompt.toLowerCase().includes("with cooldown")
+            ? "Server requested 3158s retry delay (max: 60s). 429 rate_limit_error"
+            : "Scripted run failure",
+        );
       }
       // Like Pi, a run first takes the messages waiting for it. A continuation exists only to
       // answer them, so their text is its prompt; any other run keeps its own task. A resumed

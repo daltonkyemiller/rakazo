@@ -37,12 +37,14 @@ public final class RakazoFoldRegionsModule: Module {
   }
 
   @MainActor private func regions() -> [CGRect] {
+    #if RAKAZO_HAS_RESERVED_REGIONS
     if #available(iOS 27.1, *) {
       // Query the key window so frames are already in window coordinates.
       guard let window = appContext?.utilities?.currentViewController()?.view.window,
             window.isKeyWindow else { return [] }
       return window.reservedRegions(kind: .division).filter(\.isActive).map(\.frame)
     }
+    #endif
     return []
   }
 
@@ -55,6 +57,7 @@ public final class RakazoFoldRegionsModule: Module {
     stop()
     previous = regions()
     sendEvent("onChange", ["regions": payload(previous)])
+    #if RAKAZO_HAS_RESERVED_REGIONS
     if #available(iOS 27.1, *) {
       let observer = FoldObserver()
       observer.onFrame = { [weak self] in
@@ -76,6 +79,7 @@ public final class RakazoFoldRegionsModule: Module {
       self.observer = observer
       displayLink = link
     }
+    #endif
   }
 
   @MainActor private func stop() {

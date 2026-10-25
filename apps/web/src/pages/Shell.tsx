@@ -1,12 +1,14 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import type {
   AgentSkillCatalogEntry,
+  AppBootstrap,
   Bot,
   BotSection,
   ComputerReleaseReason,
   ComputerStatus,
+  Connection,
+  ConnectionCatalogItem,
   Group,
-  McpServer,
   Me,
   MessageReaction,
   ProductEvent,
@@ -21,7 +23,7 @@ import type {
   VoiceStatus,
 } from "@rakazo/contracts";
 import { ATTACHMENT_MAX_COUNT, attachmentMaxBytes, attachmentSizeLabel } from "@rakazo/contracts";
-import type { ComposerMention, MentionPickerConnector, ReadBoundary } from "@rakazo/core";
+import type { AgentImportReader, ComposerMention, ReadBoundary } from "@rakazo/core";
 import {
   accountDisplay,
   answerableAskMessageIds,
@@ -65,11 +67,11 @@ import {
   toast,
 } from "@rakazo/ui-web";
 import { useIsMobile } from "@rakazo/ui-web/hooks/use-mobile";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   ChevronRight,
   Menu,
   Monitor,
-  Pencil,
   Phone,
   Search,
   Settings,
@@ -90,12 +92,14 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { ComputerMaintenanceActions } from "../components/ComputerMaintenanceActions";
 import { computersAreUnavailable } from "../components/ComputersUnavailableHint";
 import { ComputerUpdateProgress } from "../components/ComputerUpdateProgress";
 import { CallCard } from "../components/call/CallCard";
 import { IncomingCall } from "../components/call/IncomingCall";
 import { lazyOverlay } from "../components/ErrorBoundary";
 import { IconTooltip } from "../components/IconTooltip";
+import { PageLoading } from "../components/PageLoading";
 import { PasskeyOffer } from "../components/PasskeyOffer";
 import { SidebarFooter } from "../components/SidebarFooter";
 import type { ActivityListFilters } from "../lib/activity-list-filters";
@@ -106,6 +110,7 @@ import { authClient } from "../lib/auth";
 import { autoReadStillWanted } from "../lib/auto-read";
 import {
   discardPrimedBootstrap,
+  peekBootstrapSeed,
   primeSpaceBootstrap,
   takeInitialBootstrap,
 } from "../lib/bootstrap";
@@ -133,6 +138,7 @@ import {
   getComposerEnterToSend,
   subscribeComposerEnterToSend,
 } from "../lib/composer-enter-to-send-pref";
+import { COMPUTER_RESOURCES_EVENT } from "../lib/computer-resources";
 import {
   bootComputerOnce,
   embeddableScreenUrl,
@@ -156,6 +162,17 @@ import {
 import { markAfterPaint, markOnce } from "../lib/performance";
 import { usePreloadRecoveryState } from "../lib/preload-recovery";
 import { canPrepareImage, prepareImage } from "../lib/prepare-image";
+import type { ChatTarget } from "../lib/query";
+import {
+  fetchFresh,
+  lastChatKey,
+  lastChatOf,
+  queryClient,
+  seedOnLeave,
+  spaceQueries,
+  spaceSeedKey,
+  writeSaved,
+} from "../lib/query";
 import { getResponseStreamingEnabled, subscribeResponseStreaming } from "../lib/response-streaming";
 import type { Panel, RightPanelState } from "../lib/right-panel-state";
 import {
@@ -177,6 +194,7 @@ import {
   activeThreadRuns,
   applyThreadSendReceipt,
   clearActiveThreadRuns,
+  computerPanelNeedsMaintenance,
   computerPanelNeedsScreen,
   computerTakeoverBlocked,
   isComputerStatusEvent,
@@ -198,6 +216,7 @@ import { CreateGroupForm, GroupSettings, memberName } from "./GroupPanel";
 import { HostComputerPrompt } from "./HostComputerPrompt";
 import { ResizableSidePanel } from "./ResizableSidePanel";
 import { RoutineEditor } from "./RoutineEditor";
+import { AgentImportForm } from "./shell/agent-import";
 import { ArchivedChats } from "./shell/archived-chats";
 import { BotSettings } from "./shell/bot-panel";
 import type { PendingAttachment } from "./shell/chat-shared";
@@ -212,15 +231,14 @@ import {
   ClearConversationDialog,
   DeleteBotDialog,
   DeleteItemDialog,
+  DeleteSpaceDialog,
   NewBotSectionDialog,
   NewSpaceDialog,
-  PickerInfoDialog,
   RenameBotSectionDialog,
-  RenameSpaceDialog,
 } from "./shell/dialogs";
 import type { RosterDropTarget } from "./shell/roster-drop";
 import { resolveRosterDrop } from "./shell/roster-drop";
-import { SidebarHeader } from "./shell/sidebar-header";
+import { SidebarHeader, useCreateMenu } from "./shell/sidebar-header";
 import { BotsSidebarLayout } from "./shell/sidebar-layout";
 import { SidebarRoster } from "./shell/sidebar-roster";
 import { commitSpaceRename, countUnreadChats, sidebarGroupsForSpaces } from "./shell/space-sidebar";
@@ -270,6 +288,8 @@ type PendingBrowserNotification = {
 const THREAD_SNAPSHOT_TIMEOUT_MS = 2_000;
 /** Bound Settings leave so a hung voice status refresh cannot block dismissal. */
 const VOICE_STATUS_REFRESH_TIMEOUT_MS = 10_000;
+const NO_AGENT_SKILLS: AgentSkillCatalogEntry[] = [];
+const NO_PROVIDERS: string[] = [];
 const MOBILE_SIDEBAR_SWIPE_EDGE_PX = 32;
 const MOBILE_SIDEBAR_SWIPE_DISTANCE_PX = 56;
 function threadSnapshotSignal(parent: AbortSignal): AbortSignal {
@@ -293,7 +313,20 @@ export function ShellPage() {
 function SpaceShell() {
   const { t } = useLingui();
   const { botId, groupId } = useParams();
-  const [rpc] = useState(() => createSpaceRpc(selectedSpaceId()));
+  const [shellSpaceId] = useState(selectedSpaceId);
+  const [rpc] = useState(() => createSpaceRpc(shellSpaceId));
+  const session = authClient.useSession();
+  const userId = session.data?.user.id;
+  const [createMenuOpen, setCreateMenuOpen] = useCreateMenu();
+  // A revisited space, or the shell reopened from another page, starts from what it showed
+  // last time while its fresh bootstrap loads.
+  const [{ seed, startChat }] = useState(() => {
+    const primed = peekBootstrapSeed(botId);
+    if (primed) return { seed: primed, startChat: undefined };
+    const cached = queryClient.getQueryData(spaceSeedKey(userId ?? null, shellSpaceId));
+    const lastChat = queryClient.getQueryData(lastChatKey(userId ?? null, shellSpaceId));
+    return { seed: cached, startChat: botId || groupId ? undefined : lastChatOf(cached, lastChat) };
+  });
   const routerNavigate = useNavigate();
   const navigateRef = useRef(routerNavigate);
   navigateRef.current = routerNavigate;
@@ -327,19 +360,18 @@ function SpaceShell() {
       ),
     [navigate],
   );
-  const session = authClient.useSession();
-  const userId = session.data?.user.id;
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [bots, setBots] = useState<Bot[]>([]);
+  const queries = spaceQueries(userId ?? null, shellSpaceId);
+  const [groups, setGroups] = useState<Group[]>(seed?.groups ?? []);
+  const [bots, setBots] = useState<Bot[]>(seed?.bots ?? []);
   const botsRef = useRef(bots);
   botsRef.current = bots;
   const botOrderEpochRef = useRef(0);
   const pendingBotOrderRef = useRef<string[] | null>(null);
   const savingBotOrderRef = useRef(false);
-  const [botSections, setBotSections] = useState<BotSection[]>([]);
-  const [spaces, setSpaces] = useState<Space[]>([]);
-  const [archivedBots, setArchivedBots] = useState<Bot[]>([]);
-  const [archivedGroups, setArchivedGroups] = useState<Group[]>([]);
+  const [botSections, setBotSections] = useState<BotSection[]>(seed?.botSections ?? []);
+  const [spaces, setSpaces] = useState<Space[]>(seed?.spaces ?? []);
+  const [archivedBots, setArchivedBots] = useState<Bot[]>(seed?.archivedBots ?? []);
+  const [archivedGroups, setArchivedGroups] = useState<Group[]>(seed?.archivedGroups ?? []);
   const { collapsedSidebarSections, toggleSidebarSection } = useSidebarExpansion(userId);
   useEffect(() => {
     setBotsSidebarCollapsed(readBotsSidebarCollapsed(userId));
@@ -388,6 +420,9 @@ function SpaceShell() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [modelFocusRequest, setModelFocusRequest] = useState(0);
   const [panel, setPanelState] = useState<Panel>(null);
+  const [droppedAgent, setDroppedAgent] = useState<AgentImportReader | null>(null);
+  // Back returns to the New bot dialog only when the import was opened from it.
+  const [importFromDialog, setImportFromDialog] = useState(false);
   const [restoredPanelKey, setRestoredPanelKey] = useState<string | null>(null);
   const panelStorageKeyRef = useRef<string | null>(null);
   const observedPanelKey = useRef<string | null>(null);
@@ -418,10 +453,13 @@ function SpaceShell() {
   const [routinesBotId, setRoutinesBotId] = useState<string | null>(null);
   const [taughtSkills, setTaughtSkills] = useState<TaughtSkill[]>([]);
   const [taughtSkillsBotId, setTaughtSkillsBotId] = useState<string | null>(null);
-  const [agentSkills, setAgentSkills] = useState<AgentSkillCatalogEntry[]>([]);
-  const [mentionRoutines, setMentionRoutines] = useState<Array<Routine & { botName?: string }>>([]);
-  const [footerLogos, setFooterLogos] = useState<Array<{ name: string; logo: string | null }>>([]);
-  const [mentionConnectors, setMentionConnectors] = useState<MentionPickerConnector[]>([]);
+  const agentSkillsQuery = useQuery(queries.agentSkills.list.queryOptions());
+  const agentSkills = agentSkillsQuery.data ?? NO_AGENT_SKILLS;
+  const setAgentSkills = useCallback(
+    (skills: AgentSkillCatalogEntry[]) =>
+      void writeSaved(queryClient, queries.agentSkills.list.queryKey(), () => skills),
+    [queries],
+  );
   const [teachBusy, setTeachBusy] = useState(false);
   const [computer, setComputer] = useState<ComputerStatus | null>(null);
   const computerRef = useRef<ComputerStatus | null>(null);
@@ -477,17 +515,33 @@ function SpaceShell() {
   function updateSnapshot(update: (prev: ThreadSnapshot | null) => ThreadSnapshot | null) {
     commitSnapshot(update(snapshotRef.current));
   }
+
+  /**
+   * Each chat's last snapshot, so reopening it paints at once. The live load and
+   * subscription still run and replace it, so it is only ever a first frame.
+   */
+  function cachedThreadKey(target: { botId: string } | { groupId: string }) {
+    return queries.threads.get.queryKey({ input: target });
+  }
   const overlay = readShellOverlay(searchParams);
   // Overlays replace the URL rather than adding history, so opening and closing never race a navigation.
   function setOverlay(next: ShellOverlay) {
     navigate({ search: searchString(withShellOverlay(searchParams, next)) }, { replace: true });
   }
-  const [messagingSurfaceEnabled, setMessagingSurfaceEnabled] = useState(false);
-  const [messagingProviders, setMessagingProviders] = useState<string[]>([]);
-  const [memoryProviderConfig, setMemoryProviderConfig] = useState<
-    SpaceMemoryConfig | null | undefined
-  >(undefined);
-  const memoryProviderConfigRevision = useRef(0);
+  const messagingStatus = useQuery({
+    ...queries.messaging.status.queryOptions(),
+    enabled: Boolean(session.data?.user),
+  }).data;
+  const messagingSurfaceEnabled = messagingStatus?.enabled ?? false;
+  const messagingProviders = messagingStatus?.providers ?? NO_PROVIDERS;
+  const memoryConfigQuery = useQuery(queries.memory.providerConfig.queryOptions());
+  // Undefined while it first loads; null when the space has none or it could not be read.
+  const memoryProviderConfig: SpaceMemoryConfig | null | undefined =
+    memoryConfigQuery.data !== undefined
+      ? memoryConfigQuery.data
+      : memoryConfigQuery.isError
+        ? null
+        : undefined;
   const call = useCallSession();
   /** Calls a bot, or opens voice settings first when no voice is connected. */
   const callBot = (bot: Bot) => {
@@ -503,7 +557,9 @@ function SpaceShell() {
       transcribe: voiceStatus ? Boolean(voiceStatus.transcribe) : undefined,
     });
   };
-  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus | null>(null);
+  const voiceStatusKey = queries.voice.status.queryKey();
+  const voiceStatus: VoiceStatus | null =
+    useQuery(queries.voice.status.queryOptions()).data ?? null;
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const [dismissedRunErrorIds, setDismissedRunErrorIds] =
     useState<ReadonlySet<string>>(readSeenRunErrorIds);
@@ -519,7 +575,6 @@ function SpaceShell() {
   const miniSidebar = botsSidebarCollapsed && !isMobileSidebar;
   const [newSpaceOpen, setNewSpaceOpen] = useState(false);
   const [createBotOpen, setCreateBotOpen] = useState(false);
-  const [pickerInfoTopic, setPickerInfoTopic] = useState<"group" | "space" | null>(null);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   useEffect(() => {
@@ -552,7 +607,6 @@ function SpaceShell() {
   const [deleteTarget, setDeleteTarget] = useState<Bot | null>(null);
   const [deleteGroupTarget, setDeleteGroupTarget] = useState<Group | null>(null);
   const [deleteSpaceTarget, setDeleteSpaceTarget] = useState<Space | null>(null);
-  const [renameSpaceTarget, setRenameSpaceTarget] = useState<Space | null>(null);
   const [spaceMenu, setSpaceMenu] = useState<{
     id: string;
     position: { x: number; y: number };
@@ -586,8 +640,10 @@ function SpaceShell() {
   const booting = bootingBotId !== null && bootingBotId === computer?.botId;
   const bootsInFlight = useRef(new Map<string, symbol>());
   const [loadingOlder, setLoadingOlder] = useState(false);
-  const [initialBotsLoaded, setInitialBotsLoaded] = useState(false);
-  const [bootstrapMe, setBootstrapMe] = useState<Me | null>();
+  const [initialBotsLoaded, setInitialBotsLoaded] = useState(Boolean(seed));
+  // A failed first load falls back to the shell, whose polling and footer can still recover.
+  const [initialLoadFailed, setInitialLoadFailed] = useState(false);
+  const [bootstrapMe, setBootstrapMe] = useState<Me | null | undefined>(seed?.me);
   const callsEnabledRef = useRef(false);
   useEffect(() => {
     callsEnabledRef.current = bootstrapMe?.phoneCallsEnabled === true;
@@ -696,29 +752,11 @@ function SpaceShell() {
       viewport.removeEventListener("scroll", sync);
     };
   }, [computerOpen]);
-  useEffect(() => {
-    if (!session.data?.user) return;
-    let cancelled = false;
-    void rpc.messaging
-      .status()
-      .then((status) => {
-        if (!cancelled) {
-          setMessagingSurfaceEnabled(status.enabled);
-          setMessagingProviders(status.providers);
-        }
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [session.data?.user]);
-  const [usage, setUsage] = useState<UsageSummary | null>(null);
-  const refreshUsage = useCallback(() => {
-    void rpc.usage
-      .summary()
-      .then(setUsage)
-      .catch(() => undefined);
-  }, []);
+  // Read when Usage opens; a reopened Usage shows the last summary while it refreshes.
+  const usageQuery = useQuery({ ...queries.usage.summary.queryOptions(), enabled: false });
+  const usage: UsageSummary | null = usageQuery.data ?? null;
+  const refetchUsage = usageQuery.refetch;
+  const refreshUsage = useCallback(() => void refetchUsage(), [refetchUsage]);
   const autoBooted = useRef<string | null>(null);
   const bootstrappedThread = useRef<ThreadSnapshot | null>(null);
   const expandedHistoryThread = useRef<string | null>(null);
@@ -740,9 +778,12 @@ function SpaceShell() {
     olderCursor: number | null;
   } | null>(null);
   const manuallyUnread = useRef(new Set<string>());
+  const [markedUnread, setMarkedUnread] = useState<{ visit: number; messageId: string } | null>(
+    null,
+  );
   const readVisibleGroups = useRef(new Set<string>());
   // What the user had read up to when the open chat was opened; the "New" divider
-  // follows it for the rest of the visit. Each open of a chat is a new visit.
+  // follows it until they write in the chat or leave it. Each open of a chat is a new visit.
   const readVisit = useRef<{ chat: string | null; visit: number }>({ chat: null, visit: 0 });
   const [readBoundary, setReadBoundary] = useState<ReadBoundary | null>(null);
   // A chat's markRead calls run one at a time so the request that opened it answers first.
@@ -752,6 +793,10 @@ function SpaceShell() {
       settleReadBoundary(current, readVisit.current.visit, { visit, seq }),
     );
   }, []);
+  // Writing in the chat means the user has caught up, so the divider goes.
+  const clearReadBoundary = useCallback(() => {
+    setReadBoundary({ visit: readVisit.current.visit, seq: null });
+  }, []);
   const notifiedBrowserEvents = useRef(new Set<string>());
   const pendingBrowserNotifications = useRef(new Map<string, PendingBrowserNotification>());
   const computerVisible = useRef(false);
@@ -760,7 +805,12 @@ function SpaceShell() {
   const autoSpokenBotId = useRef<string | null>(null);
 
   const inGroup = Boolean(groupId);
-  const active = inGroup ? undefined : (bots.find((b) => b.id === botId) ?? bots[0]);
+  // Until the route names the chat reopened from cache, that chat stands in for it.
+  const routeChat = botId || groupId ? undefined : startChat;
+  const active =
+    inGroup || routeChat?.groupId
+      ? undefined
+      : (bots.find((b) => b.id === (botId ?? routeChat?.botId)) ?? bots[0]);
   const userBubble = useMemo(
     () => (active ? chatUserBubbleColors(active.color, active.id) : undefined),
     [active?.color, active?.id],
@@ -781,14 +831,27 @@ function SpaceShell() {
     () => attachmentsForThread(pendingAttachments, inGroup ? groupId : active?.id),
     [active?.id, groupId, inGroup, pendingAttachments],
   );
-  const activeRoutines = !inGroup && routinesBotId === active?.id ? routines : [];
+  // Until this visit's read lands, a bot shows the routines and skills it had last time.
+  const activeRoutines =
+    inGroup || !active
+      ? []
+      : routinesBotId === active.id
+        ? routines
+        : (queryClient.getQueryData(
+            queries.routines.list.queryKey({ input: { botId: active.id } }),
+          ) ?? []);
   const panelTarget = inGroup ? activeGroup?.id : active?.id;
   const panelStorageKey =
     userId && bootstrapMe?.spaceId && panelTarget
       ? rightPanelStorageKey(userId, bootstrapMe.spaceId, inGroup ? "group" : "bot", panelTarget)
       : null;
   panelStorageKeyRef.current = panelStorageKey;
-  const activeTaughtSkills = taughtSkillsBotId === active?.id ? taughtSkills : [];
+  const activeTaughtSkills = !active
+    ? []
+    : taughtSkillsBotId === active.id
+      ? taughtSkills
+      : (queryClient.getQueryData(queries.skills.list.queryKey({ input: { botId: active.id } })) ??
+        []);
   const recordingSkill = activeTaughtSkills.find((skill) => skill.status === "recording") ?? null;
   const routeBotId = useRef<string | undefined>(botId);
   routeBotId.current = botId;
@@ -839,7 +902,10 @@ function SpaceShell() {
   // automatic read answering after the user marked the chat unread can't undo the hold.
   const markBotRead = useCallback(
     async (id: string, stillWanted?: () => boolean) => {
-      if (!stillWanted) manuallyUnread.current.delete(id);
+      if (!stillWanted) {
+        manuallyUnread.current.delete(id);
+        if (readVisit.current.chat === `bot:${id}`) setMarkedUnread(null);
+      }
       const answer = await readInOrder(`bot:${id}`, () =>
         !stillWanted || stillWanted() ? rpc.threads.markRead({ botId: id }) : Promise.resolve(null),
       );
@@ -852,6 +918,7 @@ function SpaceShell() {
   const markBotUnread = useCallback(
     async (id: string, messageId?: string) => {
       manuallyUnread.current.add(id);
+      const visit = readVisit.current.visit;
       try {
         // Through the chat's read queue, so a read already sent lands first and this one wins.
         await readInOrder(`bot:${id}`, () =>
@@ -861,6 +928,7 @@ function SpaceShell() {
         manuallyUnread.current.delete(id);
         throw err;
       }
+      if (messageId && readVisit.current.visit === visit) setMarkedUnread({ visit, messageId });
       updateBotUnread(id, true);
     },
     [readInOrder, updateBotUnread],
@@ -1095,8 +1163,13 @@ function SpaceShell() {
       snapTranscriptToEndAfterFrame();
     }
     void Promise.all([
-      rpc.routines.list({ botId: id }).catch(() => null),
-      rpc.skills.list({ botId: id }).catch(() => null),
+      // Runs after routine changes too, so an older read in flight is not reused.
+      fetchFresh(queryClient, queries.routines.list.queryOptions({ input: { botId: id } })).catch(
+        () => null,
+      ),
+      fetchFresh(queryClient, queries.skills.list.queryOptions({ input: { botId: id } })).catch(
+        () => null,
+      ),
       refreshComputerScreen(id).catch(() => null),
     ]).then(([routines, skills]) => {
       if (
@@ -1183,24 +1256,54 @@ function SpaceShell() {
     }
   }
 
+  function saveSeed(bootstrap: AppBootstrap, chat?: ChatTarget) {
+    // With no space chosen the server picks one, so a shell reopened that way looks there too.
+    for (const spaceId of shellSpaceId ? [bootstrap.me.spaceId] : [bootstrap.me.spaceId, null]) {
+      queryClient.setQueryData(spaceSeedKey(userId ?? null, spaceId), bootstrap);
+      if (chat) queryClient.setQueryData(lastChatKey(userId ?? null, spaceId), chat);
+    }
+  }
+  const seedStateRef = useRef<
+    | (Omit<AppBootstrap, "thread" | "routines" | "me"> & {
+        me?: Me | null;
+        chat: ChatTarget | undefined;
+      })
+    | null
+  >(null);
+  seedStateRef.current = {
+    chat: groupId ? { groupId } : active ? { botId: active.id } : undefined,
+    me: bootstrapMe,
+    bots,
+    groups,
+    botSections,
+    archivedBots,
+    archivedGroups,
+    spaces,
+  };
+  useLayoutEffect(() => {
+    if (routeChat) {
+      redirectKeepingOverlay(
+        routeChat.groupId ? `/app/g/${routeChat.groupId}` : `/app/${routeChat.botId}`,
+      );
+    }
+    // Leaving for another page or space keeps the sidebar and open chat to reopen with.
+    return () => {
+      const state = seedStateRef.current;
+      if (!state?.me) return;
+      const { me, chat, ...lists } = state;
+      const previous = queryClient.getQueryData(spaceSeedKey(userId ?? null, me.spaceId));
+      if (!previous) return;
+      saveSeed(seedOnLeave(previous, { ...lists, me }, chat, snapshotRef.current), chat);
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
-    const providerConfigRevision = memoryProviderConfigRevision.current;
-    void rpc.memory
-      .providerConfig()
-      .then((providerConfig) => {
-        if (!cancelled && memoryProviderConfigRevision.current === providerConfigRevision) {
-          setMemoryProviderConfig(providerConfig);
-        }
-      })
-      .catch(() => {
-        if (!cancelled && memoryProviderConfigRevision.current === providerConfigRevision) {
-          setMemoryProviderConfig(null);
-        }
-      });
     const appliedAtStart = botsRefreshApplied.current;
-    void takeInitialBootstrap(botId)
+    void takeInitialBootstrap(botId ?? startChat?.botId)
       .then((bootstrap) => {
+        // Kept for the space it belongs to, so switching back to it can paint at once.
+        saveSeed(bootstrap);
         if (cancelled) return;
         const groupList = bootstrap.groups;
         setBootstrapMe(bootstrap.me);
@@ -1232,7 +1335,8 @@ function SpaceShell() {
           setSpaces(bootstrap.spaces);
           setInitialBotsLoaded(true);
         }
-        if (!groupId && bootstrap.thread) {
+        // A seeded shell already loads its chat live; this older copy must not replace it.
+        if (!seed && !groupId && bootstrap.thread) {
           bootstrappedThread.current = bootstrap.thread;
           commitSnapshot(bootstrap.thread);
           commitComputer(bootstrap.thread.computer ?? null);
@@ -1242,6 +1346,15 @@ function SpaceShell() {
           markOnce("rk:renderer:thread-response");
         }
         if (!applyBotLists) return;
+        // A shell that reopened from cache is already on a chat; it moves only if that chat is gone.
+        if (
+          seed &&
+          (routeGroupId.current
+            ? groupList.some((group) => group.id === routeGroupId.current)
+            : bootstrap.bots.some((bot) => bot.id === routeBotId.current))
+        ) {
+          return;
+        }
         if (
           bootstrap.bots.length === 0 &&
           bootstrap.archivedBots.length === 0 &&
@@ -1265,8 +1378,10 @@ function SpaceShell() {
       })
       .catch(() => {
         if (cancelled) return;
-        setBootstrapMe(null);
-        void refreshBots(true).catch(() => undefined);
+        if (!seed) setBootstrapMe(null);
+        void refreshBots(true).catch(() => {
+          if (!cancelled) setInitialLoadFailed(true);
+        });
       });
     let refreshTimer: number | undefined;
     const refreshVisibleBots = () => {
@@ -1297,33 +1412,11 @@ function SpaceShell() {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    void rpc.agentSkills
-      .list()
-      .then((skills) => {
-        if (!cancelled) setAgentSkills(skills);
-      })
-      .catch(() => {
-        if (!cancelled) setAgentSkills([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const refreshAgentSkills = useCallback(() => {
-    void rpc.agentSkills
-      .list()
-      .then(setAgentSkills)
-      .catch(() => undefined);
-  }, []);
+    void queryClient.invalidateQueries({ queryKey: queries.agentSkills.list.queryKey() });
+  }, [queries]);
 
   useEffect(() => {
-    void rpc.voice
-      .status()
-      .then(setVoiceStatus)
-      .catch(() => undefined);
     const unsubSpeech = speaker.subscribe((state) => {
       setSpeakingMessageId(state.status === "idle" ? null : (state.messageId ?? null));
     });
@@ -1395,6 +1488,12 @@ function SpaceShell() {
     }
     expandedHistoryThread.current = null;
     historyEpoch.current += 1;
+    const threadKey = cachedThreadKey({ botId: active.id });
+    const cachedThread = pendingJump
+      ? undefined
+      : (queryClient.getQueryData(threadKey) ??
+        (seed?.thread?.botId === active.id ? seed.thread : undefined));
+    if (cachedThread && snapshotRef.current?.botId !== active.id) commitSnapshot(cachedThread);
     const abort = new AbortController();
     void runThreadSubscription({
       signal: abort.signal,
@@ -1475,6 +1574,8 @@ function SpaceShell() {
     });
     return () => {
       abort.abort();
+      const left = snapshotRef.current;
+      if (left?.botId === active.id && !left.groupId) queryClient.setQueryData(threadKey, left);
     };
   }, [active?.id, markBotReadIfVisible, notifyBrowserForEvent]);
 
@@ -1525,6 +1626,9 @@ function SpaceShell() {
       expandedHistoryThread.current = null;
     }
     historyEpoch.current += 1;
+    const threadKey = cachedThreadKey({ groupId });
+    const cachedThread = pendingJump ? undefined : queryClient.getQueryData(threadKey);
+    if (cachedThread && snapshotRef.current?.groupId !== groupId) commitSnapshot(cachedThread);
     const abort = new AbortController();
     void runThreadSubscription({
       signal: abort.signal,
@@ -1580,6 +1684,8 @@ function SpaceShell() {
       window.removeEventListener("focus", markVisibleGroupRead);
       document.removeEventListener("visibilitychange", markVisibleGroupRead);
       abort.abort();
+      const left = snapshotRef.current;
+      if (left?.groupId === groupId) queryClient.setQueryData(threadKey, left);
     };
   }, [activeGroup?.id, groupId, notifyBrowserForEvent]);
 
@@ -1659,7 +1765,35 @@ function SpaceShell() {
           Boolean(getCallSnapshot()),
         );
       const current = () => decision() !== "abandon";
-      const primed = primeSpaceBootstrap(spaceId, target.botId);
+      // A space visited before opens at once with what it showed then, refreshing behind it.
+      const cached = queryClient.getQueryData(spaceSeedKey(userId ?? null, spaceId));
+      const primed = primeSpaceBootstrap(spaceId, target.botId, cached);
+      const remount = () =>
+        remountShellForSpace(() => {
+          const action = decision();
+          if (action !== "commit") {
+            discardPrimedBootstrap(primed);
+            if (action === "reload") {
+              // Leave the view-transition update before starting a full navigation.
+              window.setTimeout(() => {
+                if (current()) reload();
+              }, 0);
+            }
+            return false;
+          }
+          if (!selectSpace(spaceId)) {
+            discardPrimedBootstrap(primed);
+            return false;
+          }
+          // Playback belongs to the conversation being left.
+          speaker.stop();
+          navigate(path);
+          return true;
+        });
+      if (cached) {
+        remount();
+        return;
+      }
       primed.then(
         () => {
           if (!current()) {
@@ -1672,27 +1806,7 @@ function SpaceShell() {
             reload();
             return;
           }
-          remountShellForSpace(() => {
-            const action = decision();
-            if (action !== "commit") {
-              discardPrimedBootstrap(primed);
-              if (action === "reload") {
-                // Leave the view-transition update before starting a full navigation.
-                window.setTimeout(() => {
-                  if (current()) reload();
-                }, 0);
-              }
-              return false;
-            }
-            if (!selectSpace(spaceId)) {
-              discardPrimedBootstrap(primed);
-              return false;
-            }
-            // Playback belongs to the conversation being left.
-            speaker.stop();
-            navigate(path);
-            return true;
-          });
+          remount();
         },
         () => {
           discardPrimedBootstrap(primed);
@@ -1700,7 +1814,7 @@ function SpaceShell() {
         },
       );
     },
-    [bootstrapMe?.spaceId, navigate],
+    [bootstrapMe?.spaceId, navigate, userId],
   );
   const flushBotOrder = useCallback(async () => {
     if (savingBotOrderRef.current) return;
@@ -1833,8 +1947,10 @@ function SpaceShell() {
     if (threadTarget.botId) {
       commitComputer(snap.computer ?? null);
       // Don't block parent-scroll on routines metadata; a list failure must not abort the jump.
-      void rpc.routines
-        .list({ botId: threadTarget.botId })
+      void fetchFresh(
+        queryClient,
+        queries.routines.list.queryOptions({ input: { botId: threadTarget.botId } }),
+      )
         .then((routines) => {
           if (epoch !== historyEpoch.current || jumpId !== jumpGeneration.current) return;
           if (activeBotId.current !== threadTarget.botId) return;
@@ -1974,6 +2090,68 @@ function SpaceShell() {
       ? t`You`
       : (resolveTranscriptMemberName(activeReplyTarget.botId) ?? active?.name ?? t`Bot`)
     : undefined;
+  const routineLists = useQueries({
+    queries: bots.map((bot) => queries.routines.list.queryOptions({ input: { botId: bot.id } })),
+    combine: routineListData,
+  });
+  const mentionRoutines = useMemo(
+    () =>
+      bots.flatMap((bot, index) =>
+        (routineLists[index] ?? []).map((routine) => ({ ...routine, botName: bot.name })),
+      ),
+    [bots, routineLists],
+  );
+  const composerConnections = useQuery({
+    queryKey: [...queries.connections.catalog.queryKey({ input: {} }), "with-connections"],
+    // The catalog call reconciles connection rows, so list them after it.
+    queryFn: async () => {
+      const catalog = await rpc.connections.catalog({}).catch(() => null);
+      const connections = await rpc.connections.list().catch(() => null);
+      return { catalog, connections };
+    },
+    enabled: initialBotsLoaded,
+  });
+  // Apps can change in the integrations overlay; leaving it refreshes what the composer offers.
+  const integrationsOpen = overlay?.kind === "integrations";
+  const wasIntegrationsOpen = useRef(integrationsOpen);
+  useEffect(() => {
+    if (wasIntegrationsOpen.current && !integrationsOpen) {
+      void queryClient.invalidateQueries({ queryKey: queries.connections.key() });
+    }
+    wasIntegrationsOpen.current = integrationsOpen;
+  }, [integrationsOpen, queries]);
+  // A changed roster refreshes connection data too, as it did before it was cached.
+  const mentionBotsKey = useMemo(
+    () => bots.map((bot) => `${bot.id}:${bot.name}`).join(","),
+    [bots],
+  );
+  const connectionsRoster = useRef<string | null>(null);
+  useEffect(() => {
+    if (!initialBotsLoaded) return;
+    const previous = connectionsRoster.current;
+    connectionsRoster.current = mentionBotsKey;
+    if (previous !== null && previous !== mentionBotsKey) void composerConnections.refetch();
+  }, [initialBotsLoaded, mentionBotsKey]);
+  const [footerLogos, setFooterLogos] = useState(() =>
+    connectedAppMarksOf(composerConnections.data),
+  );
+  useEffect(() => {
+    if (composerConnections.data?.catalog && composerConnections.data.connections) {
+      setFooterLogos(connectedAppMarksOf(composerConnections.data));
+    }
+  }, [composerConnections.data]);
+  const mentionMcpServers = useQuery(queries.mcp.servers.list.queryOptions());
+  const mentionConnectors = useMemo(
+    () =>
+      bots.length
+        ? mentionPickerConnectors(
+            composerConnections.data?.connections ?? [],
+            composerConnections.data?.catalog ?? [],
+            mentionMcpServers.data ?? [],
+          )
+        : [],
+    [bots.length, composerConnections.data, mentionMcpServers.data],
+  );
   const composerMentionTargets = useMemo(
     () =>
       buildComposerMentionOptions({
@@ -2006,55 +2184,6 @@ function SpaceShell() {
   loadOlderMessagesRef.current = loadOlderMessages;
   const jumpToMessageRef = useRef(jumpToMessage);
   jumpToMessageRef.current = jumpToMessage;
-
-  const mentionBotsKey = useMemo(
-    () => bots.map((bot) => `${bot.id}:${bot.name}`).join(","),
-    [bots],
-  );
-  const botsForMentionsRef = useRef(bots);
-  botsForMentionsRef.current = bots;
-
-  useEffect(() => {
-    const bots = botsForMentionsRef.current;
-    if (!initialBotsLoaded || bots.length === 0) {
-      setMentionRoutines([]);
-      setMentionConnectors([]);
-      if (!initialBotsLoaded) return;
-    }
-    let cancelled = false;
-    const botNameById = new Map(bots.map((bot) => [bot.id, bot.name]));
-    void Promise.all(
-      bots.map((bot) =>
-        rpc.routines
-          .list({ botId: bot.id })
-          .then((rows) =>
-            rows.map((routine) => ({
-              ...routine,
-              botName: botNameById.get(bot.id) ?? bot.name,
-            })),
-          )
-          .catch(() => [] as Array<Routine & { botName?: string }>),
-      ),
-    ).then((lists) => {
-      if (!cancelled) setMentionRoutines(lists.flat());
-    });
-    // The catalog call reconciles connection rows, so list them after it.
-    const catalogRequest = rpc.connections.catalog({}).catch(() => null);
-    void Promise.all([
-      catalogRequest.then(() => rpc.connections.list().catch(() => null)),
-      catalogRequest,
-      rpc.mcp.servers.list().catch(() => [] as McpServer[]),
-    ]).then(([connections, catalog, servers]) => {
-      if (cancelled) return;
-      if (catalog && connections) setFooterLogos(connectedAppMarks(catalog, connections));
-      setMentionConnectors(
-        bots.length ? mentionPickerConnectors(connections ?? [], catalog ?? [], servers) : [],
-      );
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [initialBotsLoaded, mentionBotsKey, overlay?.kind]);
 
   useLayoutEffect(() => {
     if (initialBotsLoaded) {
@@ -2117,6 +2246,7 @@ function SpaceShell() {
       const botId = activeBotId.current;
       const groupId = activeGroupId.current;
       if (!botId && !groupId) return;
+      clearReadBoundary();
       await rpc.threads.answer({
         ...(groupId ? { groupId } : { botId: botId! }),
         runId: message.runId ?? "",
@@ -2169,7 +2299,7 @@ function SpaceShell() {
     [t],
   );
   const onAttachmentPick = useCallback(
-    (files: FileList | null) => {
+    (files: FileList | readonly File[] | null) => {
       const threadKey = activeGroupId.current ?? activeBotId.current;
       if (!threadKey || !files?.length) return false;
       const existing = attachmentsForThread(pendingAttachments, threadKey);
@@ -2239,6 +2369,7 @@ function SpaceShell() {
       sendingRef.current = true;
       setSending(true);
       setSendError(null);
+      clearReadBoundary();
       const dropDelayedSetup = () => {
         // Only after successful engagement so a failed upload/send keeps the setup card.
         if (initialBotTarget && focusPromptBotIdRef.current === initialBotTarget) {
@@ -2455,6 +2586,13 @@ function SpaceShell() {
     if (!id) return;
     await refreshThreadRef.current(id);
   }, []);
+  // An import's setup checklist re-checks on each thread refresh, so refresh once setup closes.
+  const importSetupOpen = useRef(false);
+  useEffect(() => {
+    if (!importSetupOpen.current || overlay || searchParams.has("routine")) return;
+    importSetupOpen.current = false;
+    void refreshActiveThread();
+  }, [overlay, searchParams, refreshActiveThread]);
   // Teach chrome needs skills applied before this resolves — refreshThread only
   // kicks skills.list off in the background, so Stop teaching would never mount
   // if that background call failed or lagged behind local recovery.
@@ -2462,7 +2600,10 @@ function SpaceShell() {
     const id = activeBotId.current;
     if (!id) return;
     await refreshThreadRef.current(id);
-    const skills = await rpc.skills.list({ botId: id });
+    const skills = await fetchFresh(
+      queryClient,
+      queries.skills.list.queryOptions({ input: { botId: id } }),
+    );
     if (activeBotId.current !== id) return;
     setTaughtSkills(skills);
     setTaughtSkillsBotId(id);
@@ -2504,6 +2645,12 @@ function SpaceShell() {
     setOverlay({ kind: "settings", section, spaceId });
   }
 
+  useEffect(() => {
+    const open = () => openSettings("computer");
+    window.addEventListener(COMPUTER_RESOURCES_EVENT, open);
+    return () => window.removeEventListener(COMPUTER_RESOURCES_EVENT, open);
+  }, []);
+
   useEffect(
     () =>
       desktopBridge()?.settings?.onOpen(() => {
@@ -2526,7 +2673,46 @@ function SpaceShell() {
   // Space-scoped sections bind their own rpc client to this space, so another
   // space's settings open in place without switching the app or reloading.
   function openSpaceSettings(spaceId: string) {
-    openSettings("models", spaceId);
+    openSettings("space", spaceId);
+  }
+
+  async function renameSpace(spaceId: string, name: string) {
+    await commitSpaceRename({
+      rename: async () => {
+        await rpc.spaces.rename({ spaceId, name });
+      },
+      apply: () => {
+        setSpaces((current) =>
+          current.map((space) => (space.id === spaceId ? { ...space, name } : space)),
+        );
+      },
+      refresh: () => refreshBots(),
+    });
+  }
+
+  async function removeSpace(spaceId: string) {
+    const result = await rpc.spaces.remove({ spaceId });
+    if (!alive.current) return;
+    setPanel(null);
+    const effectiveSpaceId = selectedSpaceId() ?? bootstrapMe?.spaceId;
+    if (effectiveSpaceId === spaceId) {
+      // The auth boundary changed, so reload like a space switch.
+      if (selectSpace(result.activeSpaceId)) {
+        window.location.assign("/app");
+        return;
+      }
+    }
+    await refreshBots(true);
+  }
+
+  function openCreatedBot(bot: Bot) {
+    // A roster requested before creation may omit this bot and redirect its new chat.
+    botsRefreshEpoch.current += 1;
+    setBots((current) =>
+      current.some((item) => item.id === bot.id) ? current : [bot, ...current],
+    );
+    navigate(`/app/${bot.id}`);
+    setPanel(null);
   }
 
   async function createBot(input: CreateBotDialogInput) {
@@ -2687,6 +2873,23 @@ function SpaceShell() {
       setComputerErrorFromScreen(false);
     }
   }, [computer?.busyBotName]);
+
+  // Opening the computer while its bot was running was refused as busy; boot it once the run
+  // ends, or the open window is left on a stopped computer with nothing to press.
+  const computerBlockedByRun = computerTakeoverBlocked(computer, snapshot?.run?.status);
+  useEffect(() => {
+    if (computerBlockedByRun) return;
+    const botId = computer?.botId;
+    if (!botId || !computerOpenRef.current || computerBotIdRef.current !== botId) return;
+    if (activeBotId.current !== botId) return;
+    if (computer.state !== "stopped" && computer.state !== "suspended") return;
+    void bootComputer({
+      botId,
+      takeControl: false,
+      showProgress: true,
+      force: true,
+    }).catch(() => undefined);
+  }, [computerBlockedByRun]);
 
   useEffect(() => {
     if (panel !== "routine") {
@@ -2953,7 +3156,10 @@ function SpaceShell() {
         } else {
           const groupId = contextGroup!.id;
           if (unread) manuallyUnread.current.add(groupId);
-          else manuallyUnread.current.delete(groupId);
+          else {
+            manuallyUnread.current.delete(groupId);
+            if (readVisit.current.chat === `group:${groupId}`) setMarkedUnread(null);
+          }
           const request = readInOrder(`group:${groupId}`, () =>
             unread ? rpc.threads.markUnread({ groupId }) : rpc.threads.markRead({ groupId }),
           );
@@ -3149,6 +3355,8 @@ function SpaceShell() {
       >
         <SidebarHeader
           mini={miniSidebar}
+          createMenuOpen={createMenuOpen}
+          setCreateMenuOpen={setCreateMenuOpen}
           activityMode={activityMode}
           toggleActivityMode={() => {
             if (miniSidebar) setBotsSidebarCollapsedPref(false);
@@ -3164,7 +3372,6 @@ function SpaceShell() {
           navigate={navigate}
           setNewSpaceOpen={setNewSpaceOpen}
           setCreateBotOpen={setCreateBotOpen}
-          setPickerInfoTopic={setPickerInfoTopic}
         />
         {activityMode && !miniSidebar ? (
           <InputGroup
@@ -3420,6 +3627,12 @@ function SpaceShell() {
             scrollRequest={scrollRequest}
             onScrollRequestHandled={clearScrollRequest}
             artifactTarget={transcriptArtifactTarget}
+            markedUnreadMessageId={
+              markedUnread?.visit === readVisit.current.visit &&
+              manuallyUnread.current.has(groupId ?? active?.id ?? "")
+                ? markedUnread.messageId
+                : undefined
+            }
             transcript={transcript}
             showToolActivity={showToolActivity}
             olderCursor={activeSnapshot?.olderCursor ?? null}
@@ -3448,16 +3661,20 @@ function SpaceShell() {
               // The next open of this chat starts the New divider at this message.
               if (groupId) {
                 manuallyUnread.current.add(groupId);
+                const visit = readVisit.current.visit;
                 void readInOrder(`group:${groupId}`, () =>
                   rpc.threads.markUnread({ groupId, messageId: message.id }),
                 )
-                  .then(() =>
+                  .then(() => {
+                    if (readVisit.current.visit === visit) {
+                      setMarkedUnread({ visit, messageId: message.id });
+                    }
                     setGroups((current) =>
                       current.map((group) =>
                         group.id === groupId ? { ...group, unread: true } : group,
                       ),
-                    ),
-                  )
+                    );
+                  })
                   .catch(() => manuallyUnread.current.delete(groupId));
               } else if (active) {
                 void markBotUnread(active.id, message.id).catch(() => undefined);
@@ -3489,56 +3706,69 @@ function SpaceShell() {
           </div>
         ) : null}
         {active || activeGroup ? (
-          <Composer
-            key={inGroup ? `group:${groupId}` : `bot:${active?.id}`}
-            draftKey={inGroup ? `group:${groupId}` : `bot:${active?.id}`}
-            enterToSend={enterToSend}
-            activeName={inGroup ? (activeGroup?.name ?? activeSnapshot?.groupName) : active?.name}
-            running={composerRunning}
-            disabled={Boolean(recordingSkill)}
-            pendingAttachments={activePendingAttachments}
-            attachmentNotice={attachmentNotice}
-            sendError={sendError}
-            onOpenModels={() => {
-              if (active && !inGroup) {
-                setPanel("settings");
-                setModelFocusRequest(Date.now());
-              } else openSettings("models");
-            }}
-            runError={displayedRunError}
-            runErrorId={displayedRunErrorId}
-            onRunErrorPresented={handleRunErrorPresented}
-            onDismissError={dismissComposerError}
-            sending={sending}
-            fileInputRef={fileInputRef}
-            onAttachmentPick={onAttachmentPick}
-            onRemoveAttachment={removeAttachment}
-            onSend={sendMessage}
-            onStop={stopRun}
-            phoneCallsEnabled={bootstrapMe?.phoneCallsEnabled === true}
-            dictationTranscribe={voiceStatus ? Boolean(voiceStatus.transcribe) : undefined}
-            artifactTarget={transcriptArtifactTarget}
-            replyTarget={activeReplyTarget}
-            replyQuote={activeReplyQuote}
-            replyTargetName={replyTargetName}
-            onClearReply={clearReply}
-            mentionTargets={composerMentionTargets}
-            agentSkills={agentSkills}
-            onSlashOpen={refreshAgentSkills}
-            onSlashAction={(action) => {
-              if (action === "chat-settings") {
-                setPanel(inGroup ? "group-settings" : "settings");
-                return;
-              }
-              if (action === "settings-general") {
-                openSettings("general");
-                return;
-              }
-              if (action === "settings-usage") {
-                openSettings("usage");
-              }
-            }}
-          />
+          // Let messages continue behind the composer's rounded top corners.
+          <div className="pointer-events-none relative z-30 -mt-7">
+            {recordingSkill ? (
+              <div className="pointer-events-auto bg-background px-6 pb-2 text-center text-[13px] text-destructive">
+                <Trans>Teaching in progress. Stop teaching before sending a new message.</Trans>
+              </div>
+            ) : null}
+            <Composer
+              key={inGroup ? `group:${groupId}` : `bot:${active?.id}`}
+              draftKey={inGroup ? `group:${groupId}` : `bot:${active?.id}`}
+              enterToSend={enterToSend}
+              onImportAgent={(agent) => {
+                setDroppedAgent(agent);
+                setImportFromDialog(false);
+                setPanel("import-agent");
+              }}
+              activeName={inGroup ? (activeGroup?.name ?? activeSnapshot?.groupName) : active?.name}
+              running={composerRunning}
+              disabled={Boolean(recordingSkill)}
+              pendingAttachments={activePendingAttachments}
+              attachmentNotice={attachmentNotice}
+              sendError={sendError}
+              onOpenModels={() => {
+                if (active && !inGroup) {
+                  setPanel("settings");
+                  setModelFocusRequest(Date.now());
+                } else openSettings("models");
+              }}
+              runError={displayedRunError}
+              runErrorId={displayedRunErrorId}
+              onRunErrorPresented={handleRunErrorPresented}
+              onDismissError={dismissComposerError}
+              sending={sending}
+              fileInputRef={fileInputRef}
+              onAttachmentPick={onAttachmentPick}
+              onRemoveAttachment={removeAttachment}
+              onSend={sendMessage}
+              onStop={stopRun}
+              phoneCallsEnabled={bootstrapMe?.phoneCallsEnabled === true}
+              dictationTranscribe={voiceStatus ? Boolean(voiceStatus.transcribe) : undefined}
+              artifactTarget={transcriptArtifactTarget}
+              replyTarget={activeReplyTarget}
+              replyQuote={activeReplyQuote}
+              replyTargetName={replyTargetName}
+              onClearReply={clearReply}
+              mentionTargets={composerMentionTargets}
+              agentSkills={agentSkills}
+              onSlashOpen={refreshAgentSkills}
+              onSlashAction={(action) => {
+                if (action === "chat-settings") {
+                  setPanel(inGroup ? "group-settings" : "settings");
+                  return;
+                }
+                if (action === "settings-general") {
+                  openSettings("general");
+                  return;
+                }
+                if (action === "settings-usage") {
+                  openSettings("usage");
+                }
+              }}
+            />
+          </div>
         ) : null}
       </main>
 
@@ -3550,34 +3780,58 @@ function SpaceShell() {
       />
 
       <ResizableSidePanel
-        open={Boolean(panel && (active || activeGroup))}
+        open={Boolean(panel && (active || activeGroup || panel === "import-agent"))}
         panel={panel ?? "closed"}
       >
-        {panel && (active || activeGroup) ? (
-          <div className="rk-scroll relative h-full w-full overflow-y-auto px-5 py-[17px]">
-            {active && (panel === "computer" || panel === "settings") ? (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={t`Close panel`}
-                onClick={() => setPanel(null)}
-                className="absolute end-3 top-3 z-10 text-muted-foreground"
-              >
-                <X size={16} strokeWidth={1.8} />
-              </Button>
-            ) : panel === "computer" && activeGroup ? (
+        {panel && (active || activeGroup || panel === "import-agent") ? (
+          <div className="rk-scroll h-full w-full overflow-y-auto px-5 py-[17px]">
+            {panel !== "routine" &&
+            panel !== "create-group" &&
+            panel !== "group-settings" &&
+            panel !== "import-agent" ? (
               <div className="mb-4 flex items-center justify-between">
-                <span className="text-[13.5px] text-muted-foreground">
-                  <Trans>Group</Trans>
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t`Close panel`}
-                  onClick={() => setPanel(null)}
-                >
-                  <X size={16} strokeWidth={1.8} />
-                </Button>
+                {!active && panel !== "settings" ? (
+                  <span className="text-[13.5px] text-muted-foreground">
+                    <Trans>Group</Trans>
+                  </span>
+                ) : null}
+                <div className="ml-auto flex gap-1">
+                  {active &&
+                  panel === "computer" &&
+                  !computerOpen &&
+                  computerPanelNeedsMaintenance(computer?.state, booting) ? (
+                    <ComputerMaintenanceActions
+                      botId={active.id}
+                      computer={computer}
+                      onChanged={async () => {
+                        await refreshThread(active.id);
+                      }}
+                    />
+                  ) : null}
+                  {active ? (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={panel === "settings" ? t`Show computer` : t`Show settings`}
+                      onClick={() => setPanel(panel === "settings" ? "computer" : "settings")}
+                      className={panel === "settings" ? "text-foreground" : "text-muted-foreground"}
+                    >
+                      {panel === "settings" ? (
+                        <Monitor size={16} strokeWidth={1.7} />
+                      ) : (
+                        <Settings size={16} strokeWidth={1.7} />
+                      )}
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={t`Close panel`}
+                    onClick={() => setPanel(null)}
+                  >
+                    <X size={16} strokeWidth={1.8} />
+                  </Button>
+                </div>
               </div>
             ) : null}
             {panel === "computer" && active ? (
@@ -3653,6 +3907,28 @@ function SpaceShell() {
                 covered={computerOpen}
               />
             ) : null}
+            {panel === "import-agent" ? (
+              <AgentImportForm
+                bots={bots.filter((bot) => !bot.archivedAt)}
+                initialSource={droppedAgent ?? undefined}
+                onBack={() => {
+                  setDroppedAgent(null);
+                  setPanel(null);
+                  if (importFromDialog) setCreateBotOpen(true);
+                }}
+                onCancel={() => {
+                  setDroppedAgent(null);
+                  setPanel(null);
+                }}
+                onCreated={(bot) => {
+                  setDroppedAgent(null);
+                  openCreatedBot(bot);
+                  // An import into an existing bot changes it and its chat.
+                  void refreshBots().catch(() => undefined);
+                  if (bot.id === active?.id) void refreshActiveThread();
+                }}
+              />
+            ) : null}
             {panel === "settings" && active ? (
               <BotSettings
                 key={active.id}
@@ -3689,6 +3965,12 @@ function SpaceShell() {
                   URL.revokeObjectURL(url);
                 }}
                 onClear={() => setClearTarget({ kind: "bot", chat: active })}
+                onUndoImport={() => {
+                  setPanel(null);
+                  void refreshBots(true);
+                  // An import into an existing bot is undone without removing the bot.
+                  void refreshActiveThread().catch(() => undefined);
+                }}
               />
             ) : null}
             {panel === "routine" && routineEditorProps ? (
@@ -3735,17 +4017,6 @@ function SpaceShell() {
                   {t`Settings`}
                 </DropdownMenuItem>
               ) : null}
-              {spaceMenuTarget?.canRename ? (
-                <DropdownMenuItem
-                  onClick={() => {
-                    setRenameSpaceTarget(spaceMenuTarget);
-                    setSpaceMenu(null);
-                  }}
-                >
-                  <Pencil />
-                  {t`Rename space`}
-                </DropdownMenuItem>
-              ) : null}
               {spaceMenuTarget?.canDelete ? (
                 <DropdownMenuItem
                   variant="destructive"
@@ -3789,51 +4060,13 @@ function SpaceShell() {
           />
         ) : null}
 
-        {renameSpaceTarget ? (
-          <RenameSpaceDialog
-            space={renameSpaceTarget}
-            onCancel={() => setRenameSpaceTarget(null)}
-            onConfirm={async (name) => {
-              const spaceId = renameSpaceTarget.id;
-              await commitSpaceRename({
-                rename: async () => {
-                  await rpc.spaces.rename({ spaceId, name });
-                },
-                apply: () => {
-                  setSpaces((current) =>
-                    current.map((space) => (space.id === spaceId ? { ...space, name } : space)),
-                  );
-                },
-                refresh: () => refreshBots(),
-              });
-              setRenameSpaceTarget(null);
-            }}
-          />
-        ) : null}
-
         {deleteSpaceTarget ? (
-          <DeleteItemDialog
-            item={deleteSpaceTarget}
-            noun="space"
-            description={
-              <Trans>Only empty spaces can be deleted. Delete its bots and groups first.</Trans>
-            }
+          <DeleteSpaceDialog
+            space={deleteSpaceTarget}
             onCancel={() => setDeleteSpaceTarget(null)}
             onConfirm={async () => {
-              const targetId = deleteSpaceTarget.id;
-              const result = await rpc.spaces.remove({ spaceId: targetId });
-              if (!alive.current) return;
+              await removeSpace(deleteSpaceTarget.id);
               setDeleteSpaceTarget(null);
-              setPanel(null);
-              const effectiveSpaceId = selectedSpaceId() ?? bootstrapMe?.spaceId;
-              if (effectiveSpaceId === targetId) {
-                // The auth boundary changed, so reload like a space switch.
-                if (selectSpace(result.activeSpaceId)) {
-                  window.location.assign("/app");
-                  return;
-                }
-              }
-              await refreshBots(true);
             }}
           />
         ) : null}
@@ -3904,7 +4137,16 @@ function SpaceShell() {
         />
 
         {createBotOpen ? (
-          <CreateBotDialog onCancel={() => setCreateBotOpen(false)} onCreate={createBot} />
+          <CreateBotDialog
+            onCancel={() => setCreateBotOpen(false)}
+            onCreate={createBot}
+            onImport={() => {
+              setCreateBotOpen(false);
+              setDroppedAgent(null);
+              setImportFromDialog(true);
+              setPanel("import-agent");
+            }}
+          />
         ) : null}
 
         {newSpaceOpen ? (
@@ -3921,10 +4163,6 @@ function SpaceShell() {
               window.location.assign("/onboarding");
             }}
           />
-        ) : null}
-
-        {pickerInfoTopic ? (
-          <PickerInfoDialog topic={pickerInfoTopic} onClose={() => setPickerInfoTopic(null)} />
         ) : null}
 
         {clearTarget ? (
@@ -3974,6 +4212,11 @@ function SpaceShell() {
           <SettingsOverlay
             space={settingsSpace}
             spaces={spaces}
+            onRenameSpace={renameSpace}
+            onDeleteSpace={async (spaceId) => {
+              await removeSpace(spaceId);
+              if (alive.current) setOverlay(null);
+            }}
             currentSpaceId={currentSpaceId}
             onSpaceChange={(spaceId) => setOverlay({ ...overlay, spaceId })}
             name={session.data?.user.name ?? ""}
@@ -3999,17 +4242,17 @@ function SpaceShell() {
             }}
             memoryConfig={memoryProviderConfig}
             onMemoryConfigChange={(config) => {
-              memoryProviderConfigRevision.current += 1;
-              setMemoryProviderConfig(config);
+              void writeSaved(queryClient, queries.memory.providerConfig.queryKey(), () => config);
             }}
             onVoiceStatusMaybeChanged={async () => {
               try {
-                setVoiceStatus(
+                queryClient.setQueryData(
+                  voiceStatusKey,
                   await Promise.race([rpc.voice.status(), voiceStatusRefreshTimeout()]),
                 );
               } catch {
                 // Prefer reopening Voice settings over starting a call with stale readiness.
-                setVoiceStatus(null);
+                void queryClient.resetQueries({ queryKey: voiceStatusKey });
               }
             }}
             onClose={() => setOverlay(null)}
@@ -4051,6 +4294,7 @@ function SpaceShell() {
           onStopRun={() => void stopRun()}
           onRelease={releaseComputer}
           onTakeControl={() => void openComputer(computerBot.id, true)}
+          onStart={() => void openComputer(computerBot.id)}
           onRefreshTeaching={refreshActiveTeaching}
           onRefreshComputer={async () => {
             await refreshComputerFor(computerBot.id);
@@ -4061,7 +4305,18 @@ function SpaceShell() {
     </BotsSidebarLayout>
   );
 
-  return shell;
+  // Empty chrome until the first bot list lands would flash "Select a bot" before the chat.
+  return initialBotsLoaded || initialLoadFailed ? shell : <PageLoading />;
+}
+
+function routineListData(results: Array<{ data?: Routine[] }>) {
+  return results.map((result) => result.data);
+}
+
+function connectedAppMarksOf(
+  data: { catalog: ConnectionCatalogItem[] | null; connections: Connection[] | null } | undefined,
+) {
+  return data?.catalog && data.connections ? connectedAppMarks(data.catalog, data.connections) : [];
 }
 
 function firstThreadRoute(

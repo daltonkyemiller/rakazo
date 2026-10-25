@@ -11,9 +11,11 @@ import { rpc } from "../lib/api";
 import { mobileTokens } from "../lib/appearance";
 import { useI18n } from "../lib/i18n";
 import { native, useResolvedAppearance, useThemedStyles } from "../lib/native";
+import { useSideInsets } from "../lib/side-insets";
 
 /** View-only bot-to-bot exchange, opened from a Messaged / Message from chip in a bot's chat. */
 export default function PeerChat() {
+  const sideInsets = useSideInsets();
   const { t } = useI18n();
   const styles = useThemedStyles(createStyles);
   const colorScheme = useResolvedAppearance();
@@ -65,11 +67,11 @@ export default function PeerChat() {
   const peerName = displayName(chat?.peerBotName ?? params.peerBotName, t("Bot"));
   return (
     <ScrollView
-      style={styles.screen}
+      style={[styles.screen, sideInsets]}
       contentContainerStyle={styles.content}
       contentInsetAdjustmentBehavior="automatic"
     >
-      <Stack.Screen options={glassHeaderOptions(`${botName} · ${peerName}`)} />
+      <Stack.Screen options={glassHeaderOptions(`${botName}, ${peerName}`)} />
       {state.kind === "loading" ? (
         <View style={styles.center}>
           <ActivityIndicator color={tokens.mutedForeground} />

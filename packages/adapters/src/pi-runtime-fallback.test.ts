@@ -301,9 +301,8 @@ describe("Pi runtime transient model retries", () => {
     expect(providerState.delay).toHaveBeenCalledOnce();
   });
 
-  it.each(["text", "thinking"] as const)("does not recover idle after partial %s", async (type) => {
-    const content: AssistantMessage["content"] =
-      type === "text" ? [{ type, text: "partial" }] : [{ type, thinking: "partial" }];
+  it("does not recover idle after partial text", async () => {
+    const content: AssistantMessage["content"] = [{ type: "text", text: "partial" }];
     providerState.stream.mockImplementation(() =>
       stream(primary, message(primary, content, "error", MODEL_STREAM_IDLE_TIMEOUT_MESSAGE)),
     );
@@ -967,7 +966,7 @@ describe("Pi runtime ordered model fallback", () => {
       primary,
       [{ type: "text", text: "keep this text" }],
       "error",
-      "503 timeout",
+      "429 insufficient_quota",
     );
     providerState.stream.mockImplementation(() => {
       class ThrowingStream extends AssistantMessageEventStream {
@@ -979,7 +978,7 @@ describe("Pi runtime ordered model fallback", () => {
             delta: "keep this text",
             partial: failure,
           };
-          throw new Error("503 timeout");
+          throw new Error("429 insufficient_quota");
         }
       }
       return new ThrowingStream();
@@ -993,7 +992,7 @@ describe("Pi runtime ordered model fallback", () => {
         events,
         new PiAgentRuntime({ sessionRoot: "fixture-sessions" }),
       ),
-    ).rejects.toThrow(/503 timeout/);
+    ).rejects.toThrow(/429 insufficient_quota/);
     expect(providerState.stream).toHaveBeenCalledTimes(1);
     expect(appendMessage).toHaveBeenCalledWith(
       expect.objectContaining({ role: "assistant", content: failure.content }),
@@ -1357,7 +1356,7 @@ describe("Pi runtime ordered model fallback", () => {
         primary,
         [{ type: "text", text: "partial plus terminal suffix" }],
         "error",
-        "429 rate_limit_error",
+        "429 insufficient_quota",
       );
       providerState.stream.mockImplementation((target: Model<"openai-completions">) => {
         if (target.provider === primary.provider) {
@@ -1388,7 +1387,7 @@ describe("Pi runtime ordered model fallback", () => {
           events,
           new PiAgentRuntime({ sessionRoot: "fixture-sessions" }),
         ),
-      ).rejects.toThrow(/429 rate_limit_error/);
+      ).rejects.toThrow(/429 insufficient_quota/);
 
       expect(providerState.stream).toHaveBeenCalledTimes(1);
       expect(appendMessage).toHaveBeenCalledWith(
@@ -1552,10 +1551,6 @@ describe("Pi runtime ordered model fallback", () => {
   });
 
   it.each([
-    {
-      label: "thinking",
-      content: [{ type: "thinking" as const, thinking: "terminal reasoning" }],
-    },
     {
       label: "tool call",
       content: [
@@ -2210,10 +2205,57 @@ describe("Pi runtime ordered model fallback", () => {
 
     const events = await run(input);
 
-    expect(resolveFallbackModel).toHaveBeenNthCalledWith(1, backupA.provider, backupA.id);
-    expect(resolveFallbackModel).toHaveBeenNthCalledWith(2, backupB.provider, backupB.id);
+    expect(resolveFallbackModel).toHaveBeenNthCalledWith(
+      1,
+      backupA.provider,
+      backupA.id,
+      undefined,
+    );
+    expect(resolveFallbackModel).toHaveBeenNthCalledWith(
+      2,
+      backupB.provider,
+      backupB.id,
+      undefined,
+    );
     expect(requestKeys).toEqual(["backup-only-key"]);
     expect(JSON.stringify(events)).not.toContain("backup-only-key");
+  });
+
+  it("falls back to the same model on another account's connection", async () => {
+    const input = request([
+      // The running connection is never its own backup.
+      { provider: primary.provider, id: primary.id, connectionId: "personal" },
+      { provider: primary.provider, id: primary.id, connectionId: "work" },
+    ]);
+    input.model = { ...input.model, connectionId: "personal" };
+    const resolveFallbackModel = vi.fn(
+      async (provider: string, id: string, connectionId?: string) => ({
+        provider,
+        id,
+        connectionId,
+        apiKey: "fake-work-key",
+      }),
+    );
+    input.resolveFallbackModel = resolveFallbackModel;
+    const requestKeys: Array<string | undefined> = [];
+    providerState.stream.mockImplementation(
+      (target: Model<"openai-completions">, _context: unknown, options?: { apiKey?: string }) => {
+        requestKeys.push(options?.apiKey);
+        return options?.apiKey === "fake-primary-key"
+          ? stream(target, message(target, [], "error", "429 usage limit reached"))
+          : stream(target, message(target, [{ type: "text", text: "from work" }], "stop"));
+      },
+    );
+
+    const events = await run(input);
+
+    expect(resolveFallbackModel).toHaveBeenCalledExactlyOnceWith(
+      primary.provider,
+      primary.id,
+      "work",
+    );
+    expect(requestKeys.at(-1)).toBe("fake-work-key");
+    expect(JSON.stringify(events)).toContain("from work");
   });
 });
 
@@ -2563,5 +2605,102 @@ describe("Pi runtime account request ceilings", () => {
     expect(input.model).not.toHaveProperty("contextWindow");
     expect(input.executeTool).not.toHaveBeenCalled();
     expect(events).toContainEqual(expect.objectContaining({ type: "done", text: "Ready" }));
+  });
+});
+
+describe("Pi runtime fallback error classes and mid-run switches", () => {
+  const providers = (): string[] =>
+    providerState.stream.mock.calls.map(
+      ([target]) => (target as Model<"openai-completions">).provider,
+    );
+  const backups = () => [{ provider: backupA.provider, id: backupA.id, apiKey: "fake-backup-a" }];
+
+  it.each([
+    ["429 rate limit", "429 rate_limit_error: Number of request tokens has exceeded your limit"],
+    ["500 server error", "500 Internal server error"],
+    ["503 unavailable", "503 service unavailable"],
+    ["529 overloaded", "529 overloaded_error: Overloaded"],
+    ["timeout", "Request timed out."],
+  ])("switches to the backup on %s", async (_name, error) => {
+    providerState.stream.mockImplementation((target: Model<"openai-completions">) =>
+      target.provider === primary.provider
+        ? stream(target, message(target, [], "error", error))
+        : stream(target, message(target, [{ type: "text", text: "from backup" }], "stop")),
+    );
+
+    const events = await run(request(backups()));
+
+    expect(providers()).toEqual([primary.provider, backupA.provider]);
+    expect(events).toContainEqual(expect.objectContaining({ type: "text", text: "from backup" }));
+  });
+
+  it("leaves retries to the backup instead of the provider SDK", async () => {
+    vi.stubEnv("MODEL_STREAM_MAX_RETRIES", "1");
+    try {
+      providerState.stream.mockImplementation((target: Model<"openai-completions">) =>
+        stream(target, message(target, [{ type: "text", text: "Ready" }], "stop")),
+      );
+
+      await run(request(backups()));
+      await run(request());
+
+      // A hung primary would otherwise wait out its timeout twice before the switch.
+      expect(providerState.stream.mock.calls.map(([, , options]) => options.maxRetries)).toEqual([
+        0, 1,
+      ]);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it.each([["403 forbidden", "403 Forbidden"]])(
+    "does not switch to the backup on %s",
+    async (_name, error) => {
+      providerState.stream.mockImplementation((target: Model<"openai-completions">) =>
+        stream(target, message(target, [], "error", error)),
+      );
+
+      await expect(run(request(backups()))).rejects.toThrow();
+
+      expect(providers()).toEqual([primary.provider]);
+    },
+  );
+
+  it("runs the backup's own tool call after a primary tool call, never replaying the first", async () => {
+    const input = request(backups());
+    const executeTool = vi.mocked(input.executeTool!);
+    const call = (id: string, value: string) => ({
+      type: "toolCall" as const,
+      id,
+      name: "write_effect",
+      arguments: { value },
+    });
+    let primaryCalls = 0;
+    let backupCalls = 0;
+    providerState.stream.mockImplementation((target: Model<"openai-completions">) => {
+      if (target.provider === primary.provider) {
+        primaryCalls += 1;
+        return primaryCalls === 1
+          ? stream(target, message(target, [call("first", "one")], "toolUse"))
+          : stream(target, message(target, [], "error", "529 overloaded_error"));
+      }
+      backupCalls += 1;
+      return backupCalls === 1
+        ? stream(target, message(target, [call("second", "two")], "toolUse"))
+        : stream(target, message(target, [{ type: "text", text: "done" }], "stop"));
+    });
+
+    await run(input);
+
+    expect(executeTool.mock.calls.map(([, args]) => args)).toEqual([
+      { value: "one" },
+      { value: "two" },
+    ]);
+    expect(providers()).toEqual([
+      primary.provider,
+      primary.provider,
+      backupA.provider,
+      backupA.provider,
+    ]);
   });
 });

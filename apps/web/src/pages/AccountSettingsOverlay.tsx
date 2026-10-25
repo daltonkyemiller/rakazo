@@ -33,7 +33,11 @@ import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
 import { Link } from "react-router-dom";
 import { AccountAccess } from "../components/AccountAccess";
 import { SuccessPop } from "../components/ai/primitives";
-import { ComputersUnavailableHint } from "../components/ComputersUnavailableHint";
+import { ComputerResourcesSettings } from "../components/ComputerResourcesSettings";
+import {
+  ComputersUnavailableHint,
+  computersAreUnavailable,
+} from "../components/ComputersUnavailableHint";
 import { DesktopUpdateSection } from "../components/DesktopUpdates";
 import { PasskeySettings } from "../components/PasskeySettings";
 import {
@@ -568,24 +572,29 @@ export function UsageSettingsPanel({
 }
 
 export function ComputerSettingsPanel({
+  onBusyChange,
   sandboxProvider,
   onSandboxProviderChange,
   onRecoveryDismissed,
 }: {
+  onBusyChange?: (busy: boolean) => void;
   sandboxProvider?: string | null;
   onSandboxProviderChange?: (sandboxProvider: string) => void;
   onRecoveryDismissed?: () => void;
 }) {
   return (
     <SettingsStack>
-      <SettingsSection title={<Trans>Computers</Trans>} testId="computers-setup-settings">
-        <ComputersUnavailableHint
-          className="py-3 text-[13px] leading-relaxed text-muted-foreground"
-          sandboxProvider={sandboxProvider}
-          onRecovered={onSandboxProviderChange}
-          onRecoveryDismissed={onRecoveryDismissed}
-        />
-      </SettingsSection>
+      <ComputerResourcesSettings onBusyChange={onBusyChange} />
+      {computersAreUnavailable(sandboxProvider) ? (
+        <SettingsSection title={<Trans>Computers</Trans>} testId="computers-setup-settings">
+          <ComputersUnavailableHint
+            className="py-3 text-[13px] leading-relaxed text-muted-foreground"
+            sandboxProvider={sandboxProvider}
+            onRecovered={onSandboxProviderChange}
+            onRecoveryDismissed={onRecoveryDismissed}
+          />
+        </SettingsSection>
+      ) : null}
     </SettingsStack>
   );
 }

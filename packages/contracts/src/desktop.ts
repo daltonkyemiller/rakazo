@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ComputerResourceSettings, ComputerResourcesState } from "./computer-resources.js";
 
 /**
  * `unsupported` covers an unpackaged build and a repository with no published releases, which is
@@ -116,6 +117,15 @@ export interface RakazoDesktop {
     requestAccess: () => Promise<boolean>;
     revokeAccess: () => Promise<void>;
     onConfigure: (listener: () => void) => () => void;
+  };
+  /** Optional for compatibility with older desktop releases. */
+  passkeys?: {
+    /** Relying parties this build is associated with for system passkeys (macOS); others fail. */
+    rpIds: () => Promise<string[]>;
+  };
+  resources?: {
+    state: () => Promise<ComputerResourcesState | null>;
+    apply: (settings: ComputerResourceSettings) => Promise<ComputerResourcesState>;
   };
   platform: string;
   window: {

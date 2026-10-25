@@ -25,11 +25,14 @@ export function ChoiceCard({
   block,
   accent,
   onBotChanged,
+  onImportAgent,
 }: {
   botId: string;
   block: Extract<MessageBlock, { kind: "choice" }>;
   accent?: BotColorDef;
   onBotChanged: () => Promise<void>;
+  /** Offered on the first-run focus card while it is unanswered. */
+  onImportAgent?: () => void;
 }) {
   const { t } = useLingui();
   const questionId = useId();
@@ -115,14 +118,25 @@ export function ChoiceCard({
             {error}
           </p>
         ) : null}
+        {onImportAgent && !block.answerId && block.question === FOCUS_QUESTION ? (
+          <Button
+            variant="link"
+            className="mt-2 h-auto px-0 text-muted-foreground"
+            onClick={onImportAgent}
+          >
+            <Trans>Import an agent</Trans>
+          </Button>
+        ) : null}
       </div>
     </div>
   );
 }
 
+const FOCUS_QUESTION = "What do you want me on first?";
+
 /** First-run Chief focus card: API stores English; UI locale catalogs translate it. */
 function OnboardingFocusQuestion({ question }: { question: string }) {
-  if (question === "What do you want me on first?") {
+  if (question === FOCUS_QUESTION) {
     return <Trans>What do you want me on first?</Trans>;
   }
   return question;
@@ -137,7 +151,7 @@ function OnboardingFocusOptionLabel({
   label: string;
   question: string;
 }) {
-  if (question !== "What do you want me on first?") return label;
+  if (question !== FOCUS_QUESTION) return label;
   switch (id) {
     case "day":
       return <Trans>Day-to-day work</Trans>;
@@ -222,7 +236,7 @@ export function AppConnectCard({
           <img
             src={block.logo}
             alt=""
-            className="h-10 w-10 rounded-[10px] bg-white object-contain p-1"
+            className="h-10 w-10 rounded-[10px] bg-favicon-plate object-contain p-1"
           />
         ) : (
           <span className="grid h-10 w-10 place-items-center rounded-[10px] bg-muted text-[15px] text-foreground">
@@ -238,7 +252,7 @@ export function AppConnectCard({
         {status === "connected" ? (
           <SuccessPop label={t`Connected`} />
         ) : (
-          <Button className="rounded-full" disabled={busy} onClick={() => void authorize()}>
+          <Button disabled={busy} onClick={() => void authorize()}>
             {busy ? t`Waiting…` : t`Authorize`}
           </Button>
         )}
@@ -407,7 +421,7 @@ export function McpApprovalCard({
     }
   }
 
-  const summary = endpoint ?? `stdio · ${transport}`;
+  const summary = endpoint ?? `stdio (${transport})`;
   return (
     <BuiCard data-testid="mcp-approval-card" className="w-full min-w-0 max-w-xl p-4">
       <div className="flex items-center gap-2">
@@ -428,16 +442,11 @@ export function McpApprovalCard({
           </p>
           {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              className="rounded-full"
-              disabled={state !== "pending" || busy}
-              onClick={() => void authorize()}
-            >
+            <Button disabled={state !== "pending" || busy} onClick={() => void authorize()}>
               {state === "connecting" ? t`Connecting…` : needsOAuth ? t`Authorize` : t`Approve`}
             </Button>
             <Button
               variant="secondary"
-              className="rounded-full"
               disabled={state !== "pending" || busy}
               onClick={() => void dismiss()}
             >
@@ -448,7 +457,7 @@ export function McpApprovalCard({
       ) : null}
       {state === "connected" ? (
         <div className="mt-3">
-          <SuccessPop label={t`Connected. Its tools are available from your next message.`} />
+          <SuccessPop label={t`Connected`} />
         </div>
       ) : null}
       {state === "dismissed" ? (
@@ -569,7 +578,7 @@ export function ArtifactImage({
           <img src={src} alt={name} className="max-h-48 w-full object-cover" />
         </button>
       ) : (
-        <div className="rounded-[20px] border border-border bg-muted px-4 py-3 text-[14px] text-muted-foreground">
+        <div className="rounded-[20px] bg-muted px-4 py-3 text-[14px] text-muted-foreground">
           {name}
         </div>
       )}

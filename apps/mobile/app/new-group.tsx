@@ -1,4 +1,9 @@
-import { defaultGroupName, GROUP_MEMBER_MAX, GROUP_MEMBER_MIN } from "@rakazo/contracts";
+import {
+  defaultGroupName,
+  GROUP_MEMBER_MAX,
+  GROUP_MEMBER_MIN,
+  GROUP_NAME_MAX_LENGTH,
+} from "@rakazo/contracts";
 import { Stack, useRouter } from "expo-router";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { useEffect, useRef, useState } from "react";
@@ -14,9 +19,11 @@ import { rpc } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 import { native, useMobileTokens } from "../lib/native";
 import { iosAtLeast } from "../lib/native-controls";
+import { useSideInsets } from "../lib/side-insets";
 import { errorText } from "../lib/user-error";
 
 export default function NewGroup() {
+  const sideInsets = useSideInsets();
   const { t } = useI18n();
   const tokens = useMobileTokens();
   const router = useRouter();
@@ -77,7 +84,7 @@ export default function NewGroup() {
     <>
       <Stack.Screen
         options={{
-          title: t("New group"),
+          title: t("New group chat"),
           headerTransparent: true,
           headerStyle: { backgroundColor: "transparent" },
           headerBackVisible: false,
@@ -142,7 +149,7 @@ export default function NewGroup() {
       >
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
-          style={{ flex: 1 }}
+          style={[{ flex: 1 }, sideInsets]}
           contentContainerStyle={{
             padding: 24,
             paddingTop: Platform.OS === "ios" ? 24 : headerHeight + 24,
@@ -164,7 +171,7 @@ export default function NewGroup() {
                 autoFocus
                 value={name}
                 onChangeText={setName}
-                maxLength={80}
+                maxLength={GROUP_NAME_MAX_LENGTH}
                 autoCapitalize="words"
                 autoCorrect={false}
                 autoComplete="off"

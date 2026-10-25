@@ -88,6 +88,7 @@ export function MemorySettingsOverlay({
     config?.defaultMemoryScope ?? "isolated",
   );
   const [pending, setPending] = useState<"connect" | "disconnect" | "scope" | null>(null);
+  const [addingProvider, setAddingProvider] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -138,6 +139,7 @@ export function MemorySettingsOverlay({
     markPending("disconnect");
     try {
       await rpc.memory.disconnectProvider();
+      setAddingProvider(false);
       onConfigChange(null);
     } catch (err) {
       setError(errorText(err, t`Could not disconnect memory provider`));
@@ -165,7 +167,7 @@ export function MemorySettingsOverlay({
       {!embedded ? (
         <div className="flex items-start justify-between px-6 pt-6 sm:px-8 sm:pt-7">
           <div>
-            <DialogTitle className="text-2xl font-medium text-foreground">
+            <DialogTitle className="text-heading2 font-medium text-foreground">
               <Trans>Memory</Trans>
             </DialogTitle>
           </div>
@@ -223,12 +225,15 @@ export function MemorySettingsOverlay({
                 />
               </SettingsRow>
             </SettingsSection>
+          ) : !addingProvider ? (
+            <Button variant="outline" onClick={() => setAddingProvider(true)}>
+              <Trans>Connect memory provider</Trans>
+            </Button>
           ) : registration ? (
             <SettingsSection target="memory-provider">
               <SettingsRow
                 label={<Trans>Provider</Trans>}
                 labelFor={MEMORY_PROVIDER_SETTINGS.length > 1 ? providerSelectId : undefined}
-                description={registration.description}
               >
                 {MEMORY_PROVIDER_SETTINGS.length > 1 ? (
                   <NativeSelect

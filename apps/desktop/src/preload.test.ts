@@ -37,7 +37,9 @@ describe("desktop preload bridge", () => {
       "computer",
       "mcp",
       "oauth",
+      "passkeys",
       "platform",
+      "resources",
       "settings",
       "update",
       "window",
@@ -56,6 +58,7 @@ describe("desktop preload bridge", () => {
 
     await bridge.oauth.open?.("https://provider.example.com/authorize");
     await bridge.oauth.cancel?.("https://provider.example.com/authorize");
+    await bridge.passkeys?.rpIds();
     await bridge.window.close();
     await bridge.window.minimize();
     await bridge.window.toggleMaximize();
@@ -68,6 +71,7 @@ describe("desktop preload bridge", () => {
       "desktop.badge.set",
       "desktop.oauth.open",
       "desktop.oauth.cancel",
+      "desktop.passkeys.rpIds",
       "desktop.window.close",
       "desktop.window.minimize",
       "desktop.window.toggleMaximize",
@@ -99,6 +103,17 @@ describe("desktop preload bridge", () => {
       ["desktop.mcp.remove", "local-id"],
       ["desktop.mcp.openPermissions"],
     ]);
+  });
+
+  it("exposes resource settings without arbitrary Docker commands", async () => {
+    const { invoke, exposeInMainWorld } = runPreload("preload.cjs");
+    const [, bridge] = exposeInMainWorld.mock.calls[0] as [string, RakazoDesktop];
+    const settings = { memoryGiB: 4, cpuCores: 4, applyToExisting: true };
+    await bridge.resources!.state();
+    await bridge.resources!.apply(settings);
+    expect(Object.keys(bridge.resources!).sort()).toEqual(["apply", "state"]);
+    expect(invoke).toHaveBeenCalledWith("desktop.resources.state");
+    expect(invoke).toHaveBeenCalledWith("desktop.resources.apply", settings);
   });
 
   it("passes an appearance preference through the isolated bridge", async () => {

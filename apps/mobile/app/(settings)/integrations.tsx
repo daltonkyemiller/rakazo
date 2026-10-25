@@ -5,6 +5,7 @@ import type {
   ConnectionCatalogItem,
   McpServer,
 } from "@rakazo/contracts";
+import { CONNECTION_LABEL_MAX_LENGTH } from "@rakazo/contracts";
 import {
   CONNECTION_CATALOG_PAGE_SIZE,
   catalogItemAccounts,
@@ -48,6 +49,7 @@ import { loadLastBotId } from "../../lib/last-bot";
 import { mcpServerSummary } from "../../lib/mcp-labels";
 import { native, useThemedStyles } from "../../lib/native";
 import { closeSettingsSheet } from "../../lib/settings-sheet";
+import { useSideInsets } from "../../lib/side-insets";
 import { errorText } from "../../lib/user-error";
 
 type SourceKind = "treg" | "executor" | "api" | "graphql";
@@ -61,6 +63,7 @@ export default function Integrations() {
 }
 
 export function IntegrationsScreen({ connectedOnly = false }: { connectedOnly?: boolean }) {
+  const sideInsets = useSideInsets();
   const styles = useThemedStyles(createIntegrationsStyles);
   const { t } = useI18n();
   const { height } = useWindowDimensions();
@@ -665,6 +668,7 @@ export function IntegrationsScreen({ connectedOnly = false }: { connectedOnly?: 
             <View key={row.id} style={styles.accountRow}>
               <TextInput
                 value={labelDrafts[row.id] ?? row.displayName}
+                maxLength={CONNECTION_LABEL_MAX_LENGTH}
                 onChangeText={(value) =>
                   setLabelDrafts((current) => ({ ...current, [row.id]: value }))
                 }
@@ -755,6 +759,7 @@ export function IntegrationsScreen({ connectedOnly = false }: { connectedOnly?: 
         ) : null}
       </View>
       <ScrollView
+        style={sideInsets}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
@@ -1012,8 +1017,9 @@ export function IntegrationsScreen({ connectedOnly = false }: { connectedOnly?: 
                   <View key={source.id} style={styles.row}>
                     <View style={styles.grow}>
                       <Text style={styles.title}>{source.name}</Text>
+                      <Text style={styles.secondary}>{source.kind.toUpperCase()}</Text>
                       <Text numberOfLines={1} style={styles.secondary}>
-                        {source.kind.toUpperCase()} · {source.source}
+                        {source.source}
                       </Text>
                     </View>
                     <NativeActionButton

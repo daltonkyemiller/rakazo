@@ -9,6 +9,7 @@ import {
   Input,
   OptionSelect,
 } from "@rakazo/ui-web";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Brain,
   ChevronLeft,
@@ -17,6 +18,7 @@ import {
   Cpu,
   CreditCard,
   Gauge,
+  Lock,
   Monitor,
   Search,
   Settings,
@@ -31,7 +33,7 @@ import { computersAreUnavailable } from "../components/ComputersUnavailableHint"
 import { settingsTargetId } from "../components/SettingsLayout";
 import { desktopBridge } from "../lib/desktop";
 import { usePasskeysSupported } from "../lib/passkeys";
-import { rpcForSpace } from "../lib/rpc";
+import { spaceQueries, useQueryUserId, writeSaved } from "../lib/query";
 import type { SettingsSearchItem } from "../lib/settings-search";
 import { searchSettings } from "../lib/settings-search";
 import { SpaceRpcProvider } from "../lib/space-rpc";
@@ -46,16 +48,16 @@ import { BillingSettingsPanel } from "./BillingSettingsPanel";
 import { MemorySettingsOverlay } from "./MemorySettingsOverlay";
 import { ModelSettingsOverlay } from "./ModelSettingsOverlay";
 import { MEMORY_PROVIDER_SETTINGS } from "./memory-providers/registry";
+import { SpaceSettingsPanel } from "./SpaceSettingsPanel";
+import type { SettingsSpace } from "./shell/dialogs";
 import type { SettingsSection } from "./shell-overlay";
 import { VoiceSettingsOverlay } from "./VoiceSettingsOverlay";
 
-/** Sections whose settings belong to a space; only these show the space picker. */
-const SPACE_SECTIONS: ReadonlySet<SettingsSection> = new Set([
-  "models",
-  "memory",
-  "voice",
-  "confirmations",
-]);
+/**
+ * Sections whose settings belong to a space; only these show the space picker. Models, voice,
+ * and confirmations are the account's, and a space customizes them from its Space section.
+ */
+const SPACE_SECTIONS: ReadonlySet<SettingsSection> = new Set(["space", "memory"]);
 
 type NavItem = {
   id: SettingsSection;
@@ -66,12 +68,13 @@ type NavItem = {
 /** Untranslated synonyms; translated labels are always searched too. */
 const SECTION_KEYWORDS: Record<SettingsSection, readonly string[]> = {
   general: ["preferences", "profile"],
+  space: ["workspace", "team", "members"],
   models: ["llm", "ai", "provider"],
   memory: ["recall", "remember", "knowledge"],
   voice: ["speech", "audio", "speak", "read aloud", "tts", "dictation"],
   confirmations: ["approvals", "permissions", "safety", "ask first"],
   usage: ["tokens", "runs", "spend", "cost", "stats"],
-  computer: ["sandbox", "docker", "vm"],
+  computer: ["sandbox", "docker", "vm", "resources", "memory", "cpu", "limits", "performance"],
   billing: ["plan", "subscription", "payment", "invoice", "credits", "seats"],
   updates: ["version", "upgrade", "download"],
 };
@@ -86,6 +89,8 @@ export function SettingsOverlay({
   spaces = [],
   currentSpaceId,
   onSpaceChange,
+  onRenameSpace,
+  onDeleteSpace,
   email,
   isDeploymentOwner = false,
   name,
@@ -107,11 +112,13 @@ export function SettingsOverlay({
   onVoiceStatusMaybeChanged,
 }: {
   /** The space the per-space sections act on; it need not be the selected space. */
-  space?: { id: string; name: string } | null;
+  space?: SettingsSpace | null;
   spaces?: { id: string; name: string }[];
   /** The space the app is showing; its memory config comes from the shell. */
   currentSpaceId?: string | null;
   onSpaceChange?: (spaceId: string) => void;
+  onRenameSpace?: (spaceId: string, name: string) => Promise<void>;
+  onDeleteSpace?: (spaceId: string) => Promise<void>;
   email?: string | null;
   isDeploymentOwner?: boolean;
   name: string;
@@ -146,9 +153,13 @@ export function SettingsOverlay({
   const [reveal, setReveal] = useState<{ target: string } | null>(null);
   const [memoryBusy, setMemoryBusy] = useState(false);
   const [voiceBusy, setVoiceBusy] = useState(false);
+  const [computerBusy, setComputerBusy] = useState(false);
   const [keepComputerRecovery, setKeepComputerRecovery] = useState(false);
   const recoveryHoldTimer = useRef<number | undefined>(undefined);
-  const showComputer = keepComputerRecovery || computersAreUnavailable(sandboxProvider);
+  const showComputer =
+    Boolean(desktopBridge()?.resources) ||
+    keepComputerRecovery ||
+    computersAreUnavailable(sandboxProvider);
   const showUpdates = Boolean(desktopBridge()?.update);
   // A section that isn't available yet (billing before its flag loads) shows General until it is.
   const section =
@@ -157,43 +168,25 @@ export function SettingsOverlay({
     (requestedSection === "updates" && !showUpdates)
       ? "general"
       : requestedSection;
-  const panelBusy = memoryBusy || voiceBusy;
+  const panelBusy = memoryBusy || voiceBusy || computerBusy;
   const spaceScoped = SPACE_SECTIONS.has(section);
   const spaceId = spaceScoped ? (space?.id ?? null) : null;
   // The shell only holds the selected space's memory config; another space's loads here.
   const otherSpace = Boolean(spaceId && currentSpaceId && spaceId !== currentSpaceId);
-  // Kept with the space it was loaded for, so a switch never shows the previous space's config.
-  const [otherMemory, setOtherMemory] = useState<
-    { spaceId: string } & (
-      | { config: SpaceMemoryConfig | null; error?: never }
-      | { config?: never; error: string }
-    )
-  >();
-  const [memoryLoadAttempt, setMemoryLoadAttempt] = useState(0);
-  const otherMemoryError = otherMemory?.spaceId === spaceId ? otherMemory.error : undefined;
-  const otherMemoryConfig = otherMemory?.spaceId === spaceId ? otherMemory.config : undefined;
-  const setOtherMemoryConfig = useCallback(
-    (config: SpaceMemoryConfig | null) => {
-      if (spaceId) setOtherMemory({ spaceId, config });
-    },
-    [spaceId],
-  );
-  useEffect(() => {
-    if (section !== "memory" || !otherSpace || !spaceId) return;
-    let cancelled = false;
-    setOtherMemory(undefined);
-    rpcForSpace(spaceId)
-      .memory.providerConfig()
-      .then((config) => {
-        if (!cancelled) setOtherMemory({ spaceId, config });
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) setOtherMemory({ spaceId, error: errorText(err) });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [section, otherSpace, spaceId, memoryLoadAttempt]);
+  // Cached per space, so a switch never shows the previous space's config.
+  const queryClient = useQueryClient();
+  const otherMemoryOptions = spaceQueries(
+    useQueryUserId(),
+    spaceId,
+  ).memory.providerConfig.queryOptions({ enabled: section === "memory" && otherSpace });
+  const otherMemory = useQuery(otherMemoryOptions);
+  const otherMemoryError =
+    otherMemory.isError && !otherMemory.isFetching && otherMemory.data === undefined
+      ? errorText(otherMemory.error)
+      : undefined;
+  const otherMemoryConfig = otherMemory.data;
+  const setOtherMemoryConfig = (config: SpaceMemoryConfig | null) =>
+    void writeSaved(queryClient, otherMemoryOptions.queryKey, () => config);
   const releaseComputerRecovery = useCallback(() => {
     window.clearTimeout(recoveryHoldTimer.current);
     recoveryHoldTimer.current = undefined;
@@ -223,9 +216,10 @@ export function SettingsOverlay({
   const navItems: NavItem[] = [
     { id: "general", label: t`General`, icon: Settings },
     { id: "models", label: t`Models`, icon: Cpu },
-    { id: "memory", label: t`Memory`, icon: Brain },
     { id: "voice", label: t`Voice`, icon: Volume2 },
-    { id: "confirmations", label: t`Confirmations`, icon: ShieldCheck },
+    { id: "confirmations", label: t`Approvals`, icon: ShieldCheck },
+    { id: "space", label: t`Space`, icon: Lock },
+    { id: "memory", label: t`Memory`, icon: Brain },
     { id: "usage", label: t`Usage`, icon: Gauge },
     ...(showComputer ? [{ id: "computer" as const, label: t`Computer`, icon: Monitor }] : []),
     ...(billingEnabled ? [{ id: "billing" as const, label: t`Billing`, icon: CreditCard }] : []),
@@ -236,6 +230,13 @@ export function SettingsOverlay({
   const desktopSettings = desktopBridge()?.settings;
   const openServerSettings = desktopSettings ? () => void desktopSettings.openServer() : undefined;
   const settingItems: (SettingsSearchItem<SettingsSection> & { available?: boolean })[] = [
+    {
+      section: "computer",
+      target: "computer-resources",
+      label: t`Resource limits`,
+      keywords: ["docker", "memory", "ram", "cpu", "cores", "performance"],
+      available: Boolean(desktopBridge()?.resources),
+    },
     {
       section: "general",
       target: "account",
@@ -744,7 +745,7 @@ export function SettingsOverlay({
               className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 pb-5 pt-6 sm:px-8 sm:pt-7"
             >
               <div className="flex min-w-0 flex-col gap-2">
-                <DialogTitle className="text-2xl font-medium text-foreground">
+                <DialogTitle className="text-heading2 font-medium text-foreground">
                   {sectionTitle}
                 </DialogTitle>
                 {!spaceScoped ? null : space && spaces.length > 1 && onSpaceChange ? (
@@ -759,10 +760,6 @@ export function SettingsOverlay({
                       if (next !== space.id) leaveSettings(() => onSpaceChange(next));
                     }}
                   />
-                ) : space ? (
-                  <p data-testid="settings-space" className="text-sm text-muted-foreground">
-                    {space.name}
-                  </p>
                 ) : null}
               </div>
               <DialogClose
@@ -780,7 +777,7 @@ export function SettingsOverlay({
                 ref={scrollRef}
                 data-testid="settings-scroll"
                 className={`min-h-0 flex-1 ${
-                  section === "models" || section === "voice" || section === "memory"
+                  section === "memory"
                     ? "flex flex-col overflow-hidden"
                     : "rk-scroll overflow-y-auto overscroll-contain px-6 pb-6 pt-6 sm:px-8 sm:pb-8"
                 }`}
@@ -801,12 +798,23 @@ export function SettingsOverlay({
                     revealTarget={reveal?.target ?? null}
                   />
                 ) : null}
-                {section === "confirmations" ? <ApprovalRulesSettings /> : null}
+                {section === "space" && space ? (
+                  <SpaceSettingsPanel
+                    key={space.id}
+                    space={space}
+                    onRename={(name) => onRenameSpace?.(space.id, name) ?? Promise.resolve()}
+                    onDelete={() => onDeleteSpace?.(space.id) ?? Promise.resolve()}
+                    onClose={requestClose}
+                    onBusyChange={setVoiceBusy}
+                  />
+                ) : null}
+                {section === "confirmations" ? <ApprovalRulesSettings scope="account" /> : null}
                 {section === "usage" ? (
                   <UsageSettingsPanel usage={usage} panelRef={usageRef} />
                 ) : null}
                 {section === "computer" && showComputer ? (
                   <ComputerSettingsPanel
+                    onBusyChange={setComputerBusy}
                     sandboxProvider={sandboxProvider}
                     onSandboxProviderChange={(next) => {
                       onSandboxProviderChange?.(next);
@@ -818,15 +826,12 @@ export function SettingsOverlay({
                 {section === "billing" && billingEnabled ? <BillingSettingsPanel /> : null}
                 {section === "updates" && showUpdates ? <UpdatesSettingsPanel /> : null}
                 {section === "models" ? (
-                  <ModelSettingsOverlay embedded onClose={requestClose} />
+                  <ModelSettingsOverlay embedded scope="account" onClose={requestClose} />
                 ) : null}
                 {section === "memory" && otherSpace && otherMemoryError ? (
                   <div className="px-6 py-6 sm:px-8">
                     <p className="mb-4 text-sm text-destructive">{otherMemoryError}</p>
-                    <Button
-                      variant="outline"
-                      onClick={() => setMemoryLoadAttempt((attempt) => attempt + 1)}
-                    >
+                    <Button variant="outline" onClick={() => void otherMemory.refetch()}>
                       {t`Retry`}
                     </Button>
                   </div>
@@ -842,6 +847,7 @@ export function SettingsOverlay({
                 {section === "voice" ? (
                   <VoiceSettingsOverlay
                     embedded
+                    scope="account"
                     onClose={requestClose}
                     onBusyChange={setVoiceBusy}
                   />

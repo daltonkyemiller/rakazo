@@ -19,6 +19,7 @@ const state = vi.hoisted(() => ({
 vi.mock("@expo/ui/community/bottom-sheet", () => ({
   BottomSheet: ({ children }: { children: ReactNode }) => <div role="dialog">{children}</div>,
 }));
+vi.mock("./side-insets", () => ({ useSideInsets: () => ({}) }));
 vi.mock("expo-router", () => ({
   router: { push: vi.fn(), back: vi.fn() },
   useFocusEffect: (callback: () => undefined | (() => void)) => {

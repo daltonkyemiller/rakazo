@@ -23,6 +23,7 @@ const { rpc, push, alert, afterChatNotifyChange, listSpaceArtifacts, params, col
     focus: new Set<() => (() => void) | undefined>(),
   }));
 
+vi.mock("./side-insets", () => ({ useSideInsets: () => ({}) }));
 vi.mock("./api", () => ({
   rpc,
   currentApiBase: () => "https://api.example",
@@ -234,7 +235,7 @@ describe("bot profile", () => {
       .map((node) => node.textContent ?? "")
       .filter((text) => /digest|report|webhook/.test(text));
     expect(rows).toEqual([
-      "Weekly reportEvery Monday at 9:00 AM · America/New_York · Paused",
+      "Weekly reportEvery Monday at 9:00 AM (America/New_York), Paused",
       "Morning digestWeekdays at 7:00 AM",
       "Inbox webhookWebhook",
     ]);

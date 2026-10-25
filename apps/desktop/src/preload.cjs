@@ -2,6 +2,10 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("rakazoDesktop", {
   platform: process.platform,
+  resources: {
+    state: () => ipcRenderer.invoke("desktop.resources.state"),
+    apply: (settings) => ipcRenderer.invoke("desktop.resources.apply", settings),
+  },
   mcp: {
     state: () => ipcRenderer.invoke("desktop.mcp.state"),
     add: (input) => ipcRenderer.invoke("desktop.mcp.add", input),
@@ -35,6 +39,9 @@ contextBridge.exposeInMainWorld("rakazoDesktop", {
       ipcRenderer.on("desktop.computer.configure", handler);
       return () => ipcRenderer.off("desktop.computer.configure", handler);
     },
+  },
+  passkeys: {
+    rpIds: () => ipcRenderer.invoke("desktop.passkeys.rpIds"),
   },
   window: {
     close: () => ipcRenderer.invoke("desktop.window.close"),

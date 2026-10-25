@@ -61,7 +61,7 @@ msgid "{0} (over {1})"
 msgstr "{0} ({1} 초과)"
 
 #. placeholder {0}: preset.n
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "{0} {unitLabel}"
 msgstr "{0} {unitLabel}"
 
@@ -160,6 +160,10 @@ msgstr "{commandVariable}은(는) 예약되어 있어 명령 변수로 사용할
 msgid "{connectedCount} connected"
 msgstr ""
 
+#: src/components/markdown-copy.tsx
+msgid "{count, plural, one {# row} other {# rows}}"
+msgstr "{count, plural, one {# 행} other {# 행}}"
+
 #: src/lib/billing.ts
 msgid "{count} days"
 msgstr ""
@@ -180,6 +184,18 @@ msgstr ""
 msgid "{days}d ago"
 msgstr "{days}일 전"
 
+#: src/components/markdown-copy.tsx
+msgid "{from}–{to} of {total} rows"
+msgstr "{total}개 행 중 {from}–{to}"
+
+#: src/lib/cron.ts
+msgid "{fromName} to {toName}"
+msgstr "{fromName}~{toName}"
+
+#: src/components/markdown-copy.tsx
+msgid "{header}, column {index}"
+msgstr "{header}, 열 {index}"
+
 #: src/components/ToolActivityDisclosure.tsx
 msgid "{hidden, plural, one {+# earlier step} other {+# earlier steps}}"
 msgstr ""
@@ -187,6 +203,10 @@ msgstr ""
 #: src/lib/relative-time.ts
 msgid "{hours}h ago"
 msgstr "{hours}시간 전"
+
+#: src/components/markdown-copy.tsx
+msgid "{label}, empty"
+msgstr "{label}, 비어 있음"
 
 #: src/lib/relative-time.ts
 msgid "{minutes}m ago"
@@ -880,7 +900,7 @@ msgid "Ask"
 msgstr "묻기"
 
 #. placeholder {0}: preset.time
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "at {0}"
 msgstr "{0}에"
 
@@ -1042,6 +1062,11 @@ msgstr "라이브 데스크톱 시작 중…"
 msgid "bot"
 msgstr "Bot"
 
+#. js-lingui-explicit-id
+#: src/lib/browser-notifications.ts
+msgid "Bot"
+msgstr ""
+
 #: src/lib/identity-display.ts
 #: src/pages/IntegrationSetup.tsx
 #: src/pages/MessagingSettingsOverlay.tsx
@@ -1050,12 +1075,7 @@ msgstr "Bot"
 #: src/pages/shell/avatar-studio-popover.tsx
 #: src/pages/shell/message-view.tsx
 msgid "Bot"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/lib/browser-notifications.ts
-msgid "Bot"
-msgstr "Bot"
+msgstr "봇"
 
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Bot is watching, not acting"
@@ -1449,6 +1469,10 @@ msgstr "패널 닫기"
 msgid "Close preview"
 msgstr "미리보기 닫기"
 
+#: src/components/markdown-copy.tsx
+msgid "Close table"
+msgstr "표 닫기"
+
 #: src/pages/SettingsOverlay.tsx
 msgid "Close user settings"
 msgstr "계정 설정 닫기"
@@ -1487,6 +1511,10 @@ msgstr "색상"
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Color {color}"
 msgstr "색상 {color}"
+
+#: src/components/markdown-copy.tsx
+msgid "column {index}"
+msgstr "열 {index}"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Comfortable"
@@ -1657,7 +1685,7 @@ msgstr "MCP 서버 ‘{name}’ 연결"
 
 #: src/pages/MemorySettingsOverlay.tsx
 msgid "Connect memory provider"
-msgstr ""
+msgstr "기억 서비스 연결"
 
 #: src/components/ModelCredits.tsx
 msgid "Connect my own"
@@ -1761,11 +1789,12 @@ msgid "Conversations"
 msgstr ""
 
 #: src/components/ComputersUnavailableHint.tsx
+#: src/components/markdown-copy.tsx
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "Copied"
-msgstr ""
+msgstr "복사됨"
 
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
@@ -1777,9 +1806,21 @@ msgstr "복사"
 msgid "Copy .env example"
 msgstr ""
 
+#: src/components/markdown-copy.tsx
+msgid "Copy code"
+msgstr "코드 복사"
+
+#: src/components/markdown-copy.tsx
+msgid "Copy diagram source"
+msgstr "다이어그램 소스 복사"
+
 #: src/pages/shell/agent-import.tsx
 msgid "Copy prompt"
 msgstr "프롬프트 복사"
+
+#: src/components/markdown-copy.tsx
+msgid "Copy rows"
+msgstr "행 복사"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Cost"
@@ -2352,7 +2393,7 @@ msgstr ""
 msgid "Credits"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "Cron"
 msgstr "Cron"
 
@@ -2394,7 +2435,7 @@ msgid "Dark"
 msgstr "다크"
 
 #: src/lib/billing.ts
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "day"
 msgstr "일"
 
@@ -2402,7 +2443,7 @@ msgstr "일"
 msgid "Day-to-day work"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "days"
 msgstr "일"
 
@@ -2649,6 +2690,10 @@ msgstr "{0} 다운로드"
 msgid "Download {name}"
 msgstr "{name} 다운로드"
 
+#: src/components/markdown-copy.tsx
+msgid "Download CSV"
+msgstr "CSV 다운로드"
+
 #: src/components/DesktopUpdates.tsx
 msgid "Downloading…"
 msgstr ""
@@ -2773,26 +2818,44 @@ msgstr ""
 msgid "Error details"
 msgstr "오류 세부정보"
 
+#: src/lib/cron.ts
 #: src/pages/ExternalConversationSettings.tsx
-#: src/pages/RoutineSchedule.tsx
 msgid "Every"
 msgstr "매"
+
+#. placeholder {0}: names[0] ?? ""
+#: src/lib/cron.ts
+msgid "Every {0}"
+msgstr "매주 {0}"
+
+#. placeholder {0}: names.slice(0, -1).join(", ")
+#. placeholder {1}: names.at(-1) ?? ""
+#: src/lib/cron.ts
+msgid "Every {0} and {1}"
+msgstr "매주 {0} 및 {1}"
 
 #: src/pages/RoutineSchedule.tsx
 msgid "every {intervalAmountSelect} {intervalUnitSelect}"
 msgstr "{intervalAmountSelect} {intervalUnitSelect}마다"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Every day"
 msgstr "매일"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Every hour"
 msgstr "매시간"
 
-#: src/pages/RoutineSchedule.tsx
+#. placeholder {0}: String(minute).padStart(2, "0")
+#: src/lib/cron.ts
+msgid "Every hour at :{0}"
+msgstr "매시간 {0}분"
+
+#: src/lib/cron.ts
 msgid "Every Monday"
 msgstr "매주 월요일"
 
@@ -2823,6 +2886,10 @@ msgstr "{0} 펼치기"
 msgid "Expand {label}"
 msgstr "{label} 펼치기"
 
+#: src/components/markdown-copy.tsx
+msgid "Expand table"
+msgstr "표 확장"
+
 #: src/components/CloudAgentCard.tsx
 msgid "expired"
 msgstr "만료됨"
@@ -2840,15 +2907,15 @@ msgstr "CRM에서 이번 주 목록을 내려받아 공유 폴더에 넣기"
 msgid "External conversation"
 msgstr ""
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
-msgid "Extra high"
-msgstr "매우 높음"
-
 #. js-lingui-explicit-id
 #: src/lib/model-catalog.ts
 msgid "Extra high"
 msgstr ""
+
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
+msgid "Extra high"
+msgstr "매우 높음"
 
 #: src/components/CloudAgentCard.tsx
 msgid "failed"
@@ -2957,6 +3024,10 @@ msgstr "비밀번호를 잊으셨나요?"
 msgid "Free"
 msgstr "무료"
 
+#: src/lib/cron.ts
+msgid "Friday"
+msgstr "금요일"
+
 #: src/pages/ActivityList.tsx
 msgid "From"
 msgstr ""
@@ -3057,16 +3128,16 @@ msgstr "비밀번호 숨기기"
 msgid "Hide transcript"
 msgstr "대화 기록 숨기기"
 
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
+msgid "High"
+msgstr ""
+
 #: src/lib/ticket-priority.ts
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "High"
 msgstr "높음"
-
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
-msgid "High"
-msgstr ""
 
 #: src/components/composer/HoldToTalk.tsx
 msgid "Hold to talk"
@@ -3076,12 +3147,12 @@ msgstr ""
 msgid "Hold to talk, release to send"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "hour"
 msgstr "시간"
 
+#: src/lib/cron.ts
 #: src/pages/ExternalConversationSettings.tsx
-#: src/pages/RoutineSchedule.tsx
 msgid "hours"
 msgstr "시간"
 
@@ -3448,16 +3519,16 @@ msgstr "로그아웃"
 msgid "Looks like it contains a key"
 msgstr "키가 포함된 것 같습니다"
 
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
+msgid "Low"
+msgstr ""
+
 #: src/lib/ticket-priority.ts
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "Low"
 msgstr "낮음"
-
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
-msgid "Low"
-msgstr ""
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "Lowercase letters, numbers, hyphens and underscores, starting with a letter."
@@ -3535,15 +3606,19 @@ msgstr "읽지 않음으로 표시"
 msgid "Mark as Unread"
 msgstr "읽지 않음으로 표시"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
-msgid "Max"
-msgstr "최대"
+#: src/components/markdown-copy.tsx
+msgid "Markdown table"
+msgstr "Markdown 표"
 
 #. js-lingui-explicit-id
 #: src/lib/model-catalog.ts
 msgid "Max"
 msgstr ""
+
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
+msgid "Max"
+msgstr "최대"
 
 #: src/pages/Artifacts.tsx
 msgid "Maximize"
@@ -3570,15 +3645,15 @@ msgstr ""
 msgid "MCP servers"
 msgstr "MCP 서버"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
-msgid "Medium"
-msgstr "보통"
-
 #. js-lingui-explicit-id
 #: src/lib/model-catalog.ts
 msgid "Medium"
 msgstr ""
+
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
+msgid "Medium"
+msgstr "보통"
 
 #: src/lib/identity-display.ts
 msgid "Member"
@@ -3637,13 +3712,13 @@ msgstr "OpenClaw 기능을 언급함"
 msgid "Mentions: {mentions}"
 msgstr "언급: {mentions}"
 
-#: src/pages/shell/chat-shared.ts
-#: src/pages/shell/composer.tsx
+#. js-lingui-explicit-id
+#: src/lib/browser-notifications.ts
 msgid "Message"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/browser-notifications.ts
+#: src/pages/shell/chat-shared.ts
+#: src/pages/shell/composer.tsx
 msgid "Message"
 msgstr "메시지"
 
@@ -3685,15 +3760,15 @@ msgstr "메시징"
 msgid "Microphone failed"
 msgstr "마이크를 사용할 수 없습니다."
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
-msgid "Minimal"
-msgstr "최소"
-
 #. js-lingui-explicit-id
 #: src/lib/model-catalog.ts
 msgid "Minimal"
 msgstr ""
+
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
+msgid "Minimal"
+msgstr "최소"
 
 #: src/pages/WindowChrome.tsx
 msgid "Minimize"
@@ -3703,12 +3778,12 @@ msgstr "최소화"
 msgid "Minimize call"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "minute"
 msgstr "분"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
-#: src/pages/RoutineSchedule.tsx
 msgid "minutes"
 msgstr "분"
 
@@ -3771,11 +3846,15 @@ msgstr "서버에서 찾은 모델"
 msgid "Models list OK. {modelCount, plural, one {# model} other {# models}} available. Chat was not tested."
 msgstr "모델 목록이 정상입니다. {modelCount, plural, one {모델 #개} other {모델 #개}}를 사용할 수 있습니다. 채팅은 테스트하지 않았습니다."
 
+#: src/lib/cron.ts
+msgid "Monday"
+msgstr "월요일"
+
 #: src/lib/billing.ts
 msgid "month"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "Monthly"
 msgstr "매월"
 
@@ -3933,6 +4012,10 @@ msgstr "새 스페이스"
 msgid "New ticket"
 msgstr ""
 
+#: src/components/markdown-copy.tsx
+msgid "Next page"
+msgstr "다음 페이지"
+
 #: src/pages/SettingsOverlay.tsx
 msgid "Next settings sections"
 msgstr ""
@@ -4027,6 +4110,10 @@ msgstr ""
 #: src/pages/SpaceSearch.tsx
 msgid "No results"
 msgstr "검색 결과가 없습니다"
+
+#: src/components/markdown-copy.tsx
+msgid "No rows"
+msgstr "행 없음"
 
 #: src/pages/ActivityList.tsx
 msgid "No runs match these filters."
@@ -4145,10 +4232,18 @@ msgstr ""
 msgid "On a schedule"
 msgstr "일정에 따라"
 
+#: src/lib/cron.ts
+msgid "on day {day} at {time}"
+msgstr "{day}일 {time}"
+
 #. placeholder {0}: preset.time
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "on the 1st at {0}"
 msgstr "매월 1일 {0}에"
+
+#: src/lib/cron.ts
+msgid "One-time"
+msgstr "한 번"
 
 #: src/components/ModelCredits.tsx
 msgid "One-time purchase. Credits do not expire."
@@ -4265,6 +4360,10 @@ msgstr "출력"
 #: src/pages/Board.tsx
 msgid "Owner"
 msgstr "소유자"
+
+#: src/components/markdown-copy.tsx
+msgid "Page {page} of {count}"
+msgstr "{page} / {count}페이지"
 
 #: src/pages/RoutineEditor.tsx
 msgid "PagerDuty incident"
@@ -4431,6 +4530,10 @@ msgstr "{0} 미리보기"
 #: src/pages/Artifacts.tsx
 msgid "Preview isn't available for this file type — download it to view it."
 msgstr ""
+
+#: src/components/markdown-copy.tsx
+msgid "Previous page"
+msgstr "이전 페이지"
 
 #: src/pages/SettingsOverlay.tsx
 msgid "Previous settings sections"
@@ -4904,6 +5007,10 @@ msgstr "자동 실행"
 msgid "Routines that run while you're away"
 msgstr ""
 
+#: src/components/markdown-copy.tsx
+msgid "Row"
+msgstr "행"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Run at"
 msgstr "실행 시간"
@@ -4969,6 +5076,10 @@ msgstr ""
 #: src/components/mcp/McpServerAdd.tsx
 msgid "Runs where Rakazo is hosted, away from this Mac."
 msgstr ""
+
+#: src/lib/cron.ts
+msgid "Saturday"
+msgstr "토요일"
 
 #: src/components/AskCard.tsx
 #: src/components/PasskeySettings.tsx
@@ -5403,6 +5514,22 @@ msgstr "같은 이름의 항목이 방금 추가되었습니다. 다시 시도�
 msgid "Something you chose cannot work here. Untick it and try again."
 msgstr "선택한 항목 중 여기서 작동하지 않는 것이 있습니다. 선택을 해제하고 다시 시도하세요."
 
+#: src/components/markdown-copy.tsx
+msgid "Sort by {column}"
+msgstr "{column} 기준 정렬"
+
+#: src/components/markdown-copy.tsx
+msgid "Sort cleared"
+msgstr "정렬 해제됨"
+
+#: src/components/markdown-copy.tsx
+msgid "Sorted by {column}, ascending"
+msgstr "{column} 기준 정렬됨, 오름차순"
+
+#: src/components/markdown-copy.tsx
+msgid "Sorted by {column}, descending"
+msgstr "{column} 기준 정렬됨, 내림차순"
+
 #: src/lib/identity-display.ts
 #: src/pages/SettingsOverlay.tsx
 msgid "Space"
@@ -5532,6 +5659,10 @@ msgstr ""
 msgid "Subscription required"
 msgstr ""
 
+#: src/lib/cron.ts
+msgid "Sunday"
+msgstr "일요일"
+
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "Supports images"
@@ -5554,6 +5685,10 @@ msgstr "전환 중…"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "System"
 msgstr "시스템"
+
+#: src/components/markdown-copy.tsx
+msgid "Table"
+msgstr "표"
 
 #: src/pages/shell/computer-overlay.tsx
 msgid "Take control"
@@ -5797,6 +5932,10 @@ msgstr "이 구독 로그인 방식은 아직 Rakazo에서 지원되지 않습�
 msgid "This week"
 msgstr ""
 
+#: src/lib/cron.ts
+msgid "Thursday"
+msgstr "목요일"
+
 #: src/pages/RoutineSchedule.tsx
 msgid "Time of day"
 msgstr "실행 시각"
@@ -5911,6 +6050,10 @@ msgstr "다시 시도"
 #: src/lib/model-connection-preflight.ts
 msgid "Try the test again."
 msgstr "테스트를 다시 시도하세요."
+
+#: src/lib/cron.ts
+msgid "Tuesday"
+msgstr "화요일"
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "Type"
@@ -6204,14 +6347,23 @@ msgstr "웹훅"
 msgid "Website login"
 msgstr ""
 
+#: src/lib/cron.ts
+msgid "Wednesday"
+msgstr "수요일"
+
 #: src/lib/billing.ts
 msgid "week"
 msgstr ""
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Weekdays"
 msgstr "주중"
+
+#: src/lib/cron.ts
+msgid "Weekends"
+msgstr "주말"
 
 #: src/components/SignupSurvey.tsx
 msgid "Welcome to Rakazo"

@@ -61,7 +61,7 @@ msgid "{0} (over {1})"
 msgstr "{0} (meer dan {1})"
 
 #. placeholder {0}: preset.n
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "{0} {unitLabel}"
 msgstr "{0} {unitLabel}"
 
@@ -160,6 +160,10 @@ msgstr "{commandVariable} is gereserveerd en kan niet als commandovariabele word
 msgid "{connectedCount} connected"
 msgstr ""
 
+#: src/components/markdown-copy.tsx
+msgid "{count, plural, one {# row} other {# rows}}"
+msgstr "{count, plural, one {# rij} other {# rijen}}"
+
 #: src/lib/billing.ts
 msgid "{count} days"
 msgstr "{count} dagen"
@@ -180,6 +184,18 @@ msgstr "{count} jaar"
 msgid "{days}d ago"
 msgstr "{days}d geleden"
 
+#: src/components/markdown-copy.tsx
+msgid "{from}–{to} of {total} rows"
+msgstr "{from}–{to} van {total} rijen"
+
+#: src/lib/cron.ts
+msgid "{fromName} to {toName}"
+msgstr "{fromName} tot {toName}"
+
+#: src/components/markdown-copy.tsx
+msgid "{header}, column {index}"
+msgstr "{header}, kolom {index}"
+
 #: src/components/ToolActivityDisclosure.tsx
 msgid "{hidden, plural, one {+# earlier step} other {+# earlier steps}}"
 msgstr "{hidden, plural, one {+# eerdere stap} other {+# eerdere stappen}}"
@@ -187,6 +203,10 @@ msgstr "{hidden, plural, one {+# eerdere stap} other {+# eerdere stappen}}"
 #: src/lib/relative-time.ts
 msgid "{hours}h ago"
 msgstr "{hours}u geleden"
+
+#: src/components/markdown-copy.tsx
+msgid "{label}, empty"
+msgstr "{label}, leeg"
 
 #: src/lib/relative-time.ts
 msgid "{minutes}m ago"
@@ -880,7 +900,7 @@ msgid "Ask"
 msgstr "Vragen"
 
 #. placeholder {0}: preset.time
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "at {0}"
 msgstr "om {0}"
 
@@ -1042,6 +1062,11 @@ msgstr "Live desktop opstarten…"
 msgid "bot"
 msgstr "bot"
 
+#. js-lingui-explicit-id
+#: src/lib/browser-notifications.ts
+msgid "Bot"
+msgstr ""
+
 #: src/lib/identity-display.ts
 #: src/pages/IntegrationSetup.tsx
 #: src/pages/MessagingSettingsOverlay.tsx
@@ -1049,11 +1074,6 @@ msgstr "bot"
 #: src/pages/shell/agent-import.tsx
 #: src/pages/shell/avatar-studio-popover.tsx
 #: src/pages/shell/message-view.tsx
-msgid "Bot"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/lib/browser-notifications.ts
 msgid "Bot"
 msgstr "Bot"
 
@@ -1449,6 +1469,10 @@ msgstr "Paneel sluiten"
 msgid "Close preview"
 msgstr "Voorbeeld sluiten"
 
+#: src/components/markdown-copy.tsx
+msgid "Close table"
+msgstr "Tabel sluiten"
+
 #: src/pages/SettingsOverlay.tsx
 msgid "Close user settings"
 msgstr "Gebruikersinstellingen sluiten"
@@ -1487,6 +1511,10 @@ msgstr "Kleur"
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Color {color}"
 msgstr "Kleur {color}"
+
+#: src/components/markdown-copy.tsx
+msgid "column {index}"
+msgstr "kolom {index}"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Comfortable"
@@ -1657,7 +1685,7 @@ msgstr "MCP-server “{name}” koppelen"
 
 #: src/pages/MemorySettingsOverlay.tsx
 msgid "Connect memory provider"
-msgstr ""
+msgstr "Geheugenaanbieder koppelen"
 
 #: src/components/ModelCredits.tsx
 msgid "Connect my own"
@@ -1761,6 +1789,7 @@ msgid "Conversations"
 msgstr ""
 
 #: src/components/ComputersUnavailableHint.tsx
+#: src/components/markdown-copy.tsx
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
 #: src/pages/shell/agent-import.tsx
@@ -1777,9 +1806,21 @@ msgstr "Kopiëren"
 msgid "Copy .env example"
 msgstr ".env-voorbeeld kopiëren"
 
+#: src/components/markdown-copy.tsx
+msgid "Copy code"
+msgstr "Code kopiëren"
+
+#: src/components/markdown-copy.tsx
+msgid "Copy diagram source"
+msgstr "Diagrambron kopiëren"
+
 #: src/pages/shell/agent-import.tsx
 msgid "Copy prompt"
 msgstr "Prompt kopiëren"
+
+#: src/components/markdown-copy.tsx
+msgid "Copy rows"
+msgstr "Rijen kopiëren"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Cost"
@@ -2352,7 +2393,7 @@ msgstr ""
 msgid "Credits"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "Cron"
 msgstr "Cron"
 
@@ -2394,7 +2435,7 @@ msgid "Dark"
 msgstr "Donker"
 
 #: src/lib/billing.ts
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "day"
 msgstr "dag"
 
@@ -2402,7 +2443,7 @@ msgstr "dag"
 msgid "Day-to-day work"
 msgstr "Dagelijkse taken"
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "days"
 msgstr "dagen"
 
@@ -2423,7 +2464,7 @@ msgstr "Standaard"
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/bot-panel.tsx
 msgid "Default ({0})"
-msgstr ""
+msgstr "Standaard ({0})"
 
 #: src/pages/shell/agent-import.tsx
 msgid "Default from Hermes"
@@ -2649,6 +2690,10 @@ msgstr "{0} downloaden"
 msgid "Download {name}"
 msgstr "{name} downloaden"
 
+#: src/components/markdown-copy.tsx
+msgid "Download CSV"
+msgstr "CSV downloaden"
+
 #: src/components/DesktopUpdates.tsx
 msgid "Downloading…"
 msgstr "Bezig met downloaden…"
@@ -2773,26 +2818,44 @@ msgstr "Fout"
 msgid "Error details"
 msgstr "Foutdetails"
 
+#: src/lib/cron.ts
 #: src/pages/ExternalConversationSettings.tsx
-#: src/pages/RoutineSchedule.tsx
 msgid "Every"
 msgstr "Elke"
+
+#. placeholder {0}: names[0] ?? ""
+#: src/lib/cron.ts
+msgid "Every {0}"
+msgstr "Elke {0}"
+
+#. placeholder {0}: names.slice(0, -1).join(", ")
+#. placeholder {1}: names.at(-1) ?? ""
+#: src/lib/cron.ts
+msgid "Every {0} and {1}"
+msgstr "Elke {0} en {1}"
 
 #: src/pages/RoutineSchedule.tsx
 msgid "every {intervalAmountSelect} {intervalUnitSelect}"
 msgstr "elke {intervalAmountSelect} {intervalUnitSelect}"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Every day"
 msgstr "Elke dag"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Every hour"
 msgstr "Elk uur"
 
-#: src/pages/RoutineSchedule.tsx
+#. placeholder {0}: String(minute).padStart(2, "0")
+#: src/lib/cron.ts
+msgid "Every hour at :{0}"
+msgstr "Elk uur om :{0}"
+
+#: src/lib/cron.ts
 msgid "Every Monday"
 msgstr "Elke maandag"
 
@@ -2823,6 +2886,10 @@ msgstr "{0} uitklappen"
 msgid "Expand {label}"
 msgstr "{label} uitklappen"
 
+#: src/components/markdown-copy.tsx
+msgid "Expand table"
+msgstr "Tabel uitvouwen"
+
 #: src/components/CloudAgentCard.tsx
 msgid "expired"
 msgstr "verlopen"
@@ -2840,13 +2907,13 @@ msgstr "Exporteer de lijst van deze week uit het CRM en zet hem in de gedeelde m
 msgid "External conversation"
 msgstr "Extern gesprek"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
 msgid "Extra high"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
 msgid "Extra high"
 msgstr "Extra hoog"
 
@@ -2957,6 +3024,10 @@ msgstr "Wachtwoord vergeten?"
 msgid "Free"
 msgstr "Gratis"
 
+#: src/lib/cron.ts
+msgid "Friday"
+msgstr "vrijdag"
+
 #: src/pages/ActivityList.tsx
 msgid "From"
 msgstr "Van"
@@ -3057,14 +3128,14 @@ msgstr "Wachtwoord verbergen"
 msgid "Hide transcript"
 msgstr "Transcript verbergen"
 
-#: src/lib/ticket-priority.ts
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
 msgid "High"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
+#: src/lib/ticket-priority.ts
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
 msgid "High"
 msgstr "Hoog"
 
@@ -3076,12 +3147,12 @@ msgstr "Houd ingedrukt om te praten"
 msgid "Hold to talk, release to send"
 msgstr "Houd ingedrukt om te praten, laat los om te versturen"
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "hour"
 msgstr "uur"
 
+#: src/lib/cron.ts
 #: src/pages/ExternalConversationSettings.tsx
-#: src/pages/RoutineSchedule.tsx
 msgid "hours"
 msgstr "uren"
 
@@ -3448,14 +3519,14 @@ msgstr "Uitloggen"
 msgid "Looks like it contains a key"
 msgstr "Lijkt een sleutel te bevatten"
 
-#: src/lib/ticket-priority.ts
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
 msgid "Low"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
+#: src/lib/ticket-priority.ts
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
 msgid "Low"
 msgstr "Laag"
 
@@ -3535,13 +3606,17 @@ msgstr "Markeren als ongelezen"
 msgid "Mark as Unread"
 msgstr "Markeren als ongelezen"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
-msgid "Max"
-msgstr ""
+#: src/components/markdown-copy.tsx
+msgid "Markdown table"
+msgstr "Markdown-tabel"
 
 #. js-lingui-explicit-id
 #: src/lib/model-catalog.ts
+msgid "Max"
+msgstr ""
+
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
 msgid "Max"
 msgstr "Max"
 
@@ -3570,13 +3645,13 @@ msgstr "MCP-eindpunt"
 msgid "MCP servers"
 msgstr "MCP-servers"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
 msgid "Medium"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
 msgid "Medium"
 msgstr "Gemiddeld"
 
@@ -3637,13 +3712,13 @@ msgstr "Noemt OpenClaw-functies"
 msgid "Mentions: {mentions}"
 msgstr "Noemt: {mentions}"
 
-#: src/pages/shell/chat-shared.ts
-#: src/pages/shell/composer.tsx
+#. js-lingui-explicit-id
+#: src/lib/browser-notifications.ts
 msgid "Message"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/browser-notifications.ts
+#: src/pages/shell/chat-shared.ts
+#: src/pages/shell/composer.tsx
 msgid "Message"
 msgstr "Bericht"
 
@@ -3685,13 +3760,13 @@ msgstr "Berichten"
 msgid "Microphone failed"
 msgstr "Microfoon mislukt"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
 msgid "Minimal"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
 msgid "Minimal"
 msgstr "Minimaal"
 
@@ -3703,12 +3778,12 @@ msgstr "Minimaliseren"
 msgid "Minimize call"
 msgstr "Gesprek minimaliseren"
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "minute"
 msgstr "minuut"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
-#: src/pages/RoutineSchedule.tsx
 msgid "minutes"
 msgstr "minuten"
 
@@ -3771,11 +3846,15 @@ msgstr "Modellen van de server"
 msgid "Models list OK. {modelCount, plural, one {# model} other {# models}} available. Chat was not tested."
 msgstr "Modellenlijst is in orde. {modelCount, plural, one {# model} other {# modellen}} beschikbaar. Chat is niet getest."
 
+#: src/lib/cron.ts
+msgid "Monday"
+msgstr "maandag"
+
 #: src/lib/billing.ts
 msgid "month"
 msgstr "maand"
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "Monthly"
 msgstr "Maandelijks"
 
@@ -3933,6 +4012,10 @@ msgstr "Nieuwe space"
 msgid "New ticket"
 msgstr "Nieuw ticket"
 
+#: src/components/markdown-copy.tsx
+msgid "Next page"
+msgstr "Volgende pagina"
+
 #: src/pages/SettingsOverlay.tsx
 msgid "Next settings sections"
 msgstr ""
@@ -4027,6 +4110,10 @@ msgstr "Geen externe MCP-servers gevonden"
 #: src/pages/SpaceSearch.tsx
 msgid "No results"
 msgstr "Geen resultaten"
+
+#: src/components/markdown-copy.tsx
+msgid "No rows"
+msgstr "Geen rijen"
 
 #: src/pages/ActivityList.tsx
 msgid "No runs match these filters."
@@ -4145,10 +4232,18 @@ msgstr ""
 msgid "On a schedule"
 msgstr "Op een schema"
 
+#: src/lib/cron.ts
+msgid "on day {day} at {time}"
+msgstr "op dag {day} om {time}"
+
 #. placeholder {0}: preset.time
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "on the 1st at {0}"
 msgstr "op de 1e om {0}"
+
+#: src/lib/cron.ts
+msgid "One-time"
+msgstr "Eenmalig"
 
 #: src/components/ModelCredits.tsx
 msgid "One-time purchase. Credits do not expire."
@@ -4265,6 +4360,10 @@ msgstr "Uitvoer"
 #: src/pages/Board.tsx
 msgid "Owner"
 msgstr "Eigenaar"
+
+#: src/components/markdown-copy.tsx
+msgid "Page {page} of {count}"
+msgstr "Pagina {page} van {count}"
 
 #: src/pages/RoutineEditor.tsx
 msgid "PagerDuty incident"
@@ -4431,6 +4530,10 @@ msgstr "{0} bekijken"
 #: src/pages/Artifacts.tsx
 msgid "Preview isn't available for this file type — download it to view it."
 msgstr "Een voorbeeld is niet beschikbaar voor dit bestandstype — download het om het te bekijken."
+
+#: src/components/markdown-copy.tsx
+msgid "Previous page"
+msgstr "Vorige pagina"
 
 #: src/pages/SettingsOverlay.tsx
 msgid "Previous settings sections"
@@ -4904,6 +5007,10 @@ msgstr "Routines"
 msgid "Routines that run while you're away"
 msgstr "Routines die draaien terwijl je weg bent"
 
+#: src/components/markdown-copy.tsx
+msgid "Row"
+msgstr "Rij"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Run at"
 msgstr "Uitvoeren om"
@@ -4969,6 +5076,10 @@ msgstr "Draait wanneer deze bot een geverifieerd bericht van deze aanbieder ontv
 #: src/components/mcp/McpServerAdd.tsx
 msgid "Runs where Rakazo is hosted, away from this Mac."
 msgstr ""
+
+#: src/lib/cron.ts
+msgid "Saturday"
+msgstr "zaterdag"
 
 #: src/components/AskCard.tsx
 #: src/components/PasskeySettings.tsx
@@ -5403,6 +5514,22 @@ msgstr "Er is net iets met dezelfde naam toegevoegd. Probeer het opnieuw."
 msgid "Something you chose cannot work here. Untick it and try again."
 msgstr "Iets wat je koos werkt hier niet. Vink het uit en probeer het opnieuw."
 
+#: src/components/markdown-copy.tsx
+msgid "Sort by {column}"
+msgstr "Sorteren op {column}"
+
+#: src/components/markdown-copy.tsx
+msgid "Sort cleared"
+msgstr "Sortering gewist"
+
+#: src/components/markdown-copy.tsx
+msgid "Sorted by {column}, ascending"
+msgstr "Gesorteerd op {column}, oplopend"
+
+#: src/components/markdown-copy.tsx
+msgid "Sorted by {column}, descending"
+msgstr "Gesorteerd op {column}, aflopend"
+
 #: src/lib/identity-display.ts
 #: src/pages/SettingsOverlay.tsx
 msgid "Space"
@@ -5532,6 +5659,10 @@ msgstr "Abonneren"
 msgid "Subscription required"
 msgstr "Abonnement vereist"
 
+#: src/lib/cron.ts
+msgid "Sunday"
+msgstr "zondag"
+
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "Supports images"
@@ -5554,6 +5685,10 @@ msgstr "Bezig met wisselen…"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "System"
 msgstr "Systeem"
+
+#: src/components/markdown-copy.tsx
+msgid "Table"
+msgstr "Tabel"
 
 #: src/pages/shell/computer-overlay.tsx
 msgid "Take control"
@@ -5797,6 +5932,10 @@ msgstr "Deze abonnementsaanmelding is nog niet beschikbaar in Rakazo. Gebruik ee
 msgid "This week"
 msgstr "Deze week"
 
+#: src/lib/cron.ts
+msgid "Thursday"
+msgstr "donderdag"
+
 #: src/pages/RoutineSchedule.tsx
 msgid "Time of day"
 msgstr "Tijdstip van de dag"
@@ -5911,6 +6050,10 @@ msgstr "Opnieuw proberen"
 #: src/lib/model-connection-preflight.ts
 msgid "Try the test again."
 msgstr "Probeer de test opnieuw."
+
+#: src/lib/cron.ts
+msgid "Tuesday"
+msgstr "dinsdag"
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "Type"
@@ -6204,14 +6347,23 @@ msgstr "Webhook"
 msgid "Website login"
 msgstr "Websiteaanmelding"
 
+#: src/lib/cron.ts
+msgid "Wednesday"
+msgstr "woensdag"
+
 #: src/lib/billing.ts
 msgid "week"
 msgstr "week"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Weekdays"
 msgstr "Werkdagen"
+
+#: src/lib/cron.ts
+msgid "Weekends"
+msgstr "Weekenden"
 
 #: src/components/SignupSurvey.tsx
 msgid "Welcome to Rakazo"

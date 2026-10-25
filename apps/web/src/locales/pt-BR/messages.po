@@ -61,7 +61,7 @@ msgid "{0} (over {1})"
 msgstr "{0} (mais de {1})"
 
 #. placeholder {0}: preset.n
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "{0} {unitLabel}"
 msgstr "{0} {unitLabel}"
 
@@ -160,6 +160,10 @@ msgstr "{commandVariable} é reservada e não pode ser usada como variável de c
 msgid "{connectedCount} connected"
 msgstr ""
 
+#: src/components/markdown-copy.tsx
+msgid "{count, plural, one {# row} other {# rows}}"
+msgstr "{count, plural, one {# linha} other {# linhas}}"
+
 #: src/lib/billing.ts
 msgid "{count} days"
 msgstr ""
@@ -180,6 +184,18 @@ msgstr ""
 msgid "{days}d ago"
 msgstr "{days}d atrás"
 
+#: src/components/markdown-copy.tsx
+msgid "{from}–{to} of {total} rows"
+msgstr "{from}–{to} de {total} linhas"
+
+#: src/lib/cron.ts
+msgid "{fromName} to {toName}"
+msgstr "de {fromName} a {toName}"
+
+#: src/components/markdown-copy.tsx
+msgid "{header}, column {index}"
+msgstr "{header}, coluna {index}"
+
 #: src/components/ToolActivityDisclosure.tsx
 msgid "{hidden, plural, one {+# earlier step} other {+# earlier steps}}"
 msgstr ""
@@ -187,6 +203,10 @@ msgstr ""
 #: src/lib/relative-time.ts
 msgid "{hours}h ago"
 msgstr "{hours}h atrás"
+
+#: src/components/markdown-copy.tsx
+msgid "{label}, empty"
+msgstr "{label}, vazio"
 
 #: src/lib/relative-time.ts
 msgid "{minutes}m ago"
@@ -880,7 +900,7 @@ msgid "Ask"
 msgstr "Perguntar"
 
 #. placeholder {0}: preset.time
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "at {0}"
 msgstr "em {0}"
 
@@ -1042,6 +1062,11 @@ msgstr "Iniciando a área de trabalho ao vivo..."
 msgid "bot"
 msgstr "bot"
 
+#. js-lingui-explicit-id
+#: src/lib/browser-notifications.ts
+msgid "Bot"
+msgstr ""
+
 #: src/lib/identity-display.ts
 #: src/pages/IntegrationSetup.tsx
 #: src/pages/MessagingSettingsOverlay.tsx
@@ -1049,11 +1074,6 @@ msgstr "bot"
 #: src/pages/shell/agent-import.tsx
 #: src/pages/shell/avatar-studio-popover.tsx
 #: src/pages/shell/message-view.tsx
-msgid "Bot"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/lib/browser-notifications.ts
 msgid "Bot"
 msgstr "Bot"
 
@@ -1449,6 +1469,10 @@ msgstr "Fechar painel"
 msgid "Close preview"
 msgstr "Fechar pré-visualização"
 
+#: src/components/markdown-copy.tsx
+msgid "Close table"
+msgstr "Fechar tabela"
+
 #: src/pages/SettingsOverlay.tsx
 msgid "Close user settings"
 msgstr "Fechar configurações do usuário"
@@ -1487,6 +1511,10 @@ msgstr "Cor"
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Color {color}"
 msgstr "Cor {color}"
+
+#: src/components/markdown-copy.tsx
+msgid "column {index}"
+msgstr "coluna {index}"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Comfortable"
@@ -1657,7 +1685,7 @@ msgstr "Conecte o servidor MCP “{name}”"
 
 #: src/pages/MemorySettingsOverlay.tsx
 msgid "Connect memory provider"
-msgstr ""
+msgstr "Conectar provedor de memória"
 
 #: src/components/ModelCredits.tsx
 msgid "Connect my own"
@@ -1761,11 +1789,12 @@ msgid "Conversations"
 msgstr ""
 
 #: src/components/ComputersUnavailableHint.tsx
+#: src/components/markdown-copy.tsx
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "Copied"
-msgstr ""
+msgstr "Copiado"
 
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
@@ -1777,9 +1806,21 @@ msgstr "Copiar"
 msgid "Copy .env example"
 msgstr ""
 
+#: src/components/markdown-copy.tsx
+msgid "Copy code"
+msgstr "Copiar código"
+
+#: src/components/markdown-copy.tsx
+msgid "Copy diagram source"
+msgstr "Copiar fonte do diagrama"
+
 #: src/pages/shell/agent-import.tsx
 msgid "Copy prompt"
 msgstr "Copiar prompt"
+
+#: src/components/markdown-copy.tsx
+msgid "Copy rows"
+msgstr "Copiar linhas"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Cost"
@@ -2352,7 +2393,7 @@ msgstr ""
 msgid "Credits"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "Cron"
 msgstr "Cron"
 
@@ -2394,7 +2435,7 @@ msgid "Dark"
 msgstr "Escuro"
 
 #: src/lib/billing.ts
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "day"
 msgstr "dia"
 
@@ -2402,7 +2443,7 @@ msgstr "dia"
 msgid "Day-to-day work"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "days"
 msgstr "dias"
 
@@ -2649,6 +2690,10 @@ msgstr "Baixar {0}"
 msgid "Download {name}"
 msgstr "Baixar {name}"
 
+#: src/components/markdown-copy.tsx
+msgid "Download CSV"
+msgstr "Baixar CSV"
+
 #: src/components/DesktopUpdates.tsx
 msgid "Downloading…"
 msgstr ""
@@ -2773,26 +2818,44 @@ msgstr ""
 msgid "Error details"
 msgstr "Detalhes do erro"
 
+#: src/lib/cron.ts
 #: src/pages/ExternalConversationSettings.tsx
-#: src/pages/RoutineSchedule.tsx
 msgid "Every"
 msgstr "A cada"
+
+#. placeholder {0}: names[0] ?? ""
+#: src/lib/cron.ts
+msgid "Every {0}"
+msgstr "Toda semana: {0}"
+
+#. placeholder {0}: names.slice(0, -1).join(", ")
+#. placeholder {1}: names.at(-1) ?? ""
+#: src/lib/cron.ts
+msgid "Every {0} and {1}"
+msgstr "Toda semana: {0} e {1}"
 
 #: src/pages/RoutineSchedule.tsx
 msgid "every {intervalAmountSelect} {intervalUnitSelect}"
 msgstr "cada {intervalAmountSelect} {intervalUnitSelect}"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Every day"
 msgstr "Todos os dias"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Every hour"
 msgstr "A cada hora"
 
-#: src/pages/RoutineSchedule.tsx
+#. placeholder {0}: String(minute).padStart(2, "0")
+#: src/lib/cron.ts
+msgid "Every hour at :{0}"
+msgstr "Toda hora aos {0} minutos"
+
+#: src/lib/cron.ts
 msgid "Every Monday"
 msgstr "Toda segunda-feira"
 
@@ -2823,6 +2886,10 @@ msgstr ""
 msgid "Expand {label}"
 msgstr "Expandir {label}"
 
+#: src/components/markdown-copy.tsx
+msgid "Expand table"
+msgstr "Expandir tabela"
+
 #: src/components/CloudAgentCard.tsx
 msgid "expired"
 msgstr "expirado"
@@ -2840,15 +2907,15 @@ msgstr "Exporte a lista desta semana do CRM e solte-a na pasta compartilhada"
 msgid "External conversation"
 msgstr ""
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
-msgid "Extra high"
-msgstr "Extra alta"
-
 #. js-lingui-explicit-id
 #: src/lib/model-catalog.ts
 msgid "Extra high"
 msgstr ""
+
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
+msgid "Extra high"
+msgstr "Extra alta"
 
 #: src/components/CloudAgentCard.tsx
 msgid "failed"
@@ -2957,6 +3024,10 @@ msgstr "Esqueceu a senha?"
 msgid "Free"
 msgstr ""
 
+#: src/lib/cron.ts
+msgid "Friday"
+msgstr "sexta-feira"
+
 #: src/pages/ActivityList.tsx
 msgid "From"
 msgstr ""
@@ -3057,16 +3128,16 @@ msgstr ""
 msgid "Hide transcript"
 msgstr "Ocultar transcrição"
 
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
+msgid "High"
+msgstr ""
+
 #: src/lib/ticket-priority.ts
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "High"
 msgstr "Alto"
-
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
-msgid "High"
-msgstr ""
 
 #: src/components/composer/HoldToTalk.tsx
 msgid "Hold to talk"
@@ -3076,12 +3147,12 @@ msgstr ""
 msgid "Hold to talk, release to send"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "hour"
 msgstr "hora"
 
+#: src/lib/cron.ts
 #: src/pages/ExternalConversationSettings.tsx
-#: src/pages/RoutineSchedule.tsx
 msgid "hours"
 msgstr "horas"
 
@@ -3448,16 +3519,16 @@ msgstr "Sair"
 msgid "Looks like it contains a key"
 msgstr "Parece conter uma chave"
 
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
+msgid "Low"
+msgstr ""
+
 #: src/lib/ticket-priority.ts
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "Low"
 msgstr "Baixo"
-
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
-msgid "Low"
-msgstr ""
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "Lowercase letters, numbers, hyphens and underscores, starting with a letter."
@@ -3535,15 +3606,19 @@ msgstr "Marcar como não lida"
 msgid "Mark as Unread"
 msgstr "Marcar como Não Lida"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
-msgid "Max"
-msgstr "Máximo"
+#: src/components/markdown-copy.tsx
+msgid "Markdown table"
+msgstr "Tabela Markdown"
 
 #. js-lingui-explicit-id
 #: src/lib/model-catalog.ts
 msgid "Max"
 msgstr ""
+
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
+msgid "Max"
+msgstr "Máximo"
 
 #: src/pages/Artifacts.tsx
 msgid "Maximize"
@@ -3570,15 +3645,15 @@ msgstr ""
 msgid "MCP servers"
 msgstr "Servidores MCP"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
-msgid "Medium"
-msgstr "Médio"
-
 #. js-lingui-explicit-id
 #: src/lib/model-catalog.ts
 msgid "Medium"
 msgstr ""
+
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
+msgid "Medium"
+msgstr "Médio"
 
 #: src/lib/identity-display.ts
 msgid "Member"
@@ -3637,13 +3712,13 @@ msgstr "Menciona recursos do OpenClaw"
 msgid "Mentions: {mentions}"
 msgstr "Menciona: {mentions}"
 
-#: src/pages/shell/chat-shared.ts
-#: src/pages/shell/composer.tsx
+#. js-lingui-explicit-id
+#: src/lib/browser-notifications.ts
 msgid "Message"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/browser-notifications.ts
+#: src/pages/shell/chat-shared.ts
+#: src/pages/shell/composer.tsx
 msgid "Message"
 msgstr "Mensagem"
 
@@ -3685,15 +3760,15 @@ msgstr ""
 msgid "Microphone failed"
 msgstr "Falha no microfone"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
-msgid "Minimal"
-msgstr "Mínimo"
-
 #. js-lingui-explicit-id
 #: src/lib/model-catalog.ts
 msgid "Minimal"
 msgstr ""
+
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
+msgid "Minimal"
+msgstr "Mínimo"
 
 #: src/pages/WindowChrome.tsx
 msgid "Minimize"
@@ -3703,12 +3778,12 @@ msgstr "Minimizar"
 msgid "Minimize call"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "minute"
 msgstr "minuto"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
-#: src/pages/RoutineSchedule.tsx
 msgid "minutes"
 msgstr "minutos"
 
@@ -3771,11 +3846,15 @@ msgstr "Modelos do servidor"
 msgid "Models list OK. {modelCount, plural, one {# model} other {# models}} available. Chat was not tested."
 msgstr "Lista de modelos ok. {modelCount, plural, one {# modelo disponível} other {# modelos disponíveis}}. A conversa não foi testada."
 
+#: src/lib/cron.ts
+msgid "Monday"
+msgstr "segunda-feira"
+
 #: src/lib/billing.ts
 msgid "month"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "Monthly"
 msgstr "Mensalmente"
 
@@ -3933,6 +4012,10 @@ msgstr ""
 msgid "New ticket"
 msgstr ""
 
+#: src/components/markdown-copy.tsx
+msgid "Next page"
+msgstr "Próxima página"
+
 #: src/pages/SettingsOverlay.tsx
 msgid "Next settings sections"
 msgstr ""
@@ -4027,6 +4110,10 @@ msgstr ""
 #: src/pages/SpaceSearch.tsx
 msgid "No results"
 msgstr "Nenhum resultado"
+
+#: src/components/markdown-copy.tsx
+msgid "No rows"
+msgstr "Nenhuma linha"
 
 #: src/pages/ActivityList.tsx
 msgid "No runs match these filters."
@@ -4145,10 +4232,18 @@ msgstr ""
 msgid "On a schedule"
 msgstr ""
 
+#: src/lib/cron.ts
+msgid "on day {day} at {time}"
+msgstr "no dia {day} às {time}"
+
 #. placeholder {0}: preset.time
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "on the 1st at {0}"
 msgstr "no dia 1º às {0}"
+
+#: src/lib/cron.ts
+msgid "One-time"
+msgstr "Uma vez"
 
 #: src/components/ModelCredits.tsx
 msgid "One-time purchase. Credits do not expire."
@@ -4265,6 +4360,10 @@ msgstr "Saída"
 #: src/pages/Board.tsx
 msgid "Owner"
 msgstr "Proprietário"
+
+#: src/components/markdown-copy.tsx
+msgid "Page {page} of {count}"
+msgstr "Página {page} de {count}"
 
 #: src/pages/RoutineEditor.tsx
 msgid "PagerDuty incident"
@@ -4431,6 +4530,10 @@ msgstr "Pré-visualizar {0}"
 #: src/pages/Artifacts.tsx
 msgid "Preview isn't available for this file type — download it to view it."
 msgstr ""
+
+#: src/components/markdown-copy.tsx
+msgid "Previous page"
+msgstr "Página anterior"
 
 #: src/pages/SettingsOverlay.tsx
 msgid "Previous settings sections"
@@ -4904,6 +5007,10 @@ msgstr "Rotinas"
 msgid "Routines that run while you're away"
 msgstr ""
 
+#: src/components/markdown-copy.tsx
+msgid "Row"
+msgstr "Linha"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Run at"
 msgstr ""
@@ -4969,6 +5076,10 @@ msgstr ""
 #: src/components/mcp/McpServerAdd.tsx
 msgid "Runs where Rakazo is hosted, away from this Mac."
 msgstr ""
+
+#: src/lib/cron.ts
+msgid "Saturday"
+msgstr "sábado"
 
 #: src/components/AskCard.tsx
 #: src/components/PasskeySettings.tsx
@@ -5403,6 +5514,22 @@ msgstr "Algo com o mesmo nome acabou de ser adicionado. Tente de novo."
 msgid "Something you chose cannot work here. Untick it and try again."
 msgstr "Algo que você escolheu não funciona aqui. Desmarque e tente de novo."
 
+#: src/components/markdown-copy.tsx
+msgid "Sort by {column}"
+msgstr "Ordenar por {column}"
+
+#: src/components/markdown-copy.tsx
+msgid "Sort cleared"
+msgstr "Ordenação limpa"
+
+#: src/components/markdown-copy.tsx
+msgid "Sorted by {column}, ascending"
+msgstr "Ordenado por {column}, crescente"
+
+#: src/components/markdown-copy.tsx
+msgid "Sorted by {column}, descending"
+msgstr "Ordenado por {column}, decrescente"
+
 #: src/lib/identity-display.ts
 #: src/pages/SettingsOverlay.tsx
 msgid "Space"
@@ -5532,6 +5659,10 @@ msgstr ""
 msgid "Subscription required"
 msgstr ""
 
+#: src/lib/cron.ts
+msgid "Sunday"
+msgstr "domingo"
+
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "Supports images"
@@ -5554,6 +5685,10 @@ msgstr "Alternando…"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "System"
 msgstr "Sistema"
+
+#: src/components/markdown-copy.tsx
+msgid "Table"
+msgstr "Tabela"
 
 #: src/pages/shell/computer-overlay.tsx
 msgid "Take control"
@@ -5797,6 +5932,10 @@ msgstr "Este login de assinatura ainda não está disponível no Rakazo. Use uma
 msgid "This week"
 msgstr ""
 
+#: src/lib/cron.ts
+msgid "Thursday"
+msgstr "quinta-feira"
+
 #: src/pages/RoutineSchedule.tsx
 msgid "Time of day"
 msgstr "Hora do dia"
@@ -5911,6 +6050,10 @@ msgstr "Tentar novamente"
 #: src/lib/model-connection-preflight.ts
 msgid "Try the test again."
 msgstr "Tente o teste novamente."
+
+#: src/lib/cron.ts
+msgid "Tuesday"
+msgstr "terça-feira"
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "Type"
@@ -6204,14 +6347,23 @@ msgstr ""
 msgid "Website login"
 msgstr ""
 
+#: src/lib/cron.ts
+msgid "Wednesday"
+msgstr "quarta-feira"
+
 #: src/lib/billing.ts
 msgid "week"
 msgstr ""
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Weekdays"
 msgstr "Dias da semana"
+
+#: src/lib/cron.ts
+msgid "Weekends"
+msgstr "Fins de semana"
 
 #: src/components/SignupSurvey.tsx
 msgid "Welcome to Rakazo"

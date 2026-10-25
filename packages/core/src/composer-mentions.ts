@@ -1,5 +1,6 @@
 import type { Connection, ConnectionCatalogItem, McpServer } from "@rakazo/contracts";
-import { formatCron } from "./cron.js";
+import type { CronLabels } from "./cron.js";
+import { ENGLISH_CRON_LABELS, formatCron } from "./cron.js";
 import { displayName } from "./display-name.js";
 import { hasMentionToken } from "./group-mentions.js";
 
@@ -206,8 +207,12 @@ export function appendConnectorIntent(text: string, names: readonly string[]): s
   return trimmed ? `${trimmed}\n\n${line}` : line;
 }
 
-export function routineScheduleSubtitle(crons: readonly string[], botName?: string): string {
-  const schedule = crons.map((cron) => formatCron(cron)).join(", ");
+export function routineScheduleSubtitle(
+  crons: readonly string[],
+  botName?: string,
+  labels: CronLabels = ENGLISH_CRON_LABELS,
+): string {
+  const schedule = crons.map((cron) => formatCron(cron, labels)).join(", ");
   const name = displayName(botName, "");
   if (name) return `${schedule} (${name})`;
   return schedule;
@@ -260,6 +265,8 @@ export function buildComposerMentionOptions(input: {
   connectors: readonly MentionPickerConnector[];
   currentGroupId?: string | null;
   includeEveryone?: boolean;
+  /** Localized schedule words for routine subtitles; English when omitted. */
+  cronLabels?: CronLabels;
   /** When omitted, return every match (catalog build). When set, apply after query filter. */
   limit?: number;
 }): ComposerMention[] {
@@ -310,7 +317,11 @@ export function buildComposerMentionOptions(input: {
       id: routine.id,
       name,
       botId: routine.botId,
-      subtitle: routineScheduleSubtitle(routine.crons, duplicate ? routine.botName : undefined),
+      subtitle: routineScheduleSubtitle(
+        routine.crons,
+        duplicate ? routine.botName : undefined,
+        input.cronLabels,
+      ),
     });
   }
 

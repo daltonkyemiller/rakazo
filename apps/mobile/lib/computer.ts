@@ -1,5 +1,6 @@
 import type { ComputerMode, ComputerStatus as ContractComputerStatus } from "@rakazo/contracts";
-import { isRetryableError } from "@rakazo/core";
+import type { ScreenPageState } from "@rakazo/core";
+import { isRetryableError, SCREEN_PAGE_STATES } from "@rakazo/core";
 import { isLanOrLocalHost } from "./endpoint";
 import { t } from "./i18n";
 
@@ -57,14 +58,19 @@ export async function readScreenUrl(
   return null;
 }
 
-/** Proxied screens use the phone's server origin; direct LAN screens retain their own port. */
+/** Loopback proxies use the phone’s HTTPS endpoint; reachable screens keep their own origin. */
 export function embeddableScreenUrl(url: string | null, apiBase: string): string | null {
   if (!url) return null;
   try {
     const api = new URL(apiBase);
     let parsed = url.startsWith("/novnc/") ? new URL(url, api) : new URL(url);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
-    if (parsed.pathname.startsWith("/novnc/")) {
+    if (
+      parsed.pathname.startsWith("/novnc/") &&
+      isLocalHostname(parsed.hostname) &&
+      !isLocalHostname(api.hostname) &&
+      api.protocol === "https:"
+    ) {
       parsed = new URL(`${parsed.pathname}${parsed.search}${parsed.hash}`, api.origin);
     } else if (isLocalHostname(parsed.hostname) && !isLocalHostname(api.hostname)) {
       parsed.hostname = api.hostname;
@@ -185,4 +191,74 @@ export function controlLabel(computer: ComputerStatus | null, name: string, botI
 
 export function computerLabel(mode: ComputerMode | undefined, name: string) {
   return mode === "dedicated" ? t("{name}’s computer", { name }) : t("Team Computer");
+}
+
+/**
+ * The connection state a screen page posted to the WebView, or null. Only the exact
+ * `{"rakazoScreen": <state>}` shape counts; anything else is the keyboard bridge's or no one's.
+ */
+export function screenPageState(data: string): ScreenPageState | null {
+  let message: unknown;
+  try {
+    message = JSON.parse(data);
+  } catch {
+    return null;
+  }
+  if (!message || typeof message !== "object" || Array.isArray(message)) return null;
+  const keys = Object.keys(message);
+  const state = (message as { rakazoScreen?: unknown }).rakazoScreen;
+  if (keys.length !== 1 || keys[0] !== "rakazoScreen") return null;
+  return (SCREEN_PAGE_STATES as readonly unknown[]).includes(state)
+    ? (state as ScreenPageState)
+    : null;
+}
+
+/**
+ * A screen page's HTTP status through the web server's access check, or null if it couldn't
+ * be asked. Only the status is read, and nothing about the request is logged. It is meant for
+ * the server's status-only probe, which never redirects. React Native follows redirects
+ * whatever `redirect` says, so an answer from anywhere but the URL asked counts as no page (0).
+ */
+export async function screenPageStatus(
+  url: string,
+  fetchImpl: typeof fetch = fetch,
+  signal?: AbortSignal,
+): Promise<number | null> {
+  try {
+    const response = await fetchImpl(url, {
+      cache: "no-store",
+      credentials: "omit",
+      redirect: "manual",
+      signal,
+    });
+    void response.body?.cancel().catch(() => undefined);
+    const elsewhere = Boolean(response.url) && response.url !== url;
+    return elsewhere || response.redirected || response.type === "opaqueredirect"
+      ? 0
+      : response.status;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether a screen URL goes through the web server's screen proxy, which answers probes. The
+ * API hands it out sealed for the web server's address, which needn't be the API's own, so
+ * only the session path tells.
+ */
+export function isProxiedScreenPage(url: string): boolean {
+  try {
+    return new URL(url).pathname.startsWith("/novnc/session/");
+  } catch {
+    return false;
+  }
+}
+
+/** Whether a WebView message came from the screen's own page, not a page it navigated to. */
+export function fromScreenPage(pageUrl: string | undefined, screenUrl: string): boolean {
+  try {
+    return Boolean(pageUrl) && new URL(pageUrl!).origin === new URL(screenUrl).origin;
+  } catch {
+    return false;
+  }
 }

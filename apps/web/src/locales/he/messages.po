@@ -61,7 +61,7 @@ msgid "{0} (over {1})"
 msgstr "{0} (מעל {1})"
 
 #. placeholder {0}: preset.n
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "{0} {unitLabel}"
 msgstr "{0} {unitLabel}"
 
@@ -160,6 +160,10 @@ msgstr "{commandVariable} שמור ואי אפשר להשתמש בו כמשתנ�
 msgid "{connectedCount} connected"
 msgstr ""
 
+#: src/components/markdown-copy.tsx
+msgid "{count, plural, one {# row} other {# rows}}"
+msgstr "{count, plural, one {# שורה} other {# שורות}}"
+
 #: src/lib/billing.ts
 msgid "{count} days"
 msgstr "{count} ימים"
@@ -180,6 +184,18 @@ msgstr "{count} שנים"
 msgid "{days}d ago"
 msgstr "לפני {days} ימים"
 
+#: src/components/markdown-copy.tsx
+msgid "{from}–{to} of {total} rows"
+msgstr "{from}–{to} מתוך {total} שורות"
+
+#: src/lib/cron.ts
+msgid "{fromName} to {toName}"
+msgstr "מ-{fromName} עד {toName}"
+
+#: src/components/markdown-copy.tsx
+msgid "{header}, column {index}"
+msgstr "{header}, עמודה {index}"
+
 #: src/components/ToolActivityDisclosure.tsx
 msgid "{hidden, plural, one {+# earlier step} other {+# earlier steps}}"
 msgstr "{hidden, plural, one {+# שלב קודם} other {+# שלבים קודמים}}"
@@ -187,6 +203,10 @@ msgstr "{hidden, plural, one {+# שלב קודם} other {+# שלבים קודמ�
 #: src/lib/relative-time.ts
 msgid "{hours}h ago"
 msgstr "לפני {hours} שע׳"
+
+#: src/components/markdown-copy.tsx
+msgid "{label}, empty"
+msgstr "{label}, ריק"
 
 #: src/lib/relative-time.ts
 msgid "{minutes}m ago"
@@ -880,7 +900,7 @@ msgid "Ask"
 msgstr "לשאול"
 
 #. placeholder {0}: preset.time
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "at {0}"
 msgstr "בשעה {0}"
 
@@ -1042,6 +1062,11 @@ msgstr "מפעיל שולחן עבודה חי…"
 msgid "bot"
 msgstr "בוט"
 
+#. js-lingui-explicit-id
+#: src/lib/browser-notifications.ts
+msgid "Bot"
+msgstr ""
+
 #: src/lib/identity-display.ts
 #: src/pages/IntegrationSetup.tsx
 #: src/pages/MessagingSettingsOverlay.tsx
@@ -1049,11 +1074,6 @@ msgstr "בוט"
 #: src/pages/shell/agent-import.tsx
 #: src/pages/shell/avatar-studio-popover.tsx
 #: src/pages/shell/message-view.tsx
-msgid "Bot"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/lib/browser-notifications.ts
 msgid "Bot"
 msgstr "בוט"
 
@@ -1449,6 +1469,10 @@ msgstr "סגירת החלונית"
 msgid "Close preview"
 msgstr "סגירת התצוגה המקדימה"
 
+#: src/components/markdown-copy.tsx
+msgid "Close table"
+msgstr "סגירת טבלה"
+
 #: src/pages/SettingsOverlay.tsx
 msgid "Close user settings"
 msgstr "סגירת הגדרות המשתמש"
@@ -1487,6 +1511,10 @@ msgstr "צבע"
 #: src/pages/shell/avatar-studio-popover.tsx
 msgid "Color {color}"
 msgstr "צבע {color}"
+
+#: src/components/markdown-copy.tsx
+msgid "column {index}"
+msgstr "עמודה {index}"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Comfortable"
@@ -1657,7 +1685,7 @@ msgstr "חיבור שרת MCP “{name}”"
 
 #: src/pages/MemorySettingsOverlay.tsx
 msgid "Connect memory provider"
-msgstr ""
+msgstr "חיבור ספק זיכרון"
 
 #: src/components/ModelCredits.tsx
 msgid "Connect my own"
@@ -1761,6 +1789,7 @@ msgid "Conversations"
 msgstr ""
 
 #: src/components/ComputersUnavailableHint.tsx
+#: src/components/markdown-copy.tsx
 #: src/pages/model-settings/connection-controls.tsx
 #: src/pages/Onboarding.tsx
 #: src/pages/shell/agent-import.tsx
@@ -1777,9 +1806,21 @@ msgstr "העתקה"
 msgid "Copy .env example"
 msgstr "העתקת דוגמת .env"
 
+#: src/components/markdown-copy.tsx
+msgid "Copy code"
+msgstr "העתקת קוד"
+
+#: src/components/markdown-copy.tsx
+msgid "Copy diagram source"
+msgstr "העתקת מקור הדיאגרמה"
+
 #: src/pages/shell/agent-import.tsx
 msgid "Copy prompt"
 msgstr "העתקת ההנחיה"
+
+#: src/components/markdown-copy.tsx
+msgid "Copy rows"
+msgstr "העתקת שורות"
 
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Cost"
@@ -2352,7 +2393,7 @@ msgstr ""
 msgid "Credits"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "Cron"
 msgstr "Cron"
 
@@ -2394,7 +2435,7 @@ msgid "Dark"
 msgstr "כהה"
 
 #: src/lib/billing.ts
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "day"
 msgstr "יום"
 
@@ -2402,7 +2443,7 @@ msgstr "יום"
 msgid "Day-to-day work"
 msgstr "עבודה יומיומית"
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "days"
 msgstr "ימים"
 
@@ -2423,7 +2464,7 @@ msgstr "ברירת מחדל"
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/bot-panel.tsx
 msgid "Default ({0})"
-msgstr ""
+msgstr "ברירת מחדל ({0})"
 
 #: src/pages/shell/agent-import.tsx
 msgid "Default from Hermes"
@@ -2649,6 +2690,10 @@ msgstr "הורדת {0}"
 msgid "Download {name}"
 msgstr "הורדת {name}"
 
+#: src/components/markdown-copy.tsx
+msgid "Download CSV"
+msgstr "הורדת CSV"
+
 #: src/components/DesktopUpdates.tsx
 msgid "Downloading…"
 msgstr "מוריד…"
@@ -2773,26 +2818,44 @@ msgstr "שגיאה"
 msgid "Error details"
 msgstr "פרטי השגיאה"
 
+#: src/lib/cron.ts
 #: src/pages/ExternalConversationSettings.tsx
-#: src/pages/RoutineSchedule.tsx
 msgid "Every"
 msgstr "כל"
+
+#. placeholder {0}: names[0] ?? ""
+#: src/lib/cron.ts
+msgid "Every {0}"
+msgstr "כל {0}"
+
+#. placeholder {0}: names.slice(0, -1).join(", ")
+#. placeholder {1}: names.at(-1) ?? ""
+#: src/lib/cron.ts
+msgid "Every {0} and {1}"
+msgstr "כל {0} ו-{1}"
 
 #: src/pages/RoutineSchedule.tsx
 msgid "every {intervalAmountSelect} {intervalUnitSelect}"
 msgstr "כל {intervalAmountSelect} {intervalUnitSelect}"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Every day"
 msgstr "כל יום"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Every hour"
 msgstr "כל שעה"
 
-#: src/pages/RoutineSchedule.tsx
+#. placeholder {0}: String(minute).padStart(2, "0")
+#: src/lib/cron.ts
+msgid "Every hour at :{0}"
+msgstr "כל שעה בדקה {0}"
+
+#: src/lib/cron.ts
 msgid "Every Monday"
 msgstr "כל יום שני"
 
@@ -2823,6 +2886,10 @@ msgstr "הרחבת {0}"
 msgid "Expand {label}"
 msgstr "הרחבת {label}"
 
+#: src/components/markdown-copy.tsx
+msgid "Expand table"
+msgstr "הרחבת טבלה"
+
 #: src/components/CloudAgentCard.tsx
 msgid "expired"
 msgstr "פג תוקף"
@@ -2840,13 +2907,13 @@ msgstr "לייצא את הרשימה של השבוע מה-CRM ולשים אות�
 msgid "External conversation"
 msgstr "שיחה חיצונית"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
 msgid "Extra high"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
 msgid "Extra high"
 msgstr "גבוה מאוד"
 
@@ -2957,6 +3024,10 @@ msgstr "שכחת סיסמה?"
 msgid "Free"
 msgstr "חינם"
 
+#: src/lib/cron.ts
+msgid "Friday"
+msgstr "יום שישי"
+
 #: src/pages/ActivityList.tsx
 msgid "From"
 msgstr "מתאריך"
@@ -3057,16 +3128,16 @@ msgstr "הסתרת הסיסמה"
 msgid "Hide transcript"
 msgstr "הסתרת התמליל"
 
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
+msgid "High"
+msgstr ""
+
 #: src/lib/ticket-priority.ts
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "High"
-msgstr ""
-
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
-msgid "High"
-msgstr "גבוה"
+msgstr "גבוהה"
 
 #: src/components/composer/HoldToTalk.tsx
 msgid "Hold to talk"
@@ -3076,12 +3147,12 @@ msgstr ""
 msgid "Hold to talk, release to send"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "hour"
 msgstr "שעה"
 
+#: src/lib/cron.ts
 #: src/pages/ExternalConversationSettings.tsx
-#: src/pages/RoutineSchedule.tsx
 msgid "hours"
 msgstr "שעות"
 
@@ -3448,14 +3519,14 @@ msgstr "התנתקות"
 msgid "Looks like it contains a key"
 msgstr "נראה שמכיל מפתח"
 
-#: src/lib/ticket-priority.ts
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
 msgid "Low"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
+#: src/lib/ticket-priority.ts
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
 msgid "Low"
 msgstr "נמוך"
 
@@ -3535,13 +3606,17 @@ msgstr "סימון כלא נקראה"
 msgid "Mark as Unread"
 msgstr "סימון כלא נקראה"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
-msgid "Max"
-msgstr ""
+#: src/components/markdown-copy.tsx
+msgid "Markdown table"
+msgstr "טבלת Markdown"
 
 #. js-lingui-explicit-id
 #: src/lib/model-catalog.ts
+msgid "Max"
+msgstr ""
+
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
 msgid "Max"
 msgstr "מקסימלי"
 
@@ -3570,13 +3645,13 @@ msgstr "נקודת קצה של MCP"
 msgid "MCP servers"
 msgstr "שרתי MCP"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
 msgid "Medium"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
 msgid "Medium"
 msgstr "בינוני"
 
@@ -3637,13 +3712,13 @@ msgstr "מזכיר תכונות של OpenClaw"
 msgid "Mentions: {mentions}"
 msgstr "מזכיר: {mentions}"
 
-#: src/pages/shell/chat-shared.ts
-#: src/pages/shell/composer.tsx
+#. js-lingui-explicit-id
+#: src/lib/browser-notifications.ts
 msgid "Message"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/browser-notifications.ts
+#: src/pages/shell/chat-shared.ts
+#: src/pages/shell/composer.tsx
 msgid "Message"
 msgstr "הודעה"
 
@@ -3685,13 +3760,13 @@ msgstr "הודעות"
 msgid "Microphone failed"
 msgstr "המיקרופון נכשל"
 
-#: src/pages/model-settings/compatible-model-fields.tsx
-#: src/pages/Onboarding.tsx
+#. js-lingui-explicit-id
+#: src/lib/model-catalog.ts
 msgid "Minimal"
 msgstr ""
 
-#. js-lingui-explicit-id
-#: src/lib/model-catalog.ts
+#: src/pages/model-settings/compatible-model-fields.tsx
+#: src/pages/Onboarding.tsx
 msgid "Minimal"
 msgstr "מינימלי"
 
@@ -3703,12 +3778,12 @@ msgstr "מזעור"
 msgid "Minimize call"
 msgstr ""
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "minute"
 msgstr "דקה"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
-#: src/pages/RoutineSchedule.tsx
 msgid "minutes"
 msgstr "דקות"
 
@@ -3771,11 +3846,15 @@ msgstr "מודלים מהשרת"
 msgid "Models list OK. {modelCount, plural, one {# model} other {# models}} available. Chat was not tested."
 msgstr "רשימת המודלים תקינה. {modelCount, plural, one {מודל אחד זמין} other {# מודלים זמינים}}. הצ׳אט לא נבדק."
 
+#: src/lib/cron.ts
+msgid "Monday"
+msgstr "יום שני"
+
 #: src/lib/billing.ts
 msgid "month"
 msgstr "חודש"
 
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "Monthly"
 msgstr "חודשי"
 
@@ -3933,6 +4012,10 @@ msgstr "מרחב חדש"
 msgid "New ticket"
 msgstr "כרטיס חדש"
 
+#: src/components/markdown-copy.tsx
+msgid "Next page"
+msgstr "העמוד הבא"
+
 #: src/pages/SettingsOverlay.tsx
 msgid "Next settings sections"
 msgstr ""
@@ -4027,6 +4110,10 @@ msgstr "לא נמצאו שרתי MCP מרוחקים"
 #: src/pages/SpaceSearch.tsx
 msgid "No results"
 msgstr "אין תוצאות"
+
+#: src/components/markdown-copy.tsx
+msgid "No rows"
+msgstr "אין שורות"
 
 #: src/pages/ActivityList.tsx
 msgid "No runs match these filters."
@@ -4145,10 +4232,18 @@ msgstr ""
 msgid "On a schedule"
 msgstr "לפי תזמון"
 
+#: src/lib/cron.ts
+msgid "on day {day} at {time}"
+msgstr "ביום {day} בשעה {time}"
+
 #. placeholder {0}: preset.time
-#: src/pages/RoutineSchedule.tsx
+#: src/lib/cron.ts
 msgid "on the 1st at {0}"
 msgstr "ב-1 לחודש בשעה {0}"
+
+#: src/lib/cron.ts
+msgid "One-time"
+msgstr "חד-פעמי"
 
 #: src/components/ModelCredits.tsx
 msgid "One-time purchase. Credits do not expire."
@@ -4265,6 +4360,10 @@ msgstr "פלט"
 #: src/pages/Board.tsx
 msgid "Owner"
 msgstr "בעלים"
+
+#: src/components/markdown-copy.tsx
+msgid "Page {page} of {count}"
+msgstr "עמוד {page} מתוך {count}"
 
 #: src/pages/RoutineEditor.tsx
 msgid "PagerDuty incident"
@@ -4431,6 +4530,10 @@ msgstr "תצוגה מקדימה של {0}"
 #: src/pages/Artifacts.tsx
 msgid "Preview isn't available for this file type — download it to view it."
 msgstr "תצוגה מקדימה אינה זמינה לסוג הקובץ הזה — אפשר להוריד אותו כדי לצפות בו."
+
+#: src/components/markdown-copy.tsx
+msgid "Previous page"
+msgstr "העמוד הקודם"
 
 #: src/pages/SettingsOverlay.tsx
 msgid "Previous settings sections"
@@ -4904,6 +5007,10 @@ msgstr "רוטינות"
 msgid "Routines that run while you're away"
 msgstr "רוטינות שרצות גם כשלא נמצאים"
 
+#: src/components/markdown-copy.tsx
+msgid "Row"
+msgstr "שורה"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Run at"
 msgstr "הרצה ב-"
@@ -4969,6 +5076,10 @@ msgstr "רץ כשהבוט הזה מקבל הודעה מאומתת מהספק ה�
 #: src/components/mcp/McpServerAdd.tsx
 msgid "Runs where Rakazo is hosted, away from this Mac."
 msgstr ""
+
+#: src/lib/cron.ts
+msgid "Saturday"
+msgstr "שבת"
 
 #: src/components/AskCard.tsx
 #: src/components/PasskeySettings.tsx
@@ -5403,6 +5514,22 @@ msgstr "משהו עם אותו שם נוסף זה עתה. יש לנסות שוב
 msgid "Something you chose cannot work here. Untick it and try again."
 msgstr "משהו שבחרת לא יכול לעבוד כאן. יש לבטל את הסימון ולנסות שוב."
 
+#: src/components/markdown-copy.tsx
+msgid "Sort by {column}"
+msgstr "מיון לפי {column}"
+
+#: src/components/markdown-copy.tsx
+msgid "Sort cleared"
+msgstr "המיון נוקה"
+
+#: src/components/markdown-copy.tsx
+msgid "Sorted by {column}, ascending"
+msgstr "מוין לפי {column}, בסדר עולה"
+
+#: src/components/markdown-copy.tsx
+msgid "Sorted by {column}, descending"
+msgstr "מוין לפי {column}, בסדר יורד"
+
 #: src/lib/identity-display.ts
 #: src/pages/SettingsOverlay.tsx
 msgid "Space"
@@ -5532,6 +5659,10 @@ msgstr "הרשמה למנוי"
 msgid "Subscription required"
 msgstr "נדרש מנוי"
 
+#: src/lib/cron.ts
+msgid "Sunday"
+msgstr "יום ראשון"
+
 #: src/pages/model-settings/compatible-model-fields.tsx
 #: src/pages/Onboarding.tsx
 msgid "Supports images"
@@ -5554,6 +5685,10 @@ msgstr "מחליף…"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "System"
 msgstr "מערכת"
+
+#: src/components/markdown-copy.tsx
+msgid "Table"
+msgstr "טבלה"
 
 #: src/pages/shell/computer-overlay.tsx
 msgid "Take control"
@@ -5797,6 +5932,10 @@ msgstr "התחברות עם המנוי הזה עדיין לא זמינה ב-Raka
 msgid "This week"
 msgstr "השבוע"
 
+#: src/lib/cron.ts
+msgid "Thursday"
+msgstr "יום חמישי"
+
 #: src/pages/RoutineSchedule.tsx
 msgid "Time of day"
 msgstr "שעה ביום"
@@ -5911,6 +6050,10 @@ msgstr "לנסות שוב"
 #: src/lib/model-connection-preflight.ts
 msgid "Try the test again."
 msgstr "אפשר לנסות את הבדיקה שוב."
+
+#: src/lib/cron.ts
+msgid "Tuesday"
+msgstr "יום שלישי"
 
 #: src/pages/shell/bot-credentials.tsx
 msgid "Type"
@@ -6204,14 +6347,23 @@ msgstr "Webhook"
 msgid "Website login"
 msgstr "התחברות לאתר"
 
+#: src/lib/cron.ts
+msgid "Wednesday"
+msgstr "יום רביעי"
+
 #: src/lib/billing.ts
 msgid "week"
 msgstr "שבוע"
 
+#: src/lib/cron.ts
 #: src/pages/RoutineEditor.tsx
 #: src/pages/RoutineSchedule.tsx
 msgid "Weekdays"
 msgstr "שני עד שישי"
+
+#: src/lib/cron.ts
+msgid "Weekends"
+msgstr "סופי שבוע"
 
 #: src/components/SignupSurvey.tsx
 msgid "Welcome to Rakazo"

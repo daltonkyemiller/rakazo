@@ -1,3 +1,4 @@
+import { typeScale } from "@rakazo/ui-tokens";
 import { StyleSheet } from "react-native";
 import { mobileTokens } from "../lib/appearance";
 import { transparentColor } from "../lib/color";
@@ -14,7 +15,8 @@ export function createThreadHeaderStyles() {
       minWidth: 0,
       overflow: "hidden",
       minHeight: HEADER_CONTROL_SIZE,
-      paddingHorizontal: 14,
+      paddingStart: 14,
+      paddingEnd: 10,
       borderRadius: 999,
     },
     titleCapsuleFill: {
@@ -23,9 +25,8 @@ export function createThreadHeaderStyles() {
     title: {
       flexShrink: 1,
       minWidth: 0,
+      ...typeScale.cardTitle,
       color: tokens.foreground,
-      fontSize: 18,
-      fontWeight: "600",
     },
     headerActions: {
       flexDirection: "row",

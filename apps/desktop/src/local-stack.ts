@@ -594,9 +594,11 @@ export class LocalStackController {
   }
 
   private async hasLocalReleaseImages(binary: string, signal: AbortSignal): Promise<boolean> {
-    // Moving tags must still check the registry for newer images.
-    if (!this.deps.imageTag.startsWith("v") || !STABLE_VERSION.test(this.deps.imageTag.slice(1)))
-      return false;
+    // Commit-pinned local builds and releases are immutable; moving tags still check the registry.
+    const localBuild = /^local-[a-f0-9]{8,40}$/.test(this.deps.imageTag);
+    const release =
+      this.deps.imageTag.startsWith("v") && STABLE_VERSION.test(this.deps.imageTag.slice(1));
+    if (!localBuild && !release) return false;
     const config = await this.compose(
       binary,
       ["config", "--images"],

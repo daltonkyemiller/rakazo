@@ -512,25 +512,28 @@ describe("LocalStackController", () => {
     }
   });
 
-  it("starts a pinned release offline when all resolved images are cached", async () => {
-    const images = ["registry.example.test/app:v1.2.3", "registry.example.test/computer:v1.2.3"];
-    const stack = controller({}, (args) => {
-      if (args[7] === "config") return { stdout: `${images.join("\n")}\n` };
-      if (args[0] === "image" && args[1] === "inspect") return { stdout: "sha256:cached\n" };
-      if (args[7] === "pull") return { code: 1, stderr: "registry unavailable" };
-      return ok(args);
-    });
+  it.each(["v1.2.3", "local-1234abcd"])(
+    "starts cached immutable images offline: %s",
+    async (imageTag) => {
+      const images = ["registry.example.test/app:v1.2.3", "registry.example.test/computer:v1.2.3"];
+      const stack = controller({ imageTag, probe: async () => imageTag }, (args) => {
+        if (args[7] === "config") return { stdout: `${images.join("\n")}\n` };
+        if (args[0] === "image" && args[1] === "inspect") return { stdout: "sha256:cached\n" };
+        if (args[7] === "pull") return { code: 1, stderr: "registry unavailable" };
+        return ok(args);
+      });
 
-    expect((await stack.start()).phase).toBe("ready");
-    expect(calls.some((call) => call.args[7] === "pull")).toBe(false);
-    expect(calls.find((call) => call.args[0] === "image")?.args).toEqual([
-      "image",
-      "inspect",
-      "--format",
-      "{{.Id}}",
-      ...images,
-    ]);
-  });
+      expect((await stack.start()).phase).toBe("ready");
+      expect(calls.some((call) => call.args[7] === "pull")).toBe(false);
+      expect(calls.find((call) => call.args[0] === "image")?.args).toEqual([
+        "image",
+        "inspect",
+        "--format",
+        "{{.Id}}",
+        ...images,
+      ]);
+    },
+  );
 
   it("pulls a pinned release when an image is missing", async () => {
     const stack = controller({}, (args) => {

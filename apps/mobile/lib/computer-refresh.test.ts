@@ -30,6 +30,31 @@ function setup() {
 
 afterEach(() => vi.useRealTimers());
 describe("computer refresh lifecycle", () => {
+  it("retries an absent screen on the next poll while the computer is running", async () => {
+    vi.useFakeTimers();
+    const fixture = setup();
+    fixture.readScreen.mockResolvedValueOnce(null);
+    fixture.controller.start();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fixture.onScreen).toHaveBeenLastCalledWith(null);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(fixture.onScreen).toHaveBeenLastCalledWith("https://screen.example.test");
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(fixture.readScreen).toHaveBeenCalledTimes(2);
+    fixture.controller.dispose();
+  });
+
+  it("does not repeatedly request an unsupported host screen", async () => {
+    vi.useFakeTimers();
+    const fixture = setup();
+    fixture.readStatus.mockResolvedValue({ ...running, kind: "desktop" });
+    fixture.readScreen.mockResolvedValue(null);
+    fixture.controller.start();
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(fixture.readScreen).toHaveBeenCalledTimes(1);
+    fixture.controller.dispose();
+  });
+
   it("waits for a slow refresh to finish before scheduling the next poll", async () => {
     vi.useFakeTimers();
     const fixture = setup();

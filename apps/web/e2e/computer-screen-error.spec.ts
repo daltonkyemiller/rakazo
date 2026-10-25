@@ -1,6 +1,46 @@
 import { expect, test } from "@playwright/test";
 import { activeBotId, captureScreenshot, completeOnboarding, rpc, signup } from "./helpers";
 
+test("empty screen responses recover and Mac computer chrome reserves window controls", async ({
+  page,
+}, testInfo) => {
+  await signup(page, `screen-empty-${Date.now()}@rakazo.test`, "password12", "Screen Recovery");
+  await completeOnboarding(page);
+  const botId = activeBotId(page);
+  await rpc(page, "computer/boot", { botId });
+  const screenUrl = "https://screen.example/vnc.html";
+  await page.route("https://screen.example/**", (route) =>
+    route.fulfill({
+      contentType: "text/html",
+      body: "<!doctype html><title>Test desktop</title><p>Desktop connected</p>",
+    }),
+  );
+  let empty = true;
+  await page.route("**/rpc/computer/screenUrl", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ json: { url: empty ? null : screenUrl } }),
+    }),
+  );
+  await page.getByRole("button", { name: "Agent computer", exact: true }).click();
+  const preview = page.getByTestId("computer-preview");
+  await expect(preview.getByRole("alert")).toBeVisible();
+  empty = false;
+  await preview.getByRole("button", { name: "Retry screen" }).click();
+  await expect(preview.locator("iframe")).toHaveAttribute("src", screenUrl);
+  await page.evaluate(() => {
+    document.documentElement.dataset.platform = "darwin";
+  });
+  await preview.hover();
+  await preview.getByTestId("computer-preview-open").click();
+  const chrome = page.getByTestId("computer-chrome");
+  await expect(chrome).toHaveCSS("padding-left", "96px");
+  const header = await chrome.boundingBox();
+  const content = await chrome.locator(":scope > div").first().boundingBox();
+  expect(content!.x - header!.x).toBeGreaterThanOrEqual(96);
+  await captureScreenshot(page, testInfo, "computer-mac-window-controls-clearance");
+});
+
 test("screen connection failures stay visible and can be retried", async ({ page }, testInfo) => {
   await signup(page, `screen-error-${Date.now()}@rakazo.test`, "password12", "Screen Error");
   await completeOnboarding(page);

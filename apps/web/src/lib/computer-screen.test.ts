@@ -12,6 +12,65 @@ import {
 } from "./computer-screen";
 
 describe("computer screen requests", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("recovers when a running computer briefly returns an empty screen", async () => {
+    vi.useFakeTimers();
+    const commit = vi.fn();
+    const load = vi
+      .fn()
+      .mockResolvedValueOnce({ url: null })
+      .mockResolvedValue({ url: "https://screen.example/vnc.html" });
+    const result = loadComputerScreen({
+      load,
+      commit,
+      isCurrent: () => true,
+      requireScreen: true,
+      fallbackError: "Could not connect",
+    });
+    await vi.runAllTimersAsync();
+    await expect(result).resolves.toBe("https://screen.example/vnc.html");
+    expect(commit).toHaveBeenCalledExactlyOnceWith({
+      url: "https://screen.example/vnc.html",
+      error: null,
+    });
+  });
+
+  it("shows a retryable error instead of a blank label when the screen stays absent", async () => {
+    vi.useFakeTimers();
+    const commit = vi.fn();
+    const result = loadComputerScreen({
+      load: async () => ({ url: null }),
+      commit,
+      isCurrent: () => true,
+      requireScreen: true,
+      fallbackError: "Could not connect",
+    });
+    await vi.runAllTimersAsync();
+    await expect(result).resolves.toBeNull();
+    expect(commit).toHaveBeenCalledExactlyOnceWith({ url: null, error: "Could not connect" });
+  });
+
+  it("stops empty-screen retries when the user leaves the computer", async () => {
+    vi.useFakeTimers();
+    const load = vi.fn().mockResolvedValue({ url: null });
+    const commit = vi.fn();
+    let current = true;
+    const result = loadComputerScreen({
+      load,
+      commit,
+      isCurrent: () => current,
+      requireScreen: true,
+      fallbackError: "Could not connect",
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    current = false;
+    await vi.runAllTimersAsync();
+    await expect(result).resolves.toBeNull();
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(commit).not.toHaveBeenCalled();
+  });
+
   it("shows connection failures and lets a successful retry clear them", async () => {
     const commit = vi.fn();
     const options = {

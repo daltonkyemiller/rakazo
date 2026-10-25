@@ -1137,6 +1137,8 @@ function SpaceShell() {
         cacheComputerFor(id, { screenUrl: screen.url });
       },
       fallbackError: t`Could not connect to the computer screen`,
+      requireScreen:
+        computerRef.current?.state === "running" && computerRef.current.kind !== "desktop",
     });
   }
 

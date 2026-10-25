@@ -11,11 +11,21 @@ export async function loadComputerScreen(options: {
   isCurrent: () => boolean;
   commit: (result: ComputerScreenResult) => void;
   fallbackError: string;
+  requireScreen?: boolean;
 }): Promise<string | null> {
   let result: ComputerScreenResult;
   try {
-    const screen = await options.load();
-    result = { url: screen.url, error: null };
+    let screen = await options.load();
+    for (let attempt = 1; options.requireScreen && !screen.url && attempt < 5; attempt += 1) {
+      if (!options.isCurrent()) return null;
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      if (!options.isCurrent()) return null;
+      screen = await options.load();
+    }
+    result = {
+      url: screen.url,
+      error: options.requireScreen && !screen.url ? options.fallbackError : null,
+    };
   } catch (error) {
     result = {
       url: null,

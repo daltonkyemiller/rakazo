@@ -21,6 +21,10 @@ html[data-platform="darwin"] #root {
   font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
+html[data-platform="darwin"] [data-testid="computer-chrome"] {
+  padding-left: 96px;
+}
+
 /* viewport-fit=cover lets the shell reach the screen edges; keep it clear of notches and the home indicator. */
 #root {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)

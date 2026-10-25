@@ -43,8 +43,7 @@ export function createComputerRefresh(options: {
   let activeActions = 0;
   let pendingRevision: number | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  // A completed read is cached even when it returned null (no screen for this status), so the
-  // status alone decides when to ask again; the viewer clears the cache when a URL stops working.
+  // Cache absent screens only when none is expected. A running desktop can briefly return null.
   let screenLoaded = false;
   let screenStatus: string | undefined;
   let screenReadAt = 0;
@@ -84,7 +83,7 @@ export function createComputerRefresh(options: {
         try {
           const url = await options.readScreen(screenAttempts);
           if (!current()) return;
-          screenLoaded = true;
+          screenLoaded = url !== null || status.state !== "running" || status.kind === "desktop";
           screenStatus = screenKey(status);
           screenReadAt = screenRenewReadAt(url, Date.now());
           options.onScreen(url);

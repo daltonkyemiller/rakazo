@@ -14,17 +14,27 @@ describe("desktop child windows", () => {
     ).toBe(false);
   });
 
-  it.each([
-    "rakazo-model-oauth",
-    "rakazo-mcp-oauth",
-    "rakazo-sso-oauth",
-    "rakazo-app-connect",
-    "rakazo-plugin-connect",
-  ])("keeps the intentional %s flow in an Electron popup", (frameName) => {
-    expect(
-      shouldOpenInAppPopup(appOrigin, "https://provider.example.com/authorize", frameName),
-    ).toBe(true);
-  });
+  it.each(["rakazo-model-oauth", "rakazo-mcp-oauth", "rakazo-sso-oauth"])(
+    "keeps the intentional %s flow in an Electron popup",
+    (frameName) => {
+      expect(
+        shouldOpenInAppPopup(appOrigin, "https://provider.example.com/authorize", frameName),
+      ).toBe(true);
+    },
+  );
+
+  it.each(["rakazo-app-connect", "rakazo-plugin-connect"])(
+    "opens %s connection pages in the system browser",
+    (frameName) => {
+      for (const url of [
+        "https://provider.example.com/authorize",
+        "http://provider.example.com/authorize",
+        `${appOrigin}/connect`,
+      ]) {
+        expect(shouldOpenInAppPopup(appOrigin, url, frameName)).toBe(false);
+      }
+    },
+  );
 
   it("rejects malformed URLs and non-HTTPS third-party targets", () => {
     expect(shouldOpenInAppPopup(appOrigin, "not a url", "rakazo-model-oauth")).toBe(false);

@@ -1,10 +1,4 @@
-const OAUTH_POPUP_NAMES = new Set([
-  "rakazo-app-connect",
-  "rakazo-mcp-oauth",
-  "rakazo-sso-oauth",
-  "rakazo-model-oauth",
-  "rakazo-plugin-connect",
-]);
+const OAUTH_POPUP_NAMES = new Set(["rakazo-mcp-oauth", "rakazo-sso-oauth", "rakazo-model-oauth"]);
 
 export function shouldOpenInAppPopup(
   appOrigin: string | null,
@@ -21,6 +15,7 @@ export function shouldOpenInAppPopup(
   if (childUrl === "about:blank" && frameName === "rakazo-sso-oauth") return true;
 
   const isHttp = target.protocol === "http:" || target.protocol === "https:";
+  if (frameName === "rakazo-app-connect" || frameName === "rakazo-plugin-connect") return false;
   if (appOrigin !== null && target.origin === appOrigin) return isHttp;
   return target.protocol === "https:" && OAUTH_POPUP_NAMES.has(frameName);
 }

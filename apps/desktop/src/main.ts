@@ -305,9 +305,8 @@ function createWindow(url: string, partition: string | null) {
   mainWindow = win;
   appWindowTargets.set(win, url);
   const targetOrigin = safeOrigin(url);
-  // Intentional OAuth flows open the provider's authorize page via a named
-  // window; give those and same-origin popups a normal frame. Everything else
-  // opens in the system browser so a connected server cannot navigate us away.
+  // Connection links use the system browser's existing login session. OAuth
+  // flows that require popup callbacks and same-origin app routes stay in Electron.
   // Hoisted for loopback OAuth capture so MCP/in-app localhost callbacks are skipped.
   const appOrigin = targetOrigin ?? safeOrigin(url);
   win.webContents.setWindowOpenHandler(({ url: childUrl, frameName }) => {

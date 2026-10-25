@@ -25,6 +25,7 @@ import {
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { settingsTargetClass, settingsTargetId } from "../components/SettingsLayout";
+import { providerDisplayName } from "../lib/localized-provider-hint";
 import { selectedSpaceId } from "../lib/rpc";
 import { useBoundSpaceId, useSpaceRpc } from "../lib/space-rpc";
 
@@ -79,7 +80,15 @@ export function ModelBackupsSettings({
   const [reloadNonce, setReloadNonce] = useState(0);
   const [state, setState] = useState<BackupsState>(() => loadingState(activeScopeKey));
   const options = useMemo(
-    () => connectedBackupOptions(catalog, credentials),
+    () =>
+      connectedBackupOptions(catalog, credentials).map((option) => ({
+        ...option,
+        providerName: providerDisplayName(
+          option.provider,
+          option.providerName,
+          credentials.find((credential) => credential.provider === option.provider)?.authKind,
+        ),
+      })),
     [catalog, credentials],
   );
   const optionByKey = useMemo(

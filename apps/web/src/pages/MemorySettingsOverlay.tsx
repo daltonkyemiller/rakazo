@@ -8,6 +8,7 @@ import {
   DialogTitle,
   NativeSelect,
   NativeSelectOption,
+  Spinner,
   ToggleGroup,
   ToggleGroupItem,
 } from "@rakazo/ui-web";
@@ -184,7 +185,7 @@ export function MemorySettingsOverlay({
 
           {config === undefined ? (
             <p className="text-[13px] text-muted-foreground">
-              <Trans>Loading memory settings…</Trans>
+              <Spinner aria-label={t`Loading memory settings…`} />
             </p>
           ) : config ? (
             <SettingsSection target="memory-provider">

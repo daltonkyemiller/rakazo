@@ -9,7 +9,10 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, expect, it, vi } from "vitest";
 
 vi.mock("@lingui/react/macro", () => ({
-  useLingui: () => ({ t: (strings: TemplateStringsArray) => strings.join("") }),
+  useLingui: () => ({
+    t: (strings: TemplateStringsArray) => strings.join(""),
+    i18n: { locale: "en" },
+  }),
   Trans: ({ children }: { children: ReactNode }) => children,
 }));
 
@@ -98,8 +101,7 @@ vi.mock("../components/ComputersUnavailableHint", () => ({
   ComputersUnavailableHint: () => null,
 }));
 vi.mock("../components/DesktopUpdates", () => ({ DesktopUpdateSection: () => null }));
-vi.mock("../components/SoftwareUpdateSection", () => ({ SoftwareUpdateSection: () => null }));
-vi.mock("../lib/auth", () => ({ authClient: { changePassword: vi.fn() } }));
+vi.mock("../lib/auth", () => ({ authClient: { changePassword: vi.fn(), updateUser: vi.fn() } }));
 vi.mock("../lib/i18n", () => ({
   getActiveUiLocale: () => "en",
   setUiLocale: (locale: string) => Promise.resolve(locale),
@@ -109,6 +111,7 @@ vi.mock("../lib/ui-appearance", () => ({
   setUiAppearance: vi.fn(),
 }));
 
+import { authClient } from "../lib/auth";
 import {
   COMPOSER_ENTER_TO_SEND_STORAGE_KEY,
   getComposerEnterToSend,
@@ -129,13 +132,7 @@ it("flips the stored tool activity preference from the settings toggle", async (
   const root = createRoot(container);
   try {
     await act(async () => {
-      root.render(
-        <GeneralSettingsPanels
-          name="Jamie"
-          avatarStyle="robot"
-          onAvatarStyleChange={async () => undefined}
-        />,
-      );
+      root.render(<GeneralSettingsPanels name="Jamie" />);
     });
 
     const toggle = container.querySelector<HTMLButtonElement>(
@@ -171,13 +168,7 @@ it("turns loading web images on and off from the settings toggle", async () => {
   const root = createRoot(container);
   try {
     await act(async () => {
-      root.render(
-        <GeneralSettingsPanels
-          name="Jamie"
-          avatarStyle="robot"
-          onAvatarStyleChange={async () => undefined}
-        />,
-      );
+      root.render(<GeneralSettingsPanels name="Jamie" />);
     });
 
     const toggle = container.querySelector<HTMLButtonElement>(
@@ -211,19 +202,51 @@ it.each([undefined, true, false])("respects the password-change policy (%s)", as
   const container = document.createElement("div");
   const root = createRoot(container);
   try {
-    await act(async () =>
-      root.render(
-        <GeneralSettingsPanels
-          name="Test"
-          avatarStyle="robot"
-          onAvatarStyleChange={async () => undefined}
-        />,
-      ),
-    );
+    await act(async () => root.render(<GeneralSettingsPanels name="Test" />));
     expect(container.textContent?.includes("Change password")).toBe(enabled !== false);
   } finally {
     await act(async () => root.unmount());
     accountPolicy.passwordChangeEnabled = undefined;
+    vi.unstubAllGlobals();
+  }
+});
+
+it("keeps the password form closed until asked and closes it after a change", async () => {
+  vi.mocked(authClient.changePassword).mockResolvedValue({ data: {}, error: null } as never);
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
+  const passwordFields = () => container.querySelectorAll('input[type="password"]');
+  const setValue = (input: Element, value: string) => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  try {
+    await act(async () => root.render(<GeneralSettingsPanels name="Test" />));
+    expect(passwordFields()).toHaveLength(0);
+
+    const open = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent === "Change password",
+    );
+    await act(async () => open?.click());
+    const [current, next, confirm] = passwordFields();
+    await act(async () => {
+      setValue(current!, "old-password");
+      setValue(next!, "new-password-123");
+      setValue(confirm!, "new-password-123");
+    });
+    await act(async () => container.querySelector("form")?.requestSubmit());
+
+    expect(authClient.changePassword).toHaveBeenCalledWith({
+      currentPassword: "old-password",
+      newPassword: "new-password-123",
+      revokeOtherSessions: true,
+    });
+    expect(passwordFields()).toHaveLength(0);
+  } finally {
+    await act(async () => root.unmount());
+    container.remove();
     vi.unstubAllGlobals();
   }
 });
@@ -235,13 +258,7 @@ it("updates the Enter preference from Settings and reflects external changes", a
   const root = createRoot(container);
   try {
     await act(async () => {
-      root.render(
-        <GeneralSettingsPanels
-          name="Test"
-          avatarStyle="robot"
-          onAvatarStyleChange={async () => undefined}
-        />,
-      );
+      root.render(<GeneralSettingsPanels name="Test" />);
     });
     const toggle = container.querySelector<HTMLButtonElement>(
       '[data-testid="composer-enter-to-send-toggle"]',
@@ -263,27 +280,65 @@ it("updates the Enter preference from Settings and reflects external changes", a
   }
 });
 
-it.each([
-  [201, "2 runs · 201 tokens"],
-  [null, "2 runs · — tokens"],
-])("shows usage totals (%s)", async (totalTokens, expected) => {
+it("shows usage totals and a per-model breakdown", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const container = document.createElement("div");
   const root = createRoot(container);
   try {
     await act(async () =>
       root.render(
-        <UsageSettingsPanel usage={{ runs: 2, inputTokens: 10, outputTokens: 1, totalTokens }} />,
+        <UsageSettingsPanel
+          usage={{
+            runs: 2,
+            inputTokens: 1200,
+            outputTokens: 34,
+            totalTokens: 1234,
+            costUsd: 0.5,
+            modelCalls: 3,
+            models: [
+              {
+                provider: "openai",
+                model: "model-a",
+                modelCalls: 2,
+                inputTokens: 1000,
+                outputTokens: 30,
+                totalTokens: 1030,
+                costUsd: 0.5,
+              },
+              {
+                provider: "local",
+                model: "model-b",
+                modelCalls: 1,
+                inputTokens: 200,
+                outputTokens: 4,
+                totalTokens: 204,
+                costUsd: null,
+              },
+            ],
+          }}
+        />,
       ),
     );
-    expect(container.textContent).toContain(expected);
+    expect([...container.querySelectorAll("dd")].map((node) => node.textContent)).toEqual([
+      "2",
+      "1,234",
+      "$0.50",
+    ]);
+    expect(
+      [...container.querySelectorAll("tbody tr")].map((row) =>
+        [...row.querySelectorAll("td")].map((cell) => cell.textContent),
+      ),
+    ).toEqual([
+      ["model-aopenai", "2", "1,000", "30", "$0.50"],
+      ["model-blocal", "1", "200", "4", "—"],
+    ]);
   } finally {
     await act(async () => root.unmount());
     vi.unstubAllGlobals();
   }
 });
 
-it("renders the server integrations entry as a plain link", async () => {
+it("does not expose server integration configuration", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const container = document.createElement("div");
   document.body.append(container);
@@ -292,20 +347,12 @@ it("renders the server integrations entry as a plain link", async () => {
     await act(async () => {
       root.render(
         <MemoryRouter>
-          <GeneralSettingsPanels
-            name="Jamie"
-            avatarStyle="robot"
-            onAvatarStyleChange={async () => undefined}
-            isDeploymentOwner
-          />
+          <GeneralSettingsPanels name="Jamie" />
         </MemoryRouter>,
       );
     });
 
-    const link = container.querySelector('a[href="/integrations/setup"]');
-    if (!link) throw new Error("Missing server integrations link");
-    expect(link.hasAttribute("type")).toBe(false);
-    expect(link.hasAttribute("role")).toBe(false);
+    expect(container.querySelector('a[href="/integrations/setup"]')).toBeNull();
   } finally {
     await act(async () => root.unmount());
     container.remove();
@@ -320,16 +367,7 @@ it("opens Advanced when search reveals one of its settings", async () => {
   const advancedTrigger = () =>
     container.querySelector('[data-testid="advanced-settings"] [aria-expanded]');
   const renderPanels = (revealTarget: string | null) =>
-    act(async () =>
-      root.render(
-        <GeneralSettingsPanels
-          name="Test"
-          avatarStyle="robot"
-          onAvatarStyleChange={async () => undefined}
-          revealTarget={revealTarget}
-        />,
-      ),
-    );
+    act(async () => root.render(<GeneralSettingsPanels name="Test" revealTarget={revealTarget} />));
   try {
     await renderPanels("theme");
     expect(advancedTrigger()?.getAttribute("aria-expanded")).toBe("false");
@@ -352,24 +390,11 @@ it("offers server settings only when the desktop app provides them", async () =>
       '#settings-target-server-settings button[aria-label="Server settings"]',
     );
   try {
-    await act(async () =>
-      root.render(
-        <GeneralSettingsPanels
-          name="Test"
-          avatarStyle="robot"
-          onAvatarStyleChange={async () => undefined}
-        />,
-      ),
-    );
+    await act(async () => root.render(<GeneralSettingsPanels name="Test" />));
     expect(serverButton()).toBeNull();
     await act(async () =>
       root.render(
-        <GeneralSettingsPanels
-          name="Test"
-          avatarStyle="robot"
-          onAvatarStyleChange={async () => undefined}
-          onOpenServerSettings={onOpenServerSettings}
-        />,
+        <GeneralSettingsPanels name="Test" onOpenServerSettings={onOpenServerSettings} />,
       ),
     );
     await act(async () => serverButton()?.click());

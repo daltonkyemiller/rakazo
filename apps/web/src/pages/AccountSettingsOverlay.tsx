@@ -1,8 +1,12 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { AccountSecurity, AvatarStyle } from "@rakazo/contracts";
-import { accountDisplay, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from "@rakazo/core";
+import type { AccountSecurity, UsageSummary } from "@rakazo/contracts";
 import {
-  BotAvatar,
+  accountDisplay,
+  displayName,
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+} from "@rakazo/core";
+import {
   Button,
   buttonVariants,
   Field,
@@ -16,6 +20,14 @@ import {
   ToggleGroupItem,
 } from "@rakazo/ui-web";
 import { Disclosure } from "@rakazo/ui-web/components/ui/disclosure";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@rakazo/ui-web/components/ui/table";
 import type { RefObject } from "react";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { Link } from "react-router-dom";
@@ -31,8 +43,6 @@ import {
   segmentedGroupClass,
   segmentedItemClass,
 } from "../components/SettingsLayout";
-import type { ServerUpdateLoad } from "../components/SoftwareUpdateSection";
-import { hasServerUpdates, SoftwareUpdateSection } from "../components/SoftwareUpdateSection";
 import { authClient } from "../lib/auth";
 import type { BotsSidebarDensity } from "../lib/bots-sidebar-density-pref";
 import {
@@ -68,8 +78,7 @@ import { authErrorText } from "../lib/user-error";
 export type SettingsGeneralProps = {
   email?: string | null;
   name: string;
-  avatarStyle: AvatarStyle;
-  onAvatarStyleChange: (style: AvatarStyle) => Promise<void>;
+  onNameSaved?: () => Promise<void>;
   /** The user's saved IANA timezone, or null before one is set. */
   timezone?: string | null;
   onTimezoneChange?: (timezone: string) => Promise<void>;
@@ -92,8 +101,7 @@ const ADVANCED_TARGETS: ReadonlySet<string> = new Set([
 export function GeneralSettingsPanels({
   email,
   name,
-  avatarStyle,
-  onAvatarStyleChange,
+  onNameSaved,
   timezone = null,
   onTimezoneChange,
   messagingEnabled = false,
@@ -104,6 +112,44 @@ export function GeneralSettingsPanels({
 }: SettingsGeneralProps) {
   const { t } = useLingui();
   const account = accountDisplay({ name, email }, t`You`);
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [namePending, setNamePending] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const nameId = useId();
+
+  async function saveName() {
+    const nextName = nameDraft.trim();
+    if (namePending || !nextName || nextName.length > 80) return;
+    if (!displayName(nextName, "")) {
+      setNameError(t`Could not update name`);
+      return;
+    }
+    // Nothing to save, so close without a request that could only fail.
+    if (nextName === (account.label === email ? "" : displayName(name, ""))) {
+      setNameError(null);
+      setEditingName(false);
+      return;
+    }
+    setNamePending(true);
+    setNameError(null);
+    try {
+      const result = await authClient.updateUser({ name: nextName });
+      if (result.error) {
+        setNameError(authErrorText(result.error, t`Could not update name`));
+        return;
+      }
+      setEditingName(false);
+      void Promise.resolve()
+        .then(() => onNameSaved?.())
+        .catch(() => undefined);
+    } catch {
+      setNameError(t`Could not update name`);
+    } finally {
+      setNamePending(false);
+    }
+  }
+
   const [accountSecurity, setAccountSecurity] = useState<AccountSecurity | null>(null);
   const [locale, setLocale] = useState<UiLocale>(() => getActiveUiLocale());
   const localeRequestRef = useRef(0);
@@ -117,7 +163,6 @@ export function GeneralSettingsPanels({
   );
   const sidebarDensityLabelId = useId();
   const appearanceLabelId = useId();
-  const avatarLabelId = useId();
   const [advancedOpen, setAdvancedOpen] = useState(false);
   useEffect(() => {
     if (revealTarget && ADVANCED_TARGETS.has(revealTarget)) setAdvancedOpen(true);
@@ -140,8 +185,6 @@ export function GeneralSettingsPanels({
     () => getRemoteImagesPreference() === "on",
   );
   const loadRemoteImagesId = useId();
-  const [avatarPending, setAvatarPending] = useState(false);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
   const timezoneId = useId();
   const [timezonePending, setTimezonePending] = useState(false);
   const [timezoneError, setTimezoneError] = useState<string | null>(null);
@@ -155,19 +198,6 @@ export function GeneralSettingsPanels({
       if (requestId !== localeRequestRef.current) return;
       setLocale(activated);
     });
-  }
-
-  async function chooseAvatarStyle(next: AvatarStyle) {
-    if (avatarPending || next === avatarStyle) return;
-    setAvatarPending(true);
-    setAvatarError(null);
-    try {
-      await onAvatarStyleChange(next);
-    } catch {
-      setAvatarError(t`Couldn't update avatars`);
-    } finally {
-      setAvatarPending(false);
-    }
   }
 
   async function chooseTimezone(next: string) {
@@ -186,10 +216,68 @@ export function GeneralSettingsPanels({
   return (
     <SettingsStack>
       <SettingsSection title={<Trans>Account</Trans>} target="account">
-        <SettingsRow
-          label={<span dir="auto">{account.label}</span>}
-          description={email && account.label !== email ? email : undefined}
-        />
+        {editingName ? (
+          <form
+            className="space-y-3 py-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void saveName();
+            }}
+          >
+            <Field>
+              <FieldLabel htmlFor={nameId}>
+                <Trans>Name</Trans>
+              </FieldLabel>
+              <Input
+                id={nameId}
+                autoComplete="name"
+                autoFocus
+                maxLength={80}
+                value={nameDraft}
+                disabled={namePending}
+                onChange={(event) => {
+                  setNameDraft(event.target.value);
+                  setNameError(null);
+                }}
+              />
+            </Field>
+            {nameError ? (
+              <p role="alert" className="text-sm text-destructive">
+                {nameError}
+              </p>
+            ) : null}
+            <div className="flex gap-2">
+              <Button type="submit" disabled={namePending || !nameDraft.trim()}>
+                <Trans>Save</Trans>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={namePending}
+                onClick={() => setEditingName(false)}
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <SettingsRow
+            label={<span dir="auto">{account.label}</span>}
+            description={email && account.label !== email ? email : undefined}
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setNameDraft(account.label === email ? "" : displayName(name, ""));
+                setNameError(null);
+                setEditingName(true);
+              }}
+            >
+              <Trans>Edit</Trans>
+            </Button>
+          </SettingsRow>
+        )}
         {accountSecurity?.hasPassword && accountSecurity.passwordChangeEnabled !== false ? (
           <ChangePasswordRow email={email} />
         ) : null}
@@ -243,47 +331,6 @@ export function GeneralSettingsPanels({
             >
               <Trans>Compact</Trans>
             </ToggleGroupItem>
-          </ToggleGroup>
-        </SettingsRow>
-        <SettingsRow
-          label={<Trans>Avatars</Trans>}
-          labelId={avatarLabelId}
-          target="avatars"
-          testId="avatar-style-select"
-          description={
-            avatarError ? (
-              <span role="alert" className="text-destructive">
-                {avatarError}
-              </span>
-            ) : undefined
-          }
-        >
-          <ToggleGroup
-            aria-labelledby={avatarLabelId}
-            value={[avatarStyle]}
-            onValueChange={([next]) => {
-              if (next) void chooseAvatarStyle(next as AvatarStyle);
-            }}
-            disabled={avatarPending}
-            spacing={1}
-            className={`${segmentedGroupClass} w-full grid-cols-2 sm:w-56`}
-          >
-            {(["robot", "organic"] as const).map((style) => (
-              <ToggleGroupItem
-                key={style}
-                value={style}
-                data-testid={`avatar-style-${style}`}
-                className={`${segmentedItemClass} gap-1.5`}
-              >
-                <BotAvatar
-                  color="#D9508A"
-                  identity="avatar-style-preview"
-                  size={18}
-                  variant={style}
-                />
-                {style === "robot" ? <Trans>Robot</Trans> : <Trans>Organic</Trans>}
-              </ToggleGroupItem>
-            ))}
           </ToggleGroup>
         </SettingsRow>
       </SettingsSection>
@@ -443,34 +490,79 @@ export function UsageSettingsPanel({
   usage,
   panelRef,
 }: {
-  usage?: {
-    runs: number;
-    inputTokens: number | null;
-    outputTokens: number | null;
-    totalTokens?: number | null;
-  } | null;
+  usage?: UsageSummary | null;
   panelRef?: RefObject<HTMLDivElement | null>;
 }) {
+  const { t, i18n } = useLingui();
+  const count = new Intl.NumberFormat(i18n.locale);
+  const usd = new Intl.NumberFormat(i18n.locale, { style: "currency", currency: "USD" });
+  const number = (value: number | null | undefined) => (value == null ? "—" : count.format(value));
+  const cost = (value: number | null | undefined) =>
+    value == null ? "—" : value > 0 && value < 0.01 ? `<${usd.format(0.01)}` : usd.format(value);
+  const models = usage?.models ?? [];
   return (
     <div ref={panelRef} tabIndex={-1} data-testid="usage-settings" className="outline-none">
-      <SettingsStack>
-        <SettingsSection>
-          <SettingsRow
-            label={
-              usage ? (
-                <span className="tabular-nums">
-                  <Trans>
-                    {usage.runs} runs · {usage.totalTokens ?? "—"} tokens
-                  </Trans>
-                </span>
-              ) : (
-                <Trans>Usage</Trans>
-              )
-            }
-            description={<Trans>Model spend uses your provider keys.</Trans>}
-          />
-        </SettingsSection>
-      </SettingsStack>
+      {usage ? (
+        <dl className="grid grid-cols-3 gap-3">
+          {[
+            { label: t`Runs`, value: number(usage.runs) },
+            { label: t`Tokens`, value: number(usage.totalTokens) },
+            { label: t`Cost`, value: cost(usage.costUsd) },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-xl border border-border px-4 py-3">
+              <dt className="text-[12.5px] text-muted-foreground">{stat.label}</dt>
+              <dd className="mt-1 text-[18px] font-medium tabular-nums text-foreground">
+                {stat.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {models.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-border px-2">
+          <Table className="text-[13.5px]">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="text-muted-foreground">
+                  <Trans>Model</Trans>
+                </TableHead>
+                <TableHead className="text-right text-muted-foreground">
+                  <Trans>Calls</Trans>
+                </TableHead>
+                <TableHead className="text-right text-muted-foreground">
+                  <Trans>Input</Trans>
+                </TableHead>
+                <TableHead className="text-right text-muted-foreground">
+                  <Trans>Output</Trans>
+                </TableHead>
+                <TableHead className="text-right text-muted-foreground">
+                  <Trans>Cost</Trans>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {models.map((row) => (
+                <TableRow key={`${row.provider}:${row.model}`} className="hover:bg-transparent">
+                  <TableCell>
+                    <div className="text-foreground">{row.model}</div>
+                    <div className="text-[12px] text-muted-foreground">{row.provider}</div>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {number(row.modelCalls)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {number(row.inputTokens)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {number(row.outputTokens)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{cost(row.costUsd)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -498,11 +590,10 @@ export function ComputerSettingsPanel({
   );
 }
 
-export function UpdatesSettingsPanel({ serverUpdate }: { serverUpdate: ServerUpdateLoad }) {
+export function UpdatesSettingsPanel() {
   return (
     <SettingsStack>
       <DesktopUpdateSection />
-      {hasServerUpdates(serverUpdate) ? <SoftwareUpdateSection load={serverUpdate} /> : null}
     </SettingsStack>
   );
 }
@@ -539,6 +630,7 @@ function ChangePasswordRow({ email }: { email?: string | null }) {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmation("");
+      setOpen(false);
       setSaved(true);
       setOpen(false);
     } catch {
@@ -633,11 +725,13 @@ function ChangePasswordRow({ email }: { email?: string | null }) {
 function SettingsPasswordInput({
   label,
   autoComplete,
+  autoFocus,
   value,
   onChange,
 }: {
   label: string;
   autoComplete: "current-password" | "new-password";
+  autoFocus?: boolean;
   value: string;
   onChange: (value: string) => void;
 }) {
@@ -649,6 +743,7 @@ function SettingsPasswordInput({
         id={id}
         type="password"
         autoComplete={autoComplete}
+        autoFocus={autoFocus}
         minLength={autoComplete === "new-password" ? MIN_PASSWORD_LENGTH : undefined}
         maxLength={MAX_PASSWORD_LENGTH}
         value={value}

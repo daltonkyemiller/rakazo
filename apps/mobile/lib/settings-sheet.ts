@@ -18,6 +18,7 @@ const settingsScreens = new Set([
   "mcp-server",
   "mcp-server-add",
   "models",
+  "signup-survey",
   "voice",
 ]);
 

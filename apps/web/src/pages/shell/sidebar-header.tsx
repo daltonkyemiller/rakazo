@@ -2,12 +2,13 @@ import { useLingui } from "@lingui/react/macro";
 import type { Bot } from "@rakazo/contracts";
 import { Popover, PopoverContent, PopoverTrigger } from "@rakazo/ui-web";
 import { Bell, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IconTooltip } from "../../components/IconTooltip";
 import { desktopBridge } from "../../lib/desktop";
 import type { Panel } from "../../lib/right-panel-state";
 import { WindowChrome } from "../WindowChrome";
 import { BotCreatePicker } from "./bot-picker";
+import { isCreateMenuHotkey } from "./command-palette-hotkey";
 
 /** Selected state keeps the sidebar material and foreground so it reads in both themes. */
 const SIDEBAR_TOOL_BUTTON =
@@ -23,6 +24,7 @@ export function SidebarHeader({
   setPanel,
   navigate,
   setNewSpaceOpen,
+  setCreateBotOpen,
   setPickerInfoTopic,
 }: {
   mini?: boolean;
@@ -34,11 +36,21 @@ export function SidebarHeader({
   setPanel: (panel: Panel) => void;
   navigate: (path: string) => void;
   setNewSpaceOpen: (open: boolean) => void;
+  setCreateBotOpen: (open: boolean) => void;
   setPickerInfoTopic: (topic: "group" | "space") => void;
 }) {
   const { t } = useLingui();
   const [createMenuOpen, setCreateMenuOpen] = useState(false);
   const hasWindowChrome = Boolean(desktopBridge());
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (!isCreateMenuHotkey(event)) return;
+      event.preventDefault();
+      setCreateMenuOpen(true);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   return (
     <div
       className={`app-drag flex items-center ${mini ? `flex-col gap-2 px-0 pb-2 ${hasWindowChrome ? "pt-4" : "pt-2"}` : "justify-between px-3 pb-2.5 pt-3"}`}
@@ -95,7 +107,7 @@ export function SidebarHeader({
                 onCreateBot={() => {
                   setCreateMenuOpen(false);
                   setMobileSidebarOpen(false);
-                  setPanel("create");
+                  setCreateBotOpen(true);
                 }}
                 onOpenBot={(id) => {
                   setCreateMenuOpen(false);

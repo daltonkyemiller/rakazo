@@ -16,6 +16,7 @@ import {
   Input,
   NativeSelect,
   NativeSelectOption,
+  Spinner,
 } from "@rakazo/ui-web";
 import { XIcon } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -43,6 +44,7 @@ export function VoiceSettingsOverlay({
   const baseUrlId = useId();
   const ttsModelId = useId();
   const sttModelId = useId();
+  const providerSelectId = useId();
   const [catalog, setCatalog] = useState<VoiceCatalogEntry[]>([]);
   const [credentials, setCredentials] = useState<VoiceCredential[]>([]);
   const [status, setStatus] = useState<VoiceStatus | null>(null);
@@ -55,6 +57,7 @@ export function VoiceSettingsOverlay({
   const [ttsModel, setTtsModel] = useState("");
   const [sttModel, setSttModel] = useState("");
   const speechModelSave = useRef<string | null>(null);
+  const voicesRequest = useRef(0);
   const [loading, setLoading] = useState(true);
   const [pending, setPending] = useState<"connect" | "disconnect" | "voice" | "test" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,31 +74,56 @@ export function VoiceSettingsOverlay({
     onBusyChange?.(next !== null);
   }
 
-  async function refresh(nextProvider?: string) {
-    const [nextCatalog, nextCredentials, nextStatus] = await Promise.all([
-      rpc.voice.catalog(),
-      rpc.voice.credentials(),
-      rpc.voice.status(),
-    ]);
-    const selected = nextProvider || provider || nextStatus.provider || nextCatalog[0]?.id || "";
-    setCatalog(nextCatalog);
-    setCredentials(nextCredentials);
-    setStatus(nextStatus);
-    setProvider(selected);
-    const cred = nextCredentials.find((entry) => entry.provider === selected);
+  /** Fill the form from the provider's saved credential; voices load without blocking the form. */
+  function showProvider(nextProvider: string, nextCredentials: VoiceCredential[]) {
+    const request = ++voicesRequest.current;
+    setProvider(nextProvider);
+    const cred = nextCredentials.find((entry) => entry.provider === nextProvider);
     const activeVoice = cred?.voiceId ?? "";
     setVoiceId(activeVoice);
     setSpeechModel(cred?.speechModel ?? "");
     setBaseUrl(cred?.endpoint ?? "");
     setTtsModel(cred?.ttsModel ?? "");
     setSttModel(cred?.sttModel ?? "");
-    if (cred) {
-      const listed = await rpc.voice.voices({ provider: selected });
-      setVoices(listed);
-      if (!activeVoice && listed[0]) setVoiceId(listed[0].id);
-    } else {
-      setVoices([]);
-    }
+    setVoices([]);
+    if (!cred) return Promise.resolve();
+    return rpc.voice.voices({ provider: nextProvider }).then(
+      (listed) => {
+        if (request !== voicesRequest.current) return;
+        setVoices(listed);
+        if (!activeVoice && listed[0]) setVoiceId(listed[0].id);
+      },
+      (err: unknown) => {
+        if (request === voicesRequest.current) throw err;
+      },
+    );
+  }
+
+  async function refresh(nextProvider?: string) {
+    const [nextCatalog, nextCredentials, nextStatus] = await Promise.all([
+      rpc.voice.catalog(),
+      rpc.voice.credentials(),
+      rpc.voice.status(),
+    ]);
+    const selected =
+      [nextProvider, provider, nextStatus.provider].find((id) =>
+        nextCatalog.some((entry) => entry.id === id),
+      ) ??
+      nextCatalog[0]?.id ??
+      "";
+    setCatalog(nextCatalog);
+    setCredentials(nextCredentials);
+    setStatus(nextStatus);
+    await showProvider(selected, nextCredentials);
+  }
+
+  function chooseProvider(nextProvider: string) {
+    setApiKey("");
+    setError(null);
+    setNotice(null);
+    void showProvider(nextProvider, credentials).catch((err: unknown) =>
+      setError(errorText(err, t`Could not load voice settings`)),
+    );
   }
 
   useEffect(() => {
@@ -106,6 +134,9 @@ export function VoiceSettingsOverlay({
 
   const selected = catalog.find((entry) => entry.id === provider) ?? catalog[0];
   const credential = credentials.find((entry) => entry.provider === provider);
+  const hiddenSelfHosted =
+    !catalog.some((entry) => entry.id === OPENAI_COMPATIBLE_PROVIDER_ID) &&
+    credentials.some((entry) => entry.provider === OPENAI_COMPATIBLE_PROVIDER_ID);
   const voiceOptions = useMemo(
     () => (voices.length ? voices : voiceId ? [{ id: voiceId, label: voiceId }] : []),
     [voices, voiceId],
@@ -144,15 +175,15 @@ export function VoiceSettingsOverlay({
     }
   }
 
-  async function disconnectProvider() {
-    if (!credential) return;
+  async function disconnectProvider(providerId = credential?.provider) {
+    if (!providerId) return;
     setError(null);
     setNotice(null);
     markPending("disconnect");
     try {
-      await rpc.voice.disconnect({ provider: credential.provider });
+      await rpc.voice.disconnect({ provider: providerId });
       setApiKey("");
-      await refresh(credential.provider);
+      await refresh(providerId);
     } catch (err) {
       setError(errorText(err, t`Could not disconnect this voice provider`));
     } finally {
@@ -289,11 +320,45 @@ export function VoiceSettingsOverlay({
         <div className="rk-scroll min-h-0 min-w-0 flex-1 overflow-y-auto">
           {loading ? (
             <p className="text-sm text-muted-foreground">
-              <Trans>Loading voice providers…</Trans>
+              <Spinner aria-label={t`Loading voice providers…`} />
             </p>
           ) : null}
           {error ? <p className="mb-4 text-sm text-destructive">{error}</p> : null}
           {notice ? <p className="mb-4 text-sm text-success">{notice}</p> : null}
+          {catalog.length ? (
+            <Field>
+              <FieldLabel htmlFor={providerSelectId}>
+                <Trans>Provider</Trans>
+              </FieldLabel>
+              <NativeSelect
+                id={providerSelectId}
+                className="w-full"
+                value={provider}
+                disabled={busy}
+                onChange={(event) => chooseProvider(event.target.value)}
+              >
+                {catalog.map((entry) => {
+                  const connected = credentials.some((cred) => cred.provider === entry.id);
+                  return (
+                    <NativeSelectOption key={entry.id} value={entry.id}>
+                      {entry.name}
+                      {entry.transcribe ? "" : ` · ${t`Speak only`}`}
+                      {connected ? ` · ${t`Connected`}` : ""}
+                    </NativeSelectOption>
+                  );
+                })}
+              </NativeSelect>
+            </Field>
+          ) : null}
+          {hiddenSelfHosted ? (
+            <Button
+              variant="ghost"
+              disabled={busy}
+              onClick={() => void disconnectProvider(OPENAI_COMPATIBLE_PROVIDER_ID)}
+            >
+              <Trans>Disconnect Self-hosted</Trans>
+            </Button>
+          ) : null}
           {selected ? (
             <>
               {selfHosted ? (

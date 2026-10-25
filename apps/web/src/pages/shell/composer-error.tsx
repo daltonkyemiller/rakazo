@@ -59,8 +59,7 @@ export function ComposerError({
       document.removeEventListener("visibilitychange", recordIfPresented);
     };
   }, [onRunErrorPresented, runError, runErrorId]);
-
-  const error = runError
+  const normalizedRunError = runError
     ? normalizeRunError(runError, translateRunError, i18n.locale || "en")
     : null;
 
@@ -82,9 +81,9 @@ export function ComposerError({
             {sendError}
           </button>
         ) : (
-          (sendError ?? error?.summary)
+          (sendError ?? normalizedRunError?.summary)
         )}
-        {!sendError && error?.kind === "rate" ? (
+        {!sendError && normalizedRunError?.kind === "rate" ? (
           <button
             type="button"
             onClick={onOpenModels}
@@ -96,7 +95,9 @@ export function ComposerError({
         {!sendError && runError ? (
           <details key={runError} className="mt-1">
             <summary className="w-fit cursor-pointer">{t`Details`}</summary>
-            <pre className="mt-2 whitespace-pre-wrap break-words text-xs">{runError}</pre>
+            <pre className="mt-2 whitespace-pre-wrap break-words text-xs">
+              {normalizedRunError?.details}
+            </pre>
           </details>
         ) : null}
       </div>

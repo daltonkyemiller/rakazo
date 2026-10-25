@@ -31,6 +31,7 @@ export function ApprovalRulesSettings() {
   const rpc = useSpaceRpc();
   const { t } = useLingui();
   const autoReviewId = useId();
+  const skipApprovalsId = useId();
   const [rules, setRules] = useState<ActionApprovalRule[]>([]);
   const [autoReview, setAutoReview] = useState<ActionAutoReviewSettings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,12 +98,12 @@ export function ApprovalRulesSettings() {
     }
   }
 
-  async function toggleAutoReview(enabled: boolean) {
+  async function saveAutoReview(input: { enabled?: boolean; skipApprovals?: boolean }) {
     if (loading || savingAutoReview) return;
     setSavingAutoReview(true);
     setError(null);
     try {
-      setAutoReview(await rpc.autoReview.set({ enabled }));
+      setAutoReview(await rpc.autoReview.set(input));
     } catch (err) {
       setError(errorText(err, t`Could not save Auto Review`));
     } finally {
@@ -126,6 +127,15 @@ export function ApprovalRulesSettings() {
     <div data-testid="action-confirmation-settings">
       <SettingsStack>
         <SettingsSection>
+          <SettingsRow label={<Trans>Run actions without asking</Trans>} labelFor={skipApprovalsId}>
+            <Switch
+              id={skipApprovalsId}
+              data-testid="skip-approvals-toggle"
+              checked={autoReview?.skipApprovals ?? false}
+              disabled={loading || savingAutoReview || !autoReview}
+              onCheckedChange={(checked) => void saveAutoReview({ skipApprovals: checked })}
+            />
+          </SettingsRow>
           <SettingsRow
             label={<Trans>Flag unexpected actions</Trans>}
             labelFor={autoReviewId}
@@ -141,7 +151,7 @@ export function ApprovalRulesSettings() {
               data-testid="auto-review-toggle"
               checked={autoReview?.enabled ?? false}
               disabled={loading || savingAutoReview || !autoReview}
-              onCheckedChange={(checked) => void toggleAutoReview(checked)}
+              onCheckedChange={(checked) => void saveAutoReview({ enabled: checked })}
             />
           </SettingsRow>
         </SettingsSection>

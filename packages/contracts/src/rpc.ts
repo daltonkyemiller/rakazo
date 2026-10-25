@@ -83,6 +83,7 @@ import {
   ServerUpdateRequestSchema,
   ServerUpdateRunSchema,
   ServerUpdateStatusSchema,
+  SignupSurveySchema,
   SkillPlaybookSchema,
   SpaceMemoryConfigSchema,
   SpaceNavigationSchema,
@@ -98,6 +99,7 @@ import {
   UpdateExternalConversationPolicyInput,
   UpdateGroupInput,
   UsageRecordSchema,
+  UsageSummarySchema,
   VoiceCatalogEntrySchema,
   VoiceCredentialSchema,
   VoiceInfoSchema,
@@ -109,6 +111,7 @@ import {
   IntegrationProviderConfigSchema,
   IntegrationSetupStateSchema,
 } from "./integration-settings.js";
+import { ModelHeadersSchema } from "./model-headers.js";
 import { MessageReactionSchema } from "./reactions.js";
 import { RoutineWatchSchema } from "./routine-watch.js";
 import { RoutineHistorySchema, RoutineRunCursorSchema, RunsListOutputSchema } from "./runs.js";
@@ -270,6 +273,8 @@ export const appContract = {
       .input(
         z.object({
           baseUrl: z.string(),
+          credentialId: z.string().optional(),
+          headers: ModelHeadersSchema.optional(),
           apiKey: z.string().optional(),
         }),
       )
@@ -502,7 +507,10 @@ export const appContract = {
     markRead: oc
       .input(threadTarget)
       .output(z.object({ ok: z.literal(true), unreadAfterSeq: z.number().int().nullable() })),
-    markUnread: oc.input(threadTarget).output(z.object({ ok: z.literal(true) })),
+    /** With `messageId`, the chat reads as unread from that message: the next open puts New above it. */
+    markUnread: oc
+      .input(threadTarget.and(z.object({ messageId: Id.optional() })))
+      .output(z.object({ ok: z.literal(true) })),
   },
   computer: {
     status: oc.input(botId).output(ComputerStatusSchema),
@@ -831,6 +839,8 @@ export const appContract = {
     },
   },
   onboarding: {
+    /** Record the optional signup survey; an empty submission marks it skipped. */
+    signupSurvey: oc.input(SignupSurveySchema).output(z.object({ ok: z.literal(true) })),
     /** Seed the first-run greeting into the bot's thread (focus card is separate). */
     start: oc.input(z.object({ botId: Id })).output(z.object({ ok: z.literal(true) })),
     /** Post the focus choice card when the thread is still idle. */
@@ -937,7 +947,9 @@ export const appContract = {
   },
   autoReview: {
     get: oc.output(ActionAutoReviewSettingsSchema),
-    set: oc.input(z.object({ enabled: z.boolean() })).output(ActionAutoReviewSettingsSchema),
+    set: oc
+      .input(z.object({ enabled: z.boolean().optional(), skipApprovals: z.boolean().optional() }))
+      .output(ActionAutoReviewSettingsSchema),
   },
   artifacts: {
     list: oc.input(botId).output(z.array(ArtifactSchema)),
@@ -976,15 +988,7 @@ export const appContract = {
   },
   usage: {
     list: oc.output(z.array(UsageRecordSchema)),
-    summary: oc.output(
-      z.object({
-        inputTokens: z.number().nullable(),
-        outputTokens: z.number().nullable(),
-        totalTokens: z.number().nullable().optional(),
-        modelCalls: z.number().optional(),
-        runs: z.number(),
-      }),
-    ),
+    summary: oc.output(UsageSummarySchema),
   },
   export: {
     bot: oc.input(botId).output(ExportManifestSchema),

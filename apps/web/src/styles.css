@@ -21,6 +21,12 @@ html[data-platform="darwin"] #root {
   font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
+/* viewport-fit=cover lets the shell reach the screen edges; keep it clear of notches and the home indicator. */
+#root {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
 /* Switching spaces in place (lib/space-switch.ts): the sidebar holds still while the
    conversation crossfades, instead of the whole screen redrawing. */
 .rk-space-switching [data-space-switch="sidebar"] {

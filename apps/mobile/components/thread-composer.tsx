@@ -29,6 +29,7 @@ export type ThreadComposerHandle = {
 type ThreadComposerProps = {
   ref: Ref<ThreadComposerHandle>;
   onFocus?: () => void;
+  onMentionRequested?: () => void;
   agentSkills: AgentSkillCatalogEntry[];
   composerMentionTargets: ReturnType<typeof buildComposerMentionOptions>;
   composerPrompt: string;
@@ -51,6 +52,7 @@ type ThreadComposerProps = {
 export function ThreadComposer({
   ref,
   onFocus,
+  onMentionRequested,
   agentSkills,
   composerMentionTargets,
   composerPrompt,
@@ -129,6 +131,7 @@ export function ThreadComposer({
   function updateDraft(value: string) {
     setDraft(value);
     const match = /(?:^|\s)@([\w-]*)$/.exec(value);
+    if (match) onMentionRequested?.();
     setMentionQuery(match ? (match[1] ?? "") : null);
     const slashMatch = selectedSkill === null ? /^\/([^\n]*)$/.exec(value) : null;
     setSlashQuery(slashMatch ? (slashMatch[1] ?? "") : null);

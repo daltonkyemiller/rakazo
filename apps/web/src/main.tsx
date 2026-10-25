@@ -14,12 +14,14 @@ import { markAfterPaint, markOnce } from "./lib/performance";
 import { installPreloadRecovery } from "./lib/preload-recovery";
 import { applyUiAppearance, watchSystemAppearance } from "./lib/ui-appearance";
 import { resolveUiLocale } from "./lib/ui-locale";
+import { registerServiceWorker } from "./pwa/register";
 import "./styles.css";
 import "./native-glass.css";
 
 markOnce("rk:renderer:module-evaluated");
 installPreloadRecovery();
 clientUpdates().install();
+registerServiceWorker();
 applyUiDirection(resolveUiLocale());
 applyUiAppearance();
 // The macOS app uses the system font so its chrome matches native windows.

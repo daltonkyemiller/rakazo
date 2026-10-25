@@ -35,7 +35,6 @@ describe("desktop preload bridge", () => {
       "appearance",
       "badge",
       "computer",
-      "localSettings",
       "mcp",
       "oauth",
       "platform",

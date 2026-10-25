@@ -4,7 +4,6 @@ import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { DesktopReachability, DesktopSetup } from "@rakazo/contracts";
 import { DesktopHostMcpInputSchema } from "@rakazo/contracts";
-import { LOCAL_SETTINGS_PAGE } from "@rakazo/contracts/local-settings";
 import type { Session } from "electron";
 import {
   app,
@@ -30,7 +29,7 @@ import { openBrowserAuth } from "./browser-auth.js";
 import { DOCKER_INSTALL_LINKS, isDesktopSetupLink, runDocker } from "./docker-cli.js";
 import { prepareHostComputer } from "./host-computer.js";
 import { prepareHostMcp } from "./host-mcp.js";
-import { requestLocalSettings } from "./local-settings.js";
+import { saveLocalComputerHost } from "./local-settings.js";
 import {
   LocalStackController,
   readLocalStackImageTag,
@@ -99,10 +98,6 @@ const DESKTOP_STACK_TOKEN_HEADER = "x-rakazo-desktop-stack-token";
 let mainWindow: BrowserWindow | null = null;
 const appWindowTargets = new WeakMap<BrowserWindow, string>();
 let setupWindow: BrowserWindow | null = null;
-let settingsWindow: BrowserWindow | null = null;
-let openingSettings = false;
-let settingsCleanup: Promise<void> = Promise.resolve();
-let settingsTarget: { origin: string; token: string } | null = null;
 const bundledRendererInstallations = new Set<string>();
 let currentSetup: DesktopSetup | null = null;
 let currentTargetUrl: string | null = null;
@@ -631,88 +626,8 @@ function restoreAppWindowAfterSetup() {
 }
 
 async function showLocalSettings() {
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    settingsWindow.show();
-    settingsWindow.focus();
-    return;
-  }
-  if (openingSettings) return;
-  openingSettings = true;
-  try {
-    let url = localStack.webUrl();
-    let token = await readStackToken(stackDir(app.getPath("userData")));
-    let available = !!token && (await localStack.matchesDesiredStack(url));
-    if (!available && LOCAL_BUILD) {
-      // The local client can manage the installed release's stack without starting another one.
-      const hostStack = stackDir(path.join(app.getPath("appData"), "Rakazo"));
-      const hostUrl = await readStackWebUrl(hostStack, DEFAULT_LOCAL_WEB_URL);
-      const hostToken = await readStackToken(hostStack);
-      if (hostToken && (await probeManagedStack(hostUrl, hostToken))) {
-        url = hostUrl;
-        token = hostToken;
-        available = true;
-      }
-    }
-    if (!available || !token) {
-      await dialog.showMessageBox({
-        message: "Start the local server before opening its settings.",
-        type: "info",
-      });
-      return;
-    }
-    await settingsCleanup;
-    const partition = "local-server-settings";
-    const targetSession = session.fromPartition(partition);
-    installSessionPermissions(targetSession, () => null);
-    await installBundledRenderer(url, targetSession, partition, true);
-    const win = new BrowserWindow({
-      ...browserWindowOptions(process.platform),
-      title: "Local Server Settings",
-      frame: true,
-      titleBarStyle: "default",
-      trafficLightPosition: undefined,
-      webPreferences: {
-        preload: path.join(import.meta.dirname, "preload.cjs"),
-        nodeIntegration: false,
-        contextIsolation: true,
-        sandbox: true,
-        partition,
-      },
-    });
-    settingsWindow = win;
-    const origin = new URL(url).origin;
-    settingsTarget = { origin, token };
-    win.webContents.setWindowOpenHandler(({ url: externalUrl }) => {
-      const external = safeExternalUrl(externalUrl);
-      if (external) void shell.openExternal(external);
-      return { action: "deny" };
-    });
-    const preventNavigation = (event: Electron.Event, target: string) => {
-      if (target === `${origin}${LOCAL_SETTINGS_PAGE}`) return;
-      event.preventDefault();
-    };
-    win.webContents.on("will-navigate", preventNavigation);
-    win.webContents.on("will-redirect", preventNavigation);
-    win.once("closed", () => {
-      if (settingsWindow === win) {
-        settingsWindow = null;
-        settingsTarget = null;
-      }
-      const protocol = new URL(url).protocol;
-      if (bundledRendererInstallations.delete(`${partition}:${protocol}`)) {
-        targetSession.protocol.unhandle(protocol.slice(0, -1));
-      }
-      settingsCleanup = targetSession.clearStorageData().catch(() => undefined);
-    });
-    await win.loadURL(`${origin}${LOCAL_SETTINGS_PAGE}`);
-  } catch {
-    settingsWindow?.close();
-    await dialog.showMessageBox({
-      message: "Could not open local server settings. Try again.",
-      type: "error",
-    });
-  } finally {
-    openingSettings = false;
+  if (mainWindow && !mainWindow.isDestroyed() && currentTargetUrl) {
+    await mainWindow.loadURL(new URL("/integrations/setup", currentTargetUrl).href);
   }
 }
 
@@ -1226,8 +1141,7 @@ app.whenReady().then(async () => {
   app.on("before-quit", cancelBrowserAuth);
   ipcMain.handle("desktop.oauth.open", async (event, url: unknown) => {
     if (
-      (!fromMainWindow(event) &&
-        !(settingsWindow !== null && windowFrom(event) === settingsWindow)) ||
+      !fromMainWindow(event) ||
       event.senderFrame !== event.sender.mainFrame ||
       typeof url !== "string" ||
       url.length > 16_384
@@ -1269,34 +1183,13 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle("desktop.oauth.cancel", (event, url: unknown) => {
     if (
-      (!fromMainWindow(event) &&
-        !(settingsWindow !== null && windowFrom(event) === settingsWindow)) ||
+      !fromMainWindow(event) ||
       event.senderFrame !== event.sender.mainFrame ||
       typeof url !== "string"
     )
       return;
     browserAuthAttempts.get(url)?.abort();
   });
-  ipcMain.handle(
-    "desktop.localSettings.request",
-    async (event, pathname: unknown, body: unknown) => {
-      if (
-        !settingsWindow ||
-        windowFrom(event) !== settingsWindow ||
-        event.senderFrame !== event.sender.mainFrame ||
-        !settingsTarget ||
-        event.senderFrame.url !== `${settingsTarget.origin}${LOCAL_SETTINGS_PAGE}`
-      ) {
-        throw new Error("Local settings are not active");
-      }
-      return requestLocalSettings(settingsTarget, pathname, body, (input, init) =>
-        net.fetch(input instanceof URL ? input.href : input, {
-          ...init,
-          bypassCustomProtocolHandlers: true,
-        }),
-      );
-    },
-  );
   const isManagedComputerRequest = (event: Electron.IpcMainInvokeEvent) =>
     fromMainWindow(event) &&
     event.senderFrame === event.sender.mainFrame &&
@@ -1426,6 +1319,18 @@ app.whenReady().then(async () => {
   ipcMain.handle("desktop.mcp.test", async (event, id: unknown) =>
     requireHostMcp(event).test(hostMcpId(id)),
   );
+  const persistHostChoice = async (computerHost: "docker" | "this-mac") => {
+    const origin = new URL(localStack.webUrl()).origin;
+    const token = await readStackToken(stackDir(app.getPath("userData")));
+    if (!token || !(await localStack.matchesDesiredStack()))
+      throw new Error("Local server is unavailable");
+    await saveLocalComputerHost({ origin, token }, computerHost, (input, init) =>
+      net.fetch(input instanceof URL ? input.href : input, {
+        ...init,
+        bypassCustomProtocolHandlers: true,
+      }),
+    );
+  };
   ipcMain.handle("desktop.computer.requestAccess", async (event) => {
     if (!isManagedComputerRequest(event) || !hostComputer)
       throw new Error("Local computer access requires an app-managed local instance.");
@@ -1434,7 +1339,10 @@ app.whenReady().then(async () => {
     try {
       if (!(await localStack.matchesDesiredStack()) || !isManagedComputerRequest(event))
         return false;
-      if (hostComputer.isEnabled()) return true;
+      if (hostComputer.isEnabled()) {
+        await persistHostChoice("this-mac");
+        return true;
+      }
       const epoch = hostMcpGrantEpoch;
       const result = await dialog.showMessageBox(mainWindow!, {
         type: "warning",
@@ -1451,6 +1359,12 @@ app.whenReady().then(async () => {
         return false;
       hostComputer.activate(true);
       await hostComputer.grant();
+      try {
+        await persistHostChoice("this-mac");
+      } catch (error) {
+        await hostComputer.revoke();
+        throw error;
+      }
       installApplicationMenu();
       return hostComputer.isEnabled();
     } finally {
@@ -1459,7 +1373,12 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle("desktop.computer.revokeAccess", async (event) => {
     if (isManagedComputerRequest(event)) {
-      await revokeHostAccess();
+      try {
+        await persistHostChoice("docker");
+      } finally {
+        await revokeHostAccess();
+        installApplicationMenu();
+      }
     }
   });
   ipcMain.handle(

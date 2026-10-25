@@ -47,9 +47,9 @@ export async function readLocalStackImageTag(dir: string): Promise<string | null
   if (info === null) return null;
   const raw = await readPrivateFile(file, 128);
   const tag = raw?.trim();
-  if (!tag || !/^v\d+\.\d+\.\d+$/.test(tag))
+  if (!tag || !/^(?:v\d+\.\d+\.\d+|local-[a-f0-9]{8,40})$/.test(tag))
     throw new Error(
-      "Invalid local backend version pin. Restore a stable release tag before starting the stack.",
+      "Invalid local backend version pin. Use a stable release or commit-pinned local build before starting the stack.",
     );
   return tag;
 }

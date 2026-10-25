@@ -82,6 +82,10 @@ describe("adopted local backend version", () => {
       }),
     ).toBe("v0.2.0");
   });
+  it("reads a commit-pinned local backend", async () => {
+    await writeFile(path.join(dir, STACK_IMAGE_TAG_FILE), "local-1234abcd\n");
+    expect(await readLocalStackImageTag(dir)).toBe("local-1234abcd");
+  });
   it("refuses invalid or symlinked pins instead of silently upgrading the backend", async () => {
     const file = path.join(dir, STACK_IMAGE_TAG_FILE);
     await writeFile(file, "edge\n");
